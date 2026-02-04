@@ -1,98 +1,126 @@
-import type { CreateInvoiceInput, SquareInvoiceLine, SquareMoney } from "./types";
 import { squareFetch } from "./client";
-import { upsertCustomer } from "./customers";
 
-function money(amountCents: number): SquareMoney {
-  return { amount: amountCents, currency: "USD" };
+type Money = { amount: number; currency: "USD" };
+
+export type InvoiceLine = {
+  name: string;
+  quantity: string; // Square wants string quantities
+  basePriceMoney: Money;
+};
+
+export type CreateAndSendInvoiceInput = {
+  locationId: string;
+  orderId: string; // your internal order number/id (we store it in Square order referenceId)
+  kind: "full" | "deposit";
+  depositPercent?: number;
+  customerEmail: string;
+  customerGivenName?: string;
+  customerFamilyName?: string;
+  title?: string;
+  message?: string;
+  lines: InvoiceLine[];
+};
+
+function isoDate(d: Date) {
+  return d.toISOString();
 }
 
-function sumLines(lines: SquareInvoiceLine[]): number {
-  let total = 0;
-  for (const l of lines) {
-    const qty = Number(l.quantity || "1");
-    total += Math.round((l.basePriceMoney.amount || 0) * qty);
-  }
-  return total;
-}
+export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
+  // 1) Create a Square Order (required for invoices). citeturn0search2turn0search13
+  const orderBody = {
+    order: {
+      location_id: input.locationId,
+      reference_id: String(input.orderId),
+      line_items: input.lines.map((l) => ({
+        name: l.name,
+        quantity: l.quantity,
+        base_price_money: { amount: l.basePriceMoney.amount, currency: l.basePriceMoney.currency },
+      })),
+    },
+  };
 
-function cryptoRandomId(): string {
-  // uuid-ish idempotency key without deps
-  // eslint-disable-next-line no-restricted-globals
-  return (globalThis as any).crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-export async function createAndSendInvoice(input: CreateInvoiceInput): Promise<{
-  invoiceId: string;
-  publicUrl?: string;
-  status?: string;
-}> {
-  const customerId =
-    input.customerId ||
-    (input.customerEmail
-      ? await upsertCustomer({
-          email: input.customerEmail,
-          givenName: input.customerGivenName,
-          familyName: input.customerFamilyName,
-        })
-      : null);
-
-  if (!customerId) throw new Error("Missing customerId or customerEmail to create an invoice.");
-
-  const total = sumLines(input.lines);
-  const dueDays = input.dueDays ?? 7;
-  const depositPercent = input.depositPercent ?? 50;
-  const depositAmount = Math.max(1, Math.round((total * depositPercent) / 100));
-
-  const amount = input.kind === "deposit" ? depositAmount : total;
-
-  // 1) Create draft invoice
-  const createResp = await squareFetch<any>("/v2/invoices", {
+  const orderRes = await squareFetch("/v2/orders", {
     method: "POST",
-    body: JSON.stringify({
-      invoice: {
-        location_id: input.locationId,
-        primary_recipient: { customer_id: customerId },
-        title: input.title || "West Roxbury Framing",
-        delivery_method: "EMAIL",
-        payment_requests: [
+    body: JSON.stringify(orderBody),
+  });
+
+  const squareOrderId = orderRes?.order?.id;
+  if (!squareOrderId) throw new Error("Square order create failed (missing order.id)");
+
+  // 2) Create a draft invoice for that Square order. Must use invoice.order_id (NOT invoice.orders). citeturn0search5turn0search13
+  const now = new Date();
+  const due = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // default: due in 7 days
+
+  const paymentAmount = input.lines.reduce((sum, l) => sum + (l.basePriceMoney.amount || 0) * (Number(l.quantity) || 1), 0);
+
+  const depositPercent = typeof input.depositPercent === "number" ? input.depositPercent : 50;
+  const depositAmount = Math.max(1, Math.round((paymentAmount * depositPercent) / 100));
+
+  const requests =
+    input.kind === "deposit"
+      ? [
+          {
+            request_type: "DEPOSIT",
+            due_date: due.toISOString().slice(0, 10), // YYYY-MM-DD
+            percentage_requested: String(depositPercent),
+          },
           {
             request_type: "BALANCE",
-            due_date: new Date(Date.now() + dueDays * 86400000).toISOString().slice(0, 10),
-            computed_amount_money: money(amount),
+            due_date: due.toISOString().slice(0, 10),
           },
-        ],
-        accepted_payment_methods: { card: true, square_gift_card: true, bank_account: true },
-        custom_fields: [{ label: "Order ID", value: input.orderId }],
-        description: input.message || `Invoice for Order ${input.orderId}`,
-        invoice_number: `WRX-${String(input.orderId).slice(0, 8).toUpperCase()}`,
-        order: {
-          location_id: input.locationId,
-          line_items: input.lines.map((l) => ({
-            name: l.name,
-            quantity: l.quantity || "1",
-            base_price_money: l.basePriceMoney,
-          })),
-        },
+        ]
+      : [
+          {
+            request_type: "BALANCE",
+            due_date: due.toISOString().slice(0, 10),
+          },
+        ];
+
+  const invoiceBody = {
+    invoice: {
+      location_id: input.locationId,
+      order_id: squareOrderId,
+      title: input.title || "Invoice",
+      description: input.message || undefined,
+      delivery_method: "EMAIL",
+      primary_recipient: {
+        // Square supports customer_id; for email-only, use this recipient model:
+        // email_address is allowed in primary_recipient in current API. citeturn0search2turn0search13
+        email_address: input.customerEmail,
+        given_name: input.customerGivenName,
+        family_name: input.customerFamilyName,
       },
-      idempotency_key: cryptoRandomId(),
-    }),
-  });
+      payment_requests: requests,
+      accepted_payment_methods: {
+        card: true,
+        square_gift_card: true,
+        bank_account: false,
+        buy_now_pay_later: false,
+      },
+      invoice_number: String(input.orderId),
+    },
+  };
 
-  const invoiceId = createResp?.invoice?.id as string | undefined;
-  if (!invoiceId) throw new Error("Square did not return an invoice id.");
-
-  // 2) Publish (sends email)
-  const publishResp = await squareFetch<any>(`/v2/invoices/${invoiceId}/publish`, {
+  const draft = await squareFetch("/v2/invoices", {
     method: "POST",
-    body: JSON.stringify({
-      idempotency_key: cryptoRandomId(),
-      version: createResp.invoice.version,
-    }),
+    body: JSON.stringify(invoiceBody),
   });
+
+  const invoiceId = draft?.invoice?.id;
+  if (!invoiceId) throw new Error("Square invoice create failed (missing invoice.id)");
+
+  // 3) Publish invoice (this actually sends the email). citeturn0search2turn0search5
+  const publish = await squareFetch(`/v2/invoices/${invoiceId}/publish`, {
+    method: "POST",
+    body: JSON.stringify({ version: draft.invoice.version }),
+  });
+
+  const inv = publish?.invoice || draft?.invoice;
 
   return {
     invoiceId,
-    publicUrl: publishResp?.invoice?.public_url,
-    status: publishResp?.invoice?.status,
+    status: inv?.status,
+    publicUrl: inv?.public_url,
+    squareOrderId,
   };
 }

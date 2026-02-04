@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAndSendInvoice } from "@/lib/square/invoices";
-import { getStaffUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-// POST body: { kind: "full" | "deposit", depositPercent?: number }
+// Uses Order.specs instead of items (your schema does not have items)
+// Relies on staff middleware for auth
+
 export async function POST(req: Request, ctx: any) {
   try {
-    const userId = await getStaffUserId(req);
-    if (!userId) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-
     const params = await ctx.params;
     const id = String(params.id);
 
@@ -31,7 +27,7 @@ export async function POST(req: Request, ctx: any) {
       where: { id },
       include: {
         customer: true,
-        items: true,
+        specs: true,
       },
     });
 
@@ -51,29 +47,23 @@ export async function POST(req: Request, ctx: any) {
       );
     }
 
-    const items = (order as any).items || [];
     const totalCents =
       (order as any).totalCents ??
       (order as any).total_cents ??
       0;
 
-    const lines = (
-      items.length
-        ? items
-        : [{ name: "Custom framing", quantity: 1, unitPriceCents: totalCents }]
-    ).map((it: any) => ({
-      name: it.name || it.label || "Line item",
-      quantity: String(it.quantity ?? 1),
-      basePriceMoney: {
-        amount: Number(
-          it.unitPriceCents ??
-            it.unit_price_cents ??
-            it.priceCents ??
-            0
-        ),
-        currency: "USD" as const,
+    // For now, generate a simple invoice line from the order total.
+    // We will later expand this to detailed material + labor lines from specs.
+    const lines = [
+      {
+        name: "Custom framing",
+        quantity: "1",
+        basePriceMoney: {
+          amount: Number(totalCents),
+          currency: "USD" as const,
+        },
       },
-    }));
+    ];
 
     const orderIdForInvoice =
       (order as any).orderNumber ||

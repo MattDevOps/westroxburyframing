@@ -1,64 +1,27 @@
-import crypto from "crypto";
-import type { SquareEnv } from "./types";
+const BASE = process.env.SQUARE_ENV === "production"
+  ? "https://connect.squareup.com"
+  : "https://connect.squareupsandbox.com";
 
-function required(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env var ${name}`);
-  return v;
-}
+export async function squareFetch(path: string, init: RequestInit = {}) {
+  const token = process.env.SQUARE_ACCESS_TOKEN;
+  if (!token) throw new Error("Missing SQUARE_ACCESS_TOKEN");
 
-export function getSquareEnv(): SquareEnv {
-  return (process.env.SQUARE_ENV as SquareEnv) || "sandbox";
-}
-
-export function squareBaseUrl(env: SquareEnv): string {
-  return env === "production"
-    ? "https://connect.squareup.com"
-    : "https://connect.squareupsandbox.com";
-}
-
-export async function squareFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const env = getSquareEnv();
-  const token = required("SQUARE_ACCESS_TOKEN");
-
-  const url = squareBaseUrl(env) + path;
-  const res = await fetch(url, {
+  const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
       ...(init.headers || {}),
     },
-    cache: "no-store",
   });
 
   const text = await res.text();
-  let data: any = null;
-  try { data = text ? JSON.parse(text) : null; } catch {}
+  let json: any = null;
+  try { json = text ? JSON.parse(text) : null; } catch {}
 
   if (!res.ok) {
-    const msg = data?.errors?.[0]?.detail || data?.message || text || `Square error ${res.status}`;
-    throw new Error(msg);
+    const detail = json?.errors?.[0]?.detail || json?.message || text || `Square error (${res.status})`;
+    throw new Error(detail);
   }
-  return data as T;
-}
-
-/**
- * Verify Square webhooks.
- * Square sends:
- * - x-square-hmacsha256-signature header
- * - signature = base64(hmac_sha256(signature_key, url + body))
- */
-export function verifySquareWebhookSignature(args: {
-  signatureKey: string;
-  notificationUrl: string; // exact URL configured in Square dashboard
-  requestBody: string;
-  signatureHeader: string | null;
-}): boolean {
-  const { signatureKey, notificationUrl, requestBody, signatureHeader } = args;
-  if (!signatureHeader) return false;
-
-  const payload = notificationUrl + requestBody;
-  const hmac = crypto.createHmac("sha256", signatureKey).update(payload).digest("base64");
-  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signatureHeader));
+  return json;
 }
