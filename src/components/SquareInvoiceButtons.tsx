@@ -9,6 +9,7 @@ export default function SquareInvoiceButtons(props: {
 }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [lastInvoiceUrl, setLastInvoiceUrl] = useState<string | null>(null);
 
   async function send(kind: "full" | "deposit") {
     setMsg(null);
@@ -46,14 +47,27 @@ export default function SquareInvoiceButtons(props: {
         );
       }
 
+      // Store the invoice URL for later use
+      if (data.publicUrl) {
+        setLastInvoiceUrl(data.publicUrl);
+        // Try to open immediately
+        const newWindow = window.open(data.publicUrl, "_blank", "noopener,noreferrer");
+        // If popup was blocked, log it
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+          console.warn("Popup blocked, invoice URL:", data.publicUrl);
+        }
+      } else {
+        console.warn("No publicUrl in response:", data);
+        setLastInvoiceUrl(null);
+      }
+
       // Show appropriate message
       if (data.message?.includes("already exists")) {
         setMsg(data.message || "Invoice already exists");
+        if (data.publicUrl) setLastInvoiceUrl(data.publicUrl);
       } else {
         setMsg(`Sent! Invoice id: ${data.invoiceId}`);
       }
-      
-      if (data.publicUrl) window.open(data.publicUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
       setMsg(e?.message || "Error");
     } finally {
@@ -100,7 +114,13 @@ export default function SquareInvoiceButtons(props: {
 
       setMsg(data.message || `Duplicated! New invoice: ${data.invoiceNumber}`);
       
-      if (data.publicUrl) window.open(data.publicUrl, "_blank", "noopener,noreferrer");
+      if (data.publicUrl) {
+        setLastInvoiceUrl(data.publicUrl);
+        const newWindow = window.open(data.publicUrl, "_blank", "noopener,noreferrer");
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+          console.warn("Popup blocked, invoice URL:", data.publicUrl);
+        }
+      }
     } catch (e: any) {
       setMsg(e?.message || "Error");
     } finally {
@@ -133,7 +153,21 @@ export default function SquareInvoiceButtons(props: {
           {loading === "duplicate" ? "Duplicating..." : "Duplicate Invoice"}
         </button>
       )}
-      {msg ? <span className="text-sm text-neutral-500">{msg}</span> : null}
+      {msg ? (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-500">{msg}</span>
+          {loading === null && lastInvoiceUrl && (
+            <button
+              onClick={() => {
+                window.open(lastInvoiceUrl, "_blank", "noopener,noreferrer");
+              }}
+              className="text-sm text-blue-400 hover:text-blue-300 underline"
+            >
+              Open Invoice
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

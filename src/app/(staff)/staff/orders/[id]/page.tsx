@@ -145,6 +145,26 @@ export default function OrderDetailPage() {
             Edit Order
           </button>
           <button
+            className="rounded-xl border border-blue-700/50 px-4 py-2 text-sm text-blue-400 hover:bg-blue-900/20"
+            onClick={async () => {
+              if (!confirm(`Create a duplicate of order ${order.orderNumber}?`)) {
+                return;
+              }
+              const res = await fetch(`/staff/api/orders/${order.id}/duplicate`, {
+                method: "POST",
+              });
+              const out = await res.json();
+              if (!res.ok) {
+                alert(out.error || "Failed to duplicate order");
+                return;
+              }
+              // Navigate to the new duplicated order
+              window.location.href = `/staff/orders/${out.order.id}`;
+            }}
+          >
+            Duplicate Order
+          </button>
+          <button
             className="rounded-xl border border-red-700/50 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20"
             onClick={async () => {
               if (!confirm(`Are you sure you want to delete order ${order.orderNumber}? This action cannot be undone.`)) {
