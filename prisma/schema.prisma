@@ -34,40 +34,39 @@ model User {
   id           String   @id @default(uuid())
   name         String
   email        String   @unique
-  role         String // "admin" | "staff"
+  role         String   // "admin" | "staff"
   passwordHash String
   createdAt    DateTime @default(now())
 
-  orders   Order[]
-  activity ActivityLog[] @relation("ActorActivity")
+  orders       Order[]
+  activity     ActivityLog[] @relation("ActorActivity")
 }
 
 model Customer {
-  id               String    @id @default(uuid())
+  id               String   @id @default(uuid())
   firstName        String
   lastName         String
-  phone            String    @unique
+  phone            String   @unique
   email            String?
   addressLine1     String?
   addressLine2     String?
   city             String?
   state            String?
   zip              String?
-  preferredContact String    @default("email") // "email" | "call"
-  marketingOptIn   Boolean   @default(false)
+  preferredContact String   @default("email") // "email" | "call"
+  marketingOptIn   Boolean  @default(false)
   marketingOptInAt DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  orders       Order[]
-  appointments Appointment[]
+  orders           Order[]
 }
 
 model Order {
-  id          String   @id @default(uuid())
-  orderNumber String   @unique
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
 
   status          OrderStatus   @default(new_design)
   intakeChannel   IntakeChannel @default(walk_in)
@@ -80,27 +79,27 @@ model Order {
   notesInternal   String?
   notesCustomer   String?
 
-  subtotalAmount Int
-  taxAmount      Int
-  totalAmount    Int
-  currency       String  @default("USD")
-  paidInFull     Boolean @default(true)
+  subtotalAmount  Int
+  taxAmount       Int
+  totalAmount     Int
+  currency        String        @default("USD")
+  paidInFull      Boolean       @default(true)
 
   createdByUserId String
-  createdBy       User     @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdBy       User          @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  specs    OrderSpecs?
-  photos   OrderPhoto[]
-  payments Payment[]
-  activity ActivityLog[] @relation("OrderActivity")
+  specs           OrderSpecs?
+  photos          OrderPhoto[]
+  payments        Payment[]
+  activity        ActivityLog[] @relation("OrderActivity")
 }
 
 model OrderSpecs {
-  id      String @id @default(uuid())
-  orderId String @unique
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   frameCode     String?
   frameVendor   String?
@@ -109,11 +108,11 @@ model OrderSpecs {
   glassType     String?
   mountType     String?
   backingType   String?
-  spacers       Boolean @default(false)
+  spacers       Boolean  @default(false)
   specialtyType String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model OrderPhoto {
@@ -126,9 +125,9 @@ model OrderPhoto {
 }
 
 model Payment {
-  id      String @id @default(uuid())
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id              String        @id @default(uuid())
+  orderId          String
+  order            Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   processor        String        @default("square")
   squarePaymentId  String        @unique
@@ -141,34 +140,34 @@ model Payment {
 }
 
 model Appointment {
-  id              String @id @default(uuid())
-  provider        String @default("calcom")
-  externalEventId String @unique
+  id              String   @id @default(uuid())
+  provider        String   @default("calcom")
+  externalEventId String   @unique
 
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
 
-  name      String
-  email     String
-  phone     String?
-  startTime DateTime
-  endTime   DateTime
-  notes     String?
-  createdAt DateTime @default(now())
+  name            String
+  email           String
+  phone           String?
+  startTime       DateTime
+  endTime         DateTime
+  notes           String?
+  createdAt       DateTime @default(now())
 }
 
 model ActivityLog {
-  id         String @id @default(uuid())
-  entityType String
-  entityId   String
-  action     String
+  id          String   @id @default(uuid())
+  entityType  String
+  entityId    String
+  action      String
 
   actorUserId String?
-  actor       User?   @relation("ActorActivity", fields: [actorUserId], references: [id])
+  actor       User?    @relation("ActorActivity", fields: [actorUserId], references: [id])
 
-  orderId String?
-  order   Order?  @relation("OrderActivity", fields: [orderId], references: [id])
+  orderId     String?
+  order       Order?   @relation("OrderActivity", fields: [orderId], references: [id])
 
-  metadata  Json     @default("{}")
-  createdAt DateTime @default(now())
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
 }

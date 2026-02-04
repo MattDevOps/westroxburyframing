@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow staff auth + all staff API routes without redirect loops
+  // Allow staff API routes to run without redirect loops
   if (pathname.startsWith("/staff/api")) {
     return NextResponse.next();
   }
