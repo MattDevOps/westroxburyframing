@@ -1,5 +1,6 @@
 "use client";
 
+import SquareInvoiceButtons from "@/components/SquareInvoiceButtons";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -131,7 +132,11 @@ export default function OrderDetailPage() {
             await refresh();
           }}
         >
-          Take Payment (Square)
+          {/* Take Payment (Square) */}
+
+
+          <SquareInvoiceButtons orderId={order.id} />
+
         </button>
       </div>
     </div>

@@ -12,6 +12,7 @@ export default function SquareInvoiceButtons(props: {
   async function send(kind: "full" | "deposit") {
     setMsg(null);
     setLoading(kind);
+  
     try {
       const res = await fetch(`/staff/api/orders/${props.orderId}/invoice/send`, {
         method: "POST",
@@ -21,8 +22,29 @@ export default function SquareInvoiceButtons(props: {
           depositPercent: props.defaultDepositPercent ?? 50,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to send invoice");
+  
+      const raw = await res.text(); // <-- key change (don’t assume JSON)
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        // Not JSON (could be HTML error or empty)
+      }
+  
+      if (!res.ok) {
+        const msg =
+          data?.error ||
+          data?.message ||
+          (raw?.slice?.(0, 300) || `Request failed (${res.status})`);
+        throw new Error(msg);
+      }
+  
+      if (!data?.invoiceId) {
+        throw new Error(
+          `Expected JSON with invoiceId, got: ${raw ? raw.slice(0, 200) : "(empty response)"}`
+        );
+      }
+  
       setMsg(`Sent! Invoice id: ${data.invoiceId}`);
       if (data.publicUrl) window.open(data.publicUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
@@ -31,7 +53,7 @@ export default function SquareInvoiceButtons(props: {
       setLoading(null);
     }
   }
-
+  
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
