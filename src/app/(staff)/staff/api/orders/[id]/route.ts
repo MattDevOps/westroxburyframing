@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizePhone, normalizeEmail } from "@/lib/ids";
 
 export async function GET(req: Request, ctx: any) {
   try {
@@ -69,14 +70,86 @@ export async function PATCH(req: Request, ctx: any) {
       data.paidInFull = Boolean(body.paidInFull ?? body.paid_in_full ?? true);
     }
 
+    // Handle customer updates
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { customer: true },
+    });
+
+    if (!order) {
+      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
+    }
+
+    let customerUpdate: any = {};
+    if ("customerFirstName" in body || "customer_first_name" in body) {
+      customerUpdate.firstName = body.customerFirstName || body.customer_first_name;
+    }
+    if ("customerLastName" in body || "customer_last_name" in body) {
+      customerUpdate.lastName = body.customerLastName || body.customer_last_name;
+    }
+    if ("customerPhone" in body || "customer_phone" in body) {
+      const newPhone = normalizePhone(body.customerPhone || body.customer_phone || "");
+      if (newPhone && newPhone !== order.customer.phone) {
+        // Check if phone is already taken by another customer
+        const existing = await prisma.customer.findUnique({
+          where: { phone: newPhone },
+        });
+        if (existing && existing.id !== order.customerId) {
+          return NextResponse.json(
+            { ok: false, error: "Phone number already exists for another customer" },
+            { status: 400 }
+          );
+        }
+        customerUpdate.phone = newPhone;
+      }
+    }
+    if ("customerEmail" in body || "customer_email" in body) {
+      customerUpdate.email = normalizeEmail(body.customerEmail || body.customer_email);
+    }
+
+    // Update customer if there are changes
+    if (Object.keys(customerUpdate).length > 0) {
+      await prisma.customer.update({
+        where: { id: order.customerId },
+        data: customerUpdate,
+      });
+    }
+
     const updated = await prisma.order.update({
       where: { id },
       data,
+      include: { customer: true },
     });
 
     return NextResponse.json({ ok: true, order: updated });
   } catch (err: any) {
     console.error("Order update failed:", err);
     return NextResponse.json({ ok: false, error: err?.message || "Update failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, ctx: any) {
+  try {
+    const params = await ctx.params;
+    const id = String(params.id);
+
+    // Check if order exists
+    const order = await prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
+    }
+
+    // Delete the order (cascade will handle related records like specs, photos, payments)
+    await prisma.order.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ ok: true, message: "Order deleted successfully" });
+  } catch (err: any) {
+    console.error("Order delete failed:", err);
+    return NextResponse.json({ ok: false, error: err?.message || "Delete failed" }, { status: 500 });
   }
 }

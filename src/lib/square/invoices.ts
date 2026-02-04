@@ -148,6 +148,16 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
 
   const inv = publish?.invoice || draft?.invoice;
 
+  // Log invoice details for debugging
+  console.log("Invoice published:", {
+    invoiceId,
+    status: inv?.status,
+    publicUrl: inv?.public_url,
+    scheduledAt: inv?.scheduled_at,
+    deliveryMethod: inv?.delivery_method,
+    primaryRecipient: inv?.primary_recipient,
+  });
+
   return {
     invoiceId,
     status: inv?.status,

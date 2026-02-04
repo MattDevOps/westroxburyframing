@@ -83,6 +83,11 @@ export default function OrderDetailPage() {
       totalAmount: (order.totalAmount / 100).toFixed(2),
       currency: order.currency || "USD",
       paidInFull: order.paidInFull ?? true,
+      // Customer fields
+      customerFirstName: order.customer.firstName || "",
+      customerLastName: order.customer.lastName || "",
+      customerPhone: order.customer.phone || "",
+      customerEmail: order.customer.email || "",
     });
     setIsEditing(true);
   }
@@ -107,6 +112,11 @@ export default function OrderDetailPage() {
         totalAmount: Math.round(Number(editData.totalAmount) * 100),
         currency: editData.currency,
         paidInFull: editData.paidInFull,
+        // Customer fields
+        customerFirstName: editData.customerFirstName,
+        customerLastName: editData.customerLastName,
+        customerPhone: editData.customerPhone,
+        customerEmail: editData.customerEmail,
       }),
     });
     const out = await res.json();
@@ -133,6 +143,25 @@ export default function OrderDetailPage() {
             onClick={startEdit}
           >
             Edit Order
+          </button>
+          <button
+            className="rounded-xl border border-red-700/50 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20"
+            onClick={async () => {
+              if (!confirm(`Are you sure you want to delete order ${order.orderNumber}? This action cannot be undone.`)) {
+                return;
+              }
+              const res = await fetch(`/staff/api/orders/${order.id}`, {
+                method: "DELETE",
+              });
+              const out = await res.json();
+              if (!res.ok) {
+                alert(out.error || "Failed to delete order");
+                return;
+              }
+              window.location.href = "/staff/orders";
+            }}
+          >
+            Delete Order
           </button>
           <a
             className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
@@ -222,6 +251,52 @@ export default function OrderDetailPage() {
               >
                 ✕
               </button>
+            </div>
+
+            <div className="border-b border-neutral-700 pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-white mb-3">Customer Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="First Name">
+                  <input
+                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    value={editData.customerFirstName}
+                    onChange={(e) => setEditData({ ...editData, customerFirstName: e.target.value })}
+                    placeholder="First name"
+                  />
+                </Field>
+
+                <Field label="Last Name">
+                  <input
+                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    value={editData.customerLastName}
+                    onChange={(e) => setEditData({ ...editData, customerLastName: e.target.value })}
+                    placeholder="Last name"
+                  />
+                </Field>
+
+                <Field label="Phone">
+                  <input
+                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    value={editData.customerPhone}
+                    onChange={(e) => setEditData({ ...editData, customerPhone: e.target.value })}
+                    placeholder="Phone number"
+                  />
+                </Field>
+
+                <Field label="Email">
+                  <input
+                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    type="email"
+                    value={editData.customerEmail}
+                    onChange={(e) => setEditData({ ...editData, customerEmail: e.target.value })}
+                    placeholder="Email address"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div className="border-b border-neutral-700 pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-white mb-3">Order Information</h3>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">

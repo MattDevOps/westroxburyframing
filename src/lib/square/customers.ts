@@ -1,6 +1,6 @@
 import { squareFetch } from "./client";
 
-export async function findCustomerByEmail(email: string): Promise<string | null> {
+export async function findCustomerByEmail(email: string): Promise<{ id: string; email_address?: string } | null> {
   if (!email || !email.trim()) {
     return null;
   }
@@ -19,8 +19,8 @@ export async function findCustomerByEmail(email: string): Promise<string | null>
         limit: 1,
       }),
     });
-    const id = resp.customers?.[0]?.id;
-    return id || null;
+    const customer = resp.customers?.[0];
+    return customer || null;
   } catch (err: any) {
     // If search fails, customer doesn't exist
     return null;
@@ -37,16 +37,30 @@ export async function upsertCustomer(args: {
   }
 
   const existing = await findCustomerByEmail(args.email);
-  if (existing) return existing;
+  if (existing) {
+    // Update customer to ensure email and name are current
+    try {
+      const updated = await squareFetch<{ customer: { id: string; email_address?: string } }>(`/v2/customers/${existing.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          given_name: args.givenName || "",
+          family_name: args.familyName || "",
+          email_address: args.email.trim(),
+        }),
+      });
+      
+      // Verify email was set
+      if (!updated.customer?.email_address) {
+        console.warn("Square customer update may not have set email:", existing.id);
+      }
+    } catch (err) {
+      // If update fails, customer still exists, so continue
+      console.warn("Failed to update Square customer:", err);
+    }
+    return existing.id;
+  }
 
-  const customerData: any = {
-    email_address: args.email.trim(),
-  };
-  
-  if (args.givenName) customerData.given_name = args.givenName;
-  if (args.familyName) customerData.family_name = args.familyName;
-
-  const created = await squareFetch<{ customer: { id: string } }>("/v2/customers", {
+  const created = await squareFetch<{ customer: { id: string; email_address?: string } }>("/v2/customers", {
     method: "POST",
     body: JSON.stringify({
       given_name: args.givenName || "",
@@ -54,5 +68,11 @@ export async function upsertCustomer(args: {
       email_address: args.email.trim(),
     }),
   });
+  
+  // Verify email was set
+  if (!created.customer?.email_address) {
+    console.warn("Square customer creation may not have set email:", created.customer.id);
+  }
+  
   return created.customer.id;
 }
