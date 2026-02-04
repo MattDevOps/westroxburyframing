@@ -68,7 +68,8 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
 
   // 3) Create a draft invoice for that Square order. Must use invoice.order_id (NOT invoice.orders). citeturn0search5turn0search13
   const now = new Date();
-  const due = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // default: due in 7 days
+  const depositDue = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // Deposit due in 7 days
+  const balanceDue = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // Balance due in 30 days (or when order is ready)
 
   const paymentAmount = input.lines.reduce((sum, l) => sum + (l.basePriceMoney.amount || 0) * (Number(l.quantity) || 1), 0);
 
@@ -80,18 +81,18 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
       ? [
           {
             request_type: "DEPOSIT",
-            due_date: due.toISOString().slice(0, 10), // YYYY-MM-DD
+            due_date: depositDue.toISOString().slice(0, 10), // YYYY-MM-DD - Deposit due sooner
             percentage_requested: String(depositPercent),
           },
           {
             request_type: "BALANCE",
-            due_date: due.toISOString().slice(0, 10),
+            due_date: balanceDue.toISOString().slice(0, 10), // Balance due later
           },
         ]
       : [
           {
             request_type: "BALANCE",
-            due_date: due.toISOString().slice(0, 10),
+            due_date: depositDue.toISOString().slice(0, 10), // Full invoice due in 7 days
           },
         ];
 
@@ -113,14 +114,25 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
         bank_account: false,
         buy_now_pay_later: false,
       },
-      invoice_number: String(input.orderId),
+      invoice_number: `${input.orderId}-${input.kind}`,
     },
   };
 
-  const draft = await squareFetch("/v2/invoices", {
-    method: "POST",
-    body: JSON.stringify(invoiceBody),
-  });
+  let draft;
+  try {
+    draft = await squareFetch("/v2/invoices", {
+      method: "POST",
+      body: JSON.stringify(invoiceBody),
+    });
+  } catch (err: any) {
+    // Check if error is about duplicate invoice number
+    if (err?.message?.includes("invoice number") && err?.message?.includes("unique")) {
+      throw new Error(
+        `An invoice for this order (${input.kind}) already exists. Invoice numbers must be unique.`
+      );
+    }
+    throw err;
+  }
 
   const invoiceId = draft?.invoice?.id;
   if (!invoiceId) throw new Error("Square invoice create failed (missing invoice.id)");

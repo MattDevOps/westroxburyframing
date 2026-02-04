@@ -108,7 +108,10 @@ export async function POST(req: Request, ctx: any) {
   } catch (err: any) {
     console.error("Square invoice send failed:", err);
     return NextResponse.json(
-      { ok: false, error: err?.message || "Failed to send Square invoice" },
+      {
+        ok: false,
+        error: err?.message || "Failed to send Square invoice",
+      },
       { status: 500 }
     );
   }

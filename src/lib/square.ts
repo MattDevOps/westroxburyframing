@@ -28,7 +28,26 @@ export async function createSquarePayment(params: {
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.errors?.[0]?.detail || "Square payment failed");
+  const text = await res.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {}
+
+  if (!res.ok) {
+    const detail =
+      data?.errors?.map((e: any) => e?.detail || e?.code).filter(Boolean)?.join(" | ") ||
+      data?.message ||
+      text ||
+      "Square payment failed";
+
+    // Avoid leaking payment details in prod logs, but make local debugging easy.
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Square payment response:", res.status, text);
+    }
+
+    throw new Error(detail);
+  }
+
   return data.payment;
 }
