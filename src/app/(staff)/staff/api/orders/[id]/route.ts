@@ -34,6 +34,12 @@ export async function PATCH(req: Request, ctx: any) {
 
     // Handle field updates - support both snake_case and camelCase
     if ("status" in body) data.status = body.status;
+    if ("intakeChannel" in body || "intake_channel" in body) {
+      data.intakeChannel = body.intakeChannel || body.intake_channel;
+    }
+    if ("dueDate" in body || "due_date" in body) {
+      data.dueDate = body.dueDate || body.due_date ? new Date(body.dueDate || body.due_date) : null;
+    }
     if ("itemType" in body || "item_type" in body) {
       data.itemType = body.itemType || body.item_type;
     }
@@ -58,8 +64,9 @@ export async function PATCH(req: Request, ctx: any) {
     if ("totalAmount" in body || "total_amount" in body || "total_cents" in body) {
       data.totalAmount = Number(body.totalAmount || body.total_amount || body.total_cents || 0);
     }
-    if ("dueDate" in body || "due_date" in body) {
-      data.dueDate = body.dueDate || body.due_date ? new Date(body.dueDate || body.due_date) : null;
+    if ("currency" in body) data.currency = body.currency;
+    if ("paidInFull" in body || "paid_in_full" in body) {
+      data.paidInFull = Boolean(body.paidInFull ?? body.paid_in_full ?? true);
     }
 
     const updated = await prisma.order.update({

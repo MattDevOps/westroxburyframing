@@ -68,6 +68,9 @@ export default function OrderDetailPage() {
 
   function startEdit() {
     setEditData({
+      status: order.status,
+      intakeChannel: order.intakeChannel || "walk_in",
+      dueDate: order.dueDate ? new Date(order.dueDate).toISOString().slice(0, 10) : "",
       itemType: order.itemType,
       itemDescription: order.itemDescription || "",
       width: order.width ? Number(order.width) : "",
@@ -78,6 +81,8 @@ export default function OrderDetailPage() {
       subtotalAmount: (order.subtotalAmount / 100).toFixed(2),
       taxAmount: (order.taxAmount / 100).toFixed(2),
       totalAmount: (order.totalAmount / 100).toFixed(2),
+      currency: order.currency || "USD",
+      paidInFull: order.paidInFull ?? true,
     });
     setIsEditing(true);
   }
@@ -87,6 +92,9 @@ export default function OrderDetailPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        status: editData.status,
+        intakeChannel: editData.intakeChannel,
+        dueDate: editData.dueDate || null,
         itemType: editData.itemType,
         itemDescription: editData.itemDescription || null,
         width: editData.width ? Number(editData.width) : null,
@@ -97,6 +105,8 @@ export default function OrderDetailPage() {
         subtotalAmount: Math.round(Number(editData.subtotalAmount) * 100),
         taxAmount: Math.round(Number(editData.taxAmount) * 100),
         totalAmount: Math.round(Number(editData.totalAmount) * 100),
+        currency: editData.currency,
+        paidInFull: editData.paidInFull,
       }),
     });
     const out = await res.json();
@@ -215,6 +225,41 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Status">
+                <select
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.status}
+                  onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                >
+                  {Object.entries(STATUS_LABEL).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Intake Channel">
+                <select
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.intakeChannel}
+                  onChange={(e) => setEditData({ ...editData, intakeChannel: e.target.value })}
+                >
+                  <option value="walk_in">Walk In</option>
+                  <option value="appointment">Appointment</option>
+                  <option value="web_lead">Web Lead</option>
+                </select>
+              </Field>
+
+              <Field label="Due Date">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="date"
+                  value={editData.dueDate}
+                  onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
+                />
+              </Field>
+
               <Field label="Item Type">
                 <select
                   className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
@@ -292,7 +337,7 @@ export default function OrderDetailPage() {
               </Field>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <Field label="Subtotal ($)">
                 <input
                   className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
@@ -322,6 +367,31 @@ export default function OrderDetailPage() {
                   onChange={(e) => setEditData({ ...editData, totalAmount: e.target.value })}
                 />
               </Field>
+
+              <Field label="Currency">
+                <select
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.currency}
+                  onChange={(e) => setEditData({ ...editData, currency: e.target.value })}
+                >
+                  <option value="USD">USD</option>
+                  <option value="CAD">CAD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </Field>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-neutral-300">
+                <input
+                  type="checkbox"
+                  checked={editData.paidInFull}
+                  onChange={(e) => setEditData({ ...editData, paidInFull: e.target.checked })}
+                  className="rounded border-neutral-700"
+                />
+                Paid in Full
+              </label>
             </div>
 
             <div className="flex gap-2 justify-end pt-4">
