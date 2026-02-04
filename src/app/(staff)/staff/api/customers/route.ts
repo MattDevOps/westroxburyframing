@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireStaff } from "@/lib/auth";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
 import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
 export async function POST(req: Request) {
-  const user = await requireStaff();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const phone = normalizePhone(String(body.phone || ""));
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       email,
       preferredContact: body.preferred_contact === "call" ? "call" : "email",
       marketingOptIn: marketing,
-      marketingOptInAt: marketing ? new Date() : null
+      marketingOptInAt: marketing ? new Date() : null,
     },
     update: {
       firstName: body.first_name,
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
       email,
       preferredContact: body.preferred_contact === "call" ? "call" : "email",
       marketingOptIn: marketing,
-      marketingOptInAt: marketing ? new Date() : null
-    }
+      marketingOptInAt: marketing ? new Date() : null,
+    },
   });
 
   if (marketing) {

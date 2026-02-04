@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireStaff } from "@/lib/auth";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { nextOrderNumber } from "@/lib/ids";
 
 export async function GET(req: Request) {
-  const user = await requireStaff();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "";
@@ -16,11 +16,11 @@ export async function GET(req: Request) {
     where,
     take: limit,
     orderBy: { updatedAt: "desc" },
-    include: { customer: true, payments: true }
+    include: { customer: true, payments: true },
   });
 
   return NextResponse.json({
-    orders: orders.map(o => ({
+    orders: orders.map((o) => ({
       id: o.id,
       order_number: o.orderNumber,
       status: o.status,
@@ -28,20 +28,20 @@ export async function GET(req: Request) {
       customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
       total_cents: o.totalAmount,
       paid: o.payments.length > 0,
-      item_type: o.itemType
-    }))
+      item_type: o.itemType,
+    })),
   });
 }
 
 export async function POST(req: Request) {
-  const user = await requireStaff();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
 
   const last = await prisma.order.findFirst({
     orderBy: { createdAt: "desc" },
-    select: { orderNumber: true }
+    select: { orderNumber: true },
   });
   const orderNumber = nextOrderNumber(last?.orderNumber);
 
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       totalAmount: total,
       currency: "USD",
       paidInFull: true,
-      createdByUserId: user.id,
+      createdByUserId: userId,
       specs: {
         create: {
           frameCode: body.specs?.frame_code || null,
@@ -83,11 +83,11 @@ export async function POST(req: Request) {
           mountType: body.specs?.mount_type || null,
           backingType: body.specs?.backing_type || null,
           spacers: Boolean(body.specs?.spacers),
-          specialtyType: body.specs?.specialty_type || null
-        }
-      }
+          specialtyType: body.specs?.specialty_type || null,
+        },
+      },
     },
-    include: { customer: true }
+    include: { customer: true },
   });
 
   await prisma.activityLog.create({
@@ -96,10 +96,12 @@ export async function POST(req: Request) {
       entityId: order.id,
       orderId: order.id,
       action: "order_created",
-      actorUserId: user.id,
-      metadata: { orderNumber }
-    }
+      actorUserId: userId,
+      metadata: { orderNumber },
+    },
   });
 
-  return NextResponse.json({ order: { id: order.id, order_number: order.orderNumber, status: order.status } });
+  return NextResponse.json({
+    order: { id: order.id, order_number: order.orderNumber, status: order.status },
+  });
 }

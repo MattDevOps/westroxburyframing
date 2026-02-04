@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireStaff } from "@/lib/auth";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const user = await requireStaff();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const order = await prisma.order.findUnique({
     where: { id: params.id },
@@ -13,8 +13,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       specs: true,
       photos: true,
       payments: true,
-      activity: { orderBy: { createdAt: "desc" } }
-    }
+      activity: { orderBy: { createdAt: "desc" } },
+    },
   });
 
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });

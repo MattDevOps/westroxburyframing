@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { hashPassword, setStaffCookie } from "@/lib/auth";
+import { COOKIE_NAME, hashPassword, signStaffCookie } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/ids";
 
 export async function POST(req: Request) {
@@ -18,6 +18,17 @@ export async function POST(req: Request) {
   const hash = hashPassword(password);
   if (hash !== user.passwordHash) return NextResponse.json({ ok: false }, { status: 401 });
 
-  setStaffCookie(user.id);
-  return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, role: user.role } });
+  const res = NextResponse.json({
+    ok: true,
+    user: { id: user.id, name: user.name, role: user.role },
+  });
+
+  res.cookies.set(COOKIE_NAME, signStaffCookie(user.id), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
+  return res;
 }
