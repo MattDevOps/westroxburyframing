@@ -3,5 +3,5 @@ export const SITE = {
   googleReviewsUrl: "https://share.google/NBTK5ZqPELQkaMhiy",
   ratingValue: 5.0,
   ratingCount: 100,
-  calendlyUrl: "https://calendly.com/REPLACE_ME",
+  calendlyUrl: "https://calendly.com/jake-westroxburyframing/30min",
 };
