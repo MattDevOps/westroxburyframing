@@ -4,6 +4,15 @@ import SquareInvoiceButtons from "@/components/SquareInvoiceButtons";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-neutral-300">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 const STATUS_FLOW = [
   "new_design",
   "awaiting_materials",
@@ -29,6 +38,8 @@ export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const id = String(params?.id || "");
   const [data, setData] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
 
   async function refresh() {
     if (!id) return;
@@ -55,6 +66,48 @@ export default function OrderDetailPage() {
     await refresh();
   }
 
+  function startEdit() {
+    setEditData({
+      itemType: order.itemType,
+      itemDescription: order.itemDescription || "",
+      width: order.width ? Number(order.width) : "",
+      height: order.height ? Number(order.height) : "",
+      units: order.units || "in",
+      notesInternal: order.notesInternal || "",
+      notesCustomer: order.notesCustomer || "",
+      subtotalAmount: (order.subtotalAmount / 100).toFixed(2),
+      taxAmount: (order.taxAmount / 100).toFixed(2),
+      totalAmount: (order.totalAmount / 100).toFixed(2),
+    });
+    setIsEditing(true);
+  }
+
+  async function saveEdit() {
+    const res = await fetch(`/staff/api/orders/${order.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        itemType: editData.itemType,
+        itemDescription: editData.itemDescription || null,
+        width: editData.width ? Number(editData.width) : null,
+        height: editData.height ? Number(editData.height) : null,
+        units: editData.units,
+        notesInternal: editData.notesInternal || null,
+        notesCustomer: editData.notesCustomer || null,
+        subtotalAmount: Math.round(Number(editData.subtotalAmount) * 100),
+        taxAmount: Math.round(Number(editData.taxAmount) * 100),
+        totalAmount: Math.round(Number(editData.totalAmount) * 100),
+      }),
+    });
+    const out = await res.json();
+    if (!res.ok) {
+      alert(out.error || "Failed to update order");
+      return;
+    }
+    setIsEditing(false);
+    await refresh();
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
@@ -64,12 +117,20 @@ export default function OrderDetailPage() {
             {order.customer.firstName} {order.customer.lastName}
           </div>
         </div>
-        <a
-          className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
-          href="/staff/orders"
-        >
-          Back to orders
-        </a>
+        <div className="flex gap-2">
+          <button
+            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            onClick={startEdit}
+          >
+            Edit Order
+          </button>
+          <a
+            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            href="/staff/orders"
+          >
+            Back to orders
+          </a>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-neutral-950/30 p-5 space-y-3">
@@ -139,6 +200,147 @@ export default function OrderDetailPage() {
 
         </button>
       </div>
+
+      {isEditing && editData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Edit Order</h2>
+              <button
+                className="text-neutral-400 hover:text-white"
+                onClick={() => setIsEditing(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Item Type">
+                <select
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.itemType}
+                  onChange={(e) => setEditData({ ...editData, itemType: e.target.value })}
+                >
+                  <option value="art">Art / Print</option>
+                  <option value="photo">Photo</option>
+                  <option value="diploma">Diploma / Certificate</option>
+                  <option value="object">Object / Shadowbox</option>
+                  <option value="memorabilia">Memorabilia / Jersey</option>
+                </select>
+              </Field>
+
+              <Field label="Item Description">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.itemDescription}
+                  onChange={(e) => setEditData({ ...editData, itemDescription: e.target.value })}
+                  placeholder="Optional description"
+                />
+              </Field>
+
+              <Field label="Width">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="number"
+                  step="0.01"
+                  value={editData.width}
+                  onChange={(e) => setEditData({ ...editData, width: e.target.value })}
+                  placeholder="Width"
+                />
+              </Field>
+
+              <Field label="Height">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="number"
+                  step="0.01"
+                  value={editData.height}
+                  onChange={(e) => setEditData({ ...editData, height: e.target.value })}
+                  placeholder="Height"
+                />
+              </Field>
+
+              <Field label="Units">
+                <select
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  value={editData.units}
+                  onChange={(e) => setEditData({ ...editData, units: e.target.value })}
+                >
+                  <option value="in">Inches</option>
+                  <option value="cm">Centimeters</option>
+                </select>
+              </Field>
+            </div>
+
+            <div className="space-y-2">
+              <Field label="Internal Notes">
+                <textarea
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100 w-full min-h-[80px]"
+                  value={editData.notesInternal}
+                  onChange={(e) => setEditData({ ...editData, notesInternal: e.target.value })}
+                  placeholder="Internal notes (not visible to customer)"
+                />
+              </Field>
+
+              <Field label="Customer Notes">
+                <textarea
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100 w-full min-h-[80px]"
+                  value={editData.notesCustomer}
+                  onChange={(e) => setEditData({ ...editData, notesCustomer: e.target.value })}
+                  placeholder="Customer-facing notes"
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Subtotal ($)">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="number"
+                  step="0.01"
+                  value={editData.subtotalAmount}
+                  onChange={(e) => setEditData({ ...editData, subtotalAmount: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Tax ($)">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="number"
+                  step="0.01"
+                  value={editData.taxAmount}
+                  onChange={(e) => setEditData({ ...editData, taxAmount: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Total ($)">
+                <input
+                  className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                  type="number"
+                  step="0.01"
+                  value={editData.totalAmount}
+                  onChange={(e) => setEditData({ ...editData, totalAmount: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <button
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-xl bg-white text-black px-4 py-2 text-sm hover:bg-neutral-200"
+                onClick={saveEdit}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

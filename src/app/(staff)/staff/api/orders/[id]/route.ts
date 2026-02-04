@@ -32,42 +32,34 @@ export async function PATCH(req: Request, ctx: any) {
     // Adjust these keys to match your Prisma schema if needed.
     const data: any = {};
 
-    const allow = [
-      "status",
-      "itemType",
-      "item_type",
-      "width",
-      "height",
-      "units",
-      "notes",
-      "subtotalCents",
-      "subtotal_cents",
-      "taxCents",
-      "tax_cents",
-      "totalCents",
-      "total_cents",
-    ];
-
-    for (const k of allow) {
-      if (k in body) data[k] = body[k];
+    // Handle field updates - support both snake_case and camelCase
+    if ("status" in body) data.status = body.status;
+    if ("itemType" in body || "item_type" in body) {
+      data.itemType = body.itemType || body.item_type;
     }
-
-    // Normalize common snake_case -> camelCase if your schema uses camelCase
-    if ("item_type" in data && !("itemType" in data)) {
-      data.itemType = data.item_type;
-      delete data.item_type;
+    if ("itemDescription" in body || "item_description" in body) {
+      data.itemDescription = body.itemDescription || body.item_description || null;
     }
-    if ("subtotal_cents" in data && !("subtotalCents" in data)) {
-      data.subtotalCents = data.subtotal_cents;
-      delete data.subtotal_cents;
+    if ("width" in body) data.width = body.width !== null && body.width !== undefined ? Number(body.width) : null;
+    if ("height" in body) data.height = body.height !== null && body.height !== undefined ? Number(body.height) : null;
+    if ("units" in body) data.units = body.units;
+    if ("notesInternal" in body || "notes_internal" in body) {
+      data.notesInternal = body.notesInternal || body.notes_internal || null;
     }
-    if ("tax_cents" in data && !("taxCents" in data)) {
-      data.taxCents = data.tax_cents;
-      delete data.tax_cents;
+    if ("notesCustomer" in body || "notes_customer" in body) {
+      data.notesCustomer = body.notesCustomer || body.notes_customer || null;
     }
-    if ("total_cents" in data && !("totalCents" in data)) {
-      data.totalCents = data.total_cents;
-      delete data.total_cents;
+    if ("subtotalAmount" in body || "subtotal_amount" in body || "subtotal_cents" in body) {
+      data.subtotalAmount = Number(body.subtotalAmount || body.subtotal_amount || body.subtotal_cents || 0);
+    }
+    if ("taxAmount" in body || "tax_amount" in body || "tax_cents" in body) {
+      data.taxAmount = Number(body.taxAmount || body.tax_amount || body.tax_cents || 0);
+    }
+    if ("totalAmount" in body || "total_amount" in body || "total_cents" in body) {
+      data.totalAmount = Number(body.totalAmount || body.total_amount || body.total_cents || 0);
+    }
+    if ("dueDate" in body || "due_date" in body) {
+      data.dueDate = body.dueDate || body.due_date ? new Date(body.dueDate || body.due_date) : null;
     }
 
     const updated = await prisma.order.update({

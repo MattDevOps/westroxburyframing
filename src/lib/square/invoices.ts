@@ -1,4 +1,5 @@
 import { squareFetch } from "./client";
+import { upsertCustomer } from "./customers";
 
 type Money = { amount: number; currency: "USD" };
 
@@ -25,9 +26,20 @@ function isoDate(d: Date) {
   return d.toISOString();
 }
 
+function generateIdempotencyKey(): string {
+  // Generate a unique idempotency key using timestamp and random
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
 export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
+  // Generate idempotency keys for Square API calls
+  const orderIdempotencyKey = generateIdempotencyKey();
+  const invoiceIdempotencyKey = generateIdempotencyKey();
+  const publishIdempotencyKey = generateIdempotencyKey();
+
   // 1) Create a Square Order (required for invoices). citeturn0search2turn0search13
   const orderBody = {
+    idempotency_key: orderIdempotencyKey,
     order: {
       location_id: input.locationId,
       reference_id: String(input.orderId),
@@ -47,7 +59,14 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
   const squareOrderId = orderRes?.order?.id;
   if (!squareOrderId) throw new Error("Square order create failed (missing order.id)");
 
-  // 2) Create a draft invoice for that Square order. Must use invoice.order_id (NOT invoice.orders). citeturn0search5turn0search13
+  // 2) Create or find customer in Square (required for invoices)
+  const customerId = await upsertCustomer({
+    email: input.customerEmail,
+    givenName: input.customerGivenName,
+    familyName: input.customerFamilyName,
+  });
+
+  // 3) Create a draft invoice for that Square order. Must use invoice.order_id (NOT invoice.orders). citeturn0search5turn0search13
   const now = new Date();
   const due = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // default: due in 7 days
 
@@ -77,6 +96,7 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
         ];
 
   const invoiceBody = {
+    idempotency_key: invoiceIdempotencyKey,
     invoice: {
       location_id: input.locationId,
       order_id: squareOrderId,
@@ -84,11 +104,7 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
       description: input.message || undefined,
       delivery_method: "EMAIL",
       primary_recipient: {
-        // Square supports customer_id; for email-only, use this recipient model:
-        // email_address is allowed in primary_recipient in current API. citeturn0search2turn0search13
-        email_address: input.customerEmail,
-        given_name: input.customerGivenName,
-        family_name: input.customerFamilyName,
+        customer_id: customerId,
       },
       payment_requests: requests,
       accepted_payment_methods: {
@@ -109,10 +125,13 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
   const invoiceId = draft?.invoice?.id;
   if (!invoiceId) throw new Error("Square invoice create failed (missing invoice.id)");
 
-  // 3) Publish invoice (this actually sends the email). citeturn0search2turn0search5
+  // 4) Publish invoice (this actually sends the email). citeturn0search2turn0search5
   const publish = await squareFetch(`/v2/invoices/${invoiceId}/publish`, {
     method: "POST",
-    body: JSON.stringify({ version: draft.invoice.version }),
+    body: JSON.stringify({
+      idempotency_key: publishIdempotencyKey,
+      version: draft.invoice.version,
+    }),
   });
 
   const inv = publish?.invoice || draft?.invoice;

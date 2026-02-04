@@ -47,10 +47,14 @@ export async function POST(req: Request, ctx: any) {
       );
     }
 
-    const totalCents =
-      (order as any).totalCents ??
-      (order as any).total_cents ??
-      0;
+    const totalCents = order.totalAmount || 0;
+
+    if (totalCents < 1) {
+      return NextResponse.json(
+        { ok: false, error: "Order total must be at least $0.01 to create an invoice." },
+        { status: 400 }
+      );
+    }
 
     // For now, generate a simple invoice line from the order total.
     // We will later expand this to detailed material + labor lines from specs.
@@ -59,7 +63,7 @@ export async function POST(req: Request, ctx: any) {
         name: "Custom framing",
         quantity: "1",
         basePriceMoney: {
-          amount: Number(totalCents),
+          amount: totalCents,
           currency: "USD" as const,
         },
       },
