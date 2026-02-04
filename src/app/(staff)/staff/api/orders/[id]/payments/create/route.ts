@@ -4,21 +4,20 @@ import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { createSquarePayment } from "@/lib/square";
 import crypto from "crypto";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, ctx: { params: { id: string } }) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const id = String(ctx.params.id);
   const body = await req.json();
 
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { payments: true },
   });
 
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (order.payments.length > 0) {
-    return NextResponse.json({ error: "Payment already attached" }, { status: 400 });
-  }
+  if (order.payments.length > 0) return NextResponse.json({ error: "Payment already attached" }, { status: 400 });
 
   const amountCents = Number(body.amount_cents);
   if (!Number.isFinite(amountCents) || amountCents <= 0) {
@@ -31,7 +30,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const idempotencyKey = crypto.randomUUID();
   const note = `${order.orderNumber} - ${order.itemType}`;
 
-  // NOTE: This is a skeleton. Card-present flows usually require Terminal/Reader SDK.
   const payment = await createSquarePayment({
     amountCents,
     currency: order.currency,
