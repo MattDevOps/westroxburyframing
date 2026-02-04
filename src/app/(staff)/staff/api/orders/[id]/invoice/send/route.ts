@@ -74,6 +74,44 @@ export async function POST(req: Request, ctx: any) {
       (order as any).order_number ||
       (order as any).id;
 
+    const invoiceNumber = `${orderIdForInvoice}-${kind}`;
+
+    // Check if invoice of this type already exists in Square
+    let existingInvoice = null;
+    try {
+      const { squareFetch } = await import("@/lib/square/client");
+      const searchResult = await squareFetch("/v2/invoices/search", {
+        method: "POST",
+        body: JSON.stringify({
+          query: {
+            filter: {
+              invoice_number: { exact: invoiceNumber },
+            },
+          },
+          limit: 1,
+        }),
+      });
+      
+      if (searchResult?.invoices?.[0]) {
+        existingInvoice = searchResult.invoices[0];
+      }
+    } catch (searchErr) {
+      // Search failed, continue to try creating
+      console.warn("Failed to search for existing invoice:", searchErr);
+    }
+
+    // If invoice exists, return it instead of creating a new one
+    if (existingInvoice) {
+      return NextResponse.json({
+        ok: true,
+        invoiceId: existingInvoice.id,
+        status: existingInvoice.status,
+        publicUrl: existingInvoice.public_url,
+        message: `Invoice (${kind}) already exists. Returning existing invoice.`,
+      });
+    }
+
+    // Create new invoice
     const result = await createAndSendInvoice({
       locationId,
       orderId: String(orderIdForInvoice),
@@ -104,13 +142,33 @@ export async function POST(req: Request, ctx: any) {
       });
     } catch {}
 
-    return NextResponse.json({ ok: true, ...result });
+    // Check environment and add helpful message
+    const env = process.env.SQUARE_ENV || "sandbox";
+    const response: any = { ok: true, ...result };
+    
+    if (env === "sandbox") {
+      response.warning = "Sandbox mode: Square may not send real emails. Check Square dashboard to verify.";
+    }
+    
+    if (result.recipientEmail) {
+      response.recipientEmail = result.recipientEmail;
+    }
+
+    return NextResponse.json(response);
   } catch (err: any) {
     console.error("Square invoice send failed:", err);
+    
+    const env = process.env.SQUARE_ENV || "sandbox";
+    let errorMsg = err?.message || "Failed to send Square invoice";
+    
+    if (env === "sandbox" && errorMsg.includes("email")) {
+      errorMsg += " Note: Sandbox environment may not send real emails.";
+    }
+    
     return NextResponse.json(
       {
         ok: false,
-        error: err?.message || "Failed to send Square invoice",
+        error: errorMsg,
       },
       { status: 500 }
     );

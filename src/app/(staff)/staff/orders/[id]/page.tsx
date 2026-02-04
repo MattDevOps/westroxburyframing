@@ -233,11 +233,28 @@ export default function OrderDetailPage() {
           }}
         >
           {/* Take Payment (Square) */}
-
-
-          <SquareInvoiceButtons orderId={order.id} />
-
         </button>
+
+        <SquareInvoiceButtons 
+          orderId={order.id} 
+          existingInvoiceId={order.squareInvoiceId || undefined}
+        />
+
+        {order.squareInvoiceId && (
+          <div className="text-sm text-neutral-400 mt-2">
+            Existing invoice: {order.squareInvoiceId}
+            {order.squareInvoiceUrl && (
+              <a
+                href={order.squareInvoiceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 text-blue-400 hover:underline"
+              >
+                View →
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {isEditing && editData && (

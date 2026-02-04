@@ -12,17 +12,30 @@ type OrderCard = {
   item_type: string;
 };
 
-const COLUMNS: { key: string; title: string }[] = [
+const ACTIVE_COLUMNS: { key: string; title: string }[] = [
   { key: "new_design", title: "New / Design" },
   { key: "awaiting_materials", title: "Awaiting Materials" },
   { key: "in_production", title: "In Production" },
-  { key: "quality_check", title: "Quality Check" },
   { key: "ready_for_pickup", title: "Ready for Pickup" },
 ];
+
+const COMPLETED_COLUMNS: { key: string; title: string }[] = [
+  { key: "picked_up", title: "Picked Up" },
+  { key: "completed", title: "Completed" },
+  { key: "cancelled", title: "Cancelled" },
+];
+
+const ALL_COLUMNS: { key: string; title: string }[] = [
+  ...ACTIVE_COLUMNS,
+  ...COMPLETED_COLUMNS,
+];
+
+type TabType = "active" | "completed" | "all";
 
 export default function OrdersBoardPage() {
   const [orders, setOrders] = useState<OrderCard[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("active");
 
   async function load() {
     setErr(null);
@@ -43,12 +56,18 @@ export default function OrdersBoardPage() {
 
   const [draggedOrder, setDraggedOrder] = useState<OrderCard | null>(null);
 
+  const currentColumns = useMemo(() => {
+    if (activeTab === "active") return ACTIVE_COLUMNS;
+    if (activeTab === "completed") return COMPLETED_COLUMNS;
+    return ALL_COLUMNS;
+  }, [activeTab]);
+
   const grouped = useMemo(() => {
     const m = new Map<string, OrderCard[]>();
-    for (const c of COLUMNS) m.set(c.key, []);
+    for (const c of currentColumns) m.set(c.key, []);
     for (const o of orders) if (m.has(o.status)) m.get(o.status)!.push(o);
     return m;
-  }, [orders]);
+  }, [orders, currentColumns]);
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
     const res = await fetch(`/staff/api/orders/${orderId}/status`, {
@@ -123,8 +142,42 @@ export default function OrdersBoardPage() {
 
       {err ? <div className="text-sm text-red-400">{err}</div> : null}
 
-      <div className="grid gap-4 md:grid-cols-5">
-        {COLUMNS.map((col) => (
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-neutral-800">
+        <button
+          onClick={() => setActiveTab("active")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "active"
+              ? "text-white border-b-2 border-white"
+              : "text-neutral-400 hover:text-neutral-200"
+          }`}
+        >
+          Active Orders
+        </button>
+        <button
+          onClick={() => setActiveTab("completed")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "completed"
+              ? "text-white border-b-2 border-white"
+              : "text-neutral-400 hover:text-neutral-200"
+          }`}
+        >
+          Completed Orders
+        </button>
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "all"
+              ? "text-white border-b-2 border-white"
+              : "text-neutral-400 hover:text-neutral-200"
+          }`}
+        >
+          All Orders
+        </button>
+      </div>
+
+      <div className={`grid gap-4 ${activeTab === "all" ? "md:grid-cols-8" : activeTab === "completed" ? "md:grid-cols-3" : "md:grid-cols-4"}`}>
+        {currentColumns.map((col) => (
           <div
             key={col.key}
             className={`rounded-2xl border p-4 transition-colors ${
@@ -132,19 +185,23 @@ export default function OrdersBoardPage() {
                 ? "border-blue-600 bg-blue-950/20"
                 : "border-neutral-800 bg-neutral-950/30"
             }`}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, col.key)}
+            onDragOver={ACTIVE_COLUMNS.some(c => c.key === col.key) ? handleDragOver : undefined}
+            onDrop={ACTIVE_COLUMNS.some(c => c.key === col.key) ? (e) => handleDrop(e, col.key) : undefined}
           >
             <div className="text-white font-semibold mb-3">{col.title}</div>
 
             <div className="space-y-3 min-h-[100px]">
-              {(grouped.get(col.key) || []).map((o) => (
+              {(grouped.get(col.key) || []).map((o) => {
+                const isDraggable = ACTIVE_COLUMNS.some(c => c.key === col.key);
+                return (
                 <div
                   key={o.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, o)}
-                  onDragEnd={handleDragEnd}
-                  className={`rounded-2xl border p-4 cursor-move transition-all ${
+                  draggable={isDraggable}
+                  onDragStart={isDraggable ? (e) => handleDragStart(e, o) : undefined}
+                  onDragEnd={isDraggable ? handleDragEnd : undefined}
+                  className={`rounded-2xl border p-4 transition-all ${
+                    isDraggable ? "cursor-move" : "cursor-pointer"
+                  } ${
                     draggedOrder?.id === o.id
                       ? "opacity-50 border-blue-500 bg-blue-950/20"
                       : "border-neutral-800 bg-neutral-950/40 hover:bg-neutral-900/40 hover:border-neutral-700"
@@ -181,7 +238,8 @@ export default function OrdersBoardPage() {
                     </div>
                   </a>
                 </div>
-              ))}
+                );
+              })}
 
               {(grouped.get(col.key) || []).length === 0 ? (
                 <div className="text-sm text-neutral-500 py-4 text-center">
