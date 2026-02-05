@@ -199,7 +199,7 @@ export default function OrdersBoardPage() {
                   draggable={isDraggable}
                   onDragStart={isDraggable ? (e) => handleDragStart(e, o) : undefined}
                   onDragEnd={isDraggable ? handleDragEnd : undefined}
-                  className={`rounded-2xl border p-4 transition-all ${
+                  className={`rounded-2xl border p-4 transition-all overflow-hidden ${
                     isDraggable ? "cursor-move" : "cursor-pointer"
                   } ${
                     draggedOrder?.id === o.id
@@ -218,10 +218,10 @@ export default function OrdersBoardPage() {
                     className="block"
                   >
                     <div className="text-white font-semibold">{o.order_number}</div>
-                    <div className="text-neutral-400 text-sm">{o.customer_name}</div>
+                    <div className="text-neutral-400 text-sm truncate">{o.customer_name}</div>
 
-                    <div className="mt-3 flex items-center gap-2 text-xs">
-                      <span className="rounded-full border border-neutral-700 px-2 py-1 text-neutral-200">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="rounded-full border border-neutral-700 px-2 py-1 text-neutral-200 max-w-full truncate">
                         {o.item_type}
                       </span>
                       <span
@@ -232,7 +232,7 @@ export default function OrdersBoardPage() {
                       >
                         {o.paid ? "Paid" : "Unpaid"}
                       </span>
-                      <span className="ml-auto text-neutral-300">
+                      <span className="ml-auto text-neutral-200 font-semibold text-sm md:text-base">
                         ${(o.total_cents / 100).toFixed(2)}
                       </span>
                     </div>
