@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-neutral-300">{label}</label>
+      <label className="text-sm font-medium text-neutral-800">{label}</label>
       {children}
     </div>
   );
@@ -52,7 +52,7 @@ export default function OrderDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (!data?.order) return <div className="p-6 text-neutral-300">Loading...</div>;
+  if (!data?.order) return <div className="p-6 text-neutral-700">Loading...</div>;
   const order = data.order;
 
   async function setStatus(next: string) {
@@ -132,14 +132,14 @@ export default function OrderDetailPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">{order.orderNumber}</h1>
-          <div className="text-neutral-400">
+          <h1 className="text-2xl font-semibold text-neutral-900">{order.orderNumber}</h1>
+          <div className="text-neutral-700">
             {order.customer.firstName} {order.customer.lastName}
           </div>
         </div>
         <div className="flex gap-2">
           <button
-            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={startEdit}
           >
             Edit Order
@@ -184,7 +184,7 @@ export default function OrderDetailPage() {
             Delete Order
           </button>
           <a
-            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders"
           >
             Back to orders
@@ -192,10 +192,10 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-950/30 p-5 space-y-3">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <select
-            className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
             value={order.status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -207,7 +207,7 @@ export default function OrderDetailPage() {
           </select>
 
           <button
-            className="rounded-xl border border-neutral-700 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={() => {
               const idx = STATUS_FLOW.indexOf(order.status);
               if (idx < 0 || idx === STATUS_FLOW.length - 1) return;
@@ -218,7 +218,7 @@ export default function OrderDetailPage() {
           </button>
 
           <button
-            className="rounded-xl border border-neutral-700 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={() => {
               const idx = STATUS_FLOW.indexOf(order.status);
               if (idx <= 0) return;
@@ -229,16 +229,16 @@ export default function OrderDetailPage() {
           </button>
         </div>
 
-        <div className="text-neutral-200">
+        <div className="text-neutral-800">
           <span className="font-medium">Item:</span> {order.itemType}
         </div>
-        <div className="text-neutral-200">
+        <div className="text-neutral-800">
           <span className="font-medium">Total:</span> ${(order.totalAmount / 100).toFixed(2)}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-950/30 p-5 space-y-3">
-        <div className="text-white font-semibold">Payment</div>
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+        <div className="text-neutral-900 font-semibold">Payment</div>
         <button
           className="rounded-xl bg-white text-black px-4 py-2 text-sm hover:bg-neutral-200"
           onClick={async () => {
@@ -255,14 +255,14 @@ export default function OrderDetailPage() {
           {/* Take Payment (Square) */}
         </button>
 
-        <SquareInvoiceButtons 
-          orderId={order.id} 
+        <SquareInvoiceButtons
+          orderId={order.id}
           existingInvoiceId={order.squareInvoiceId || undefined}
         />
 
         {order.squareInvoiceId && (
-          <div className="text-sm text-neutral-400 mt-2">
-            Existing invoice: {order.squareInvoiceId}
+          <div className="text-sm text-neutral-700 mt-2">
+            Invoice: {order.squareInvoiceId}
             {order.squareInvoiceUrl && (
               <a
                 href={order.squareInvoiceUrl}

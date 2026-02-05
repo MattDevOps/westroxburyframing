@@ -123,16 +123,16 @@ export default function OrdersBoardPage() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold text-white">Orders</h1>
+        <h1 className="text-3xl font-semibold text-neutral-900">Orders</h1>
         <div className="flex gap-2">
           <a
-            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders/new"
           >
             New order
           </a>
           <button
-            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={load}
           >
             Refresh
@@ -143,13 +143,13 @@ export default function OrdersBoardPage() {
       {err ? <div className="text-sm text-red-400">{err}</div> : null}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-neutral-800">
+      <div className="flex gap-2 border-b border-neutral-300">
         <button
           onClick={() => setActiveTab("active")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "active"
-              ? "text-white border-b-2 border-white"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "text-neutral-900 border-b-2 border-neutral-900"
+              : "text-neutral-600 hover:text-neutral-900"
           }`}
         >
           Active Orders
@@ -158,8 +158,8 @@ export default function OrdersBoardPage() {
           onClick={() => setActiveTab("completed")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "completed"
-              ? "text-white border-b-2 border-white"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "text-neutral-900 border-b-2 border-neutral-900"
+              : "text-neutral-600 hover:text-neutral-900"
           }`}
         >
           Completed Orders
@@ -168,8 +168,8 @@ export default function OrdersBoardPage() {
           onClick={() => setActiveTab("all")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "all"
-              ? "text-white border-b-2 border-white"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "text-neutral-900 border-b-2 border-neutral-900"
+              : "text-neutral-600 hover:text-neutral-900"
           }`}
         >
           All Orders
