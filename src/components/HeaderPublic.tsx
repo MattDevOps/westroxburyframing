@@ -50,6 +50,9 @@ export default function HeaderPublic() {
           <Link href="/services" className={linkClass("/services")}>
             Services
           </Link>
+          <Link href="/testimonials" className={linkClass("/testimonials")}>
+            Testimonials
+          </Link>
           <Link href="/restoration" className={linkClass("/restoration")}>
             Repair &amp; Restoration
           </Link>

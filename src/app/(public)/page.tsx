@@ -1,5 +1,4 @@
 import Image from "next/image";
-import HomeGalleryStrip from "@/components/HomeGalleryStrip";
 
 export default function HomePage() {
   return (
