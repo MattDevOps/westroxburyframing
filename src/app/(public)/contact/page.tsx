@@ -79,10 +79,11 @@ export default function Page() {
         <div className="rounded-2xl border border-neutral-200 overflow-hidden shadow-sm">
           <iframe
             title="West Roxbury Framing on Google Maps"
-            src="https://www.google.com/maps?ll=42.287442,-71.150185&z=10&t=m&hl=en-US&gl=US&mapclient=embed&cid=5529732401007790238"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2951.5821502373105!2d-71.1501852!3d42.28744220000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89e37f2bfd283b73%3A0x4cbd8e522909889e!2sWest%20Roxbury%20Framing!5e0!3m2!1sen!2sus!4v1770278426960!5m2!1sen!2sus"
             className="w-full h-[320px] md:h-[420px] border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
           />
         </div>
       </section>
