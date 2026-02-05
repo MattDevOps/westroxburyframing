@@ -50,7 +50,7 @@ const SERVICES = [
   {
     title: "Repair & Restoration",
     body:
-      "Oversized framing, needle points, canvas security hanging, and more.",
+      "We take old, damaged, or faded photographs and bring them back to life with careful restoration so they look clean, clear, and flawless again.",
   },
   {
     title: "Canvas Stretching",

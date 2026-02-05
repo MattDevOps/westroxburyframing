@@ -18,6 +18,7 @@ export default function HeaderPublic() {
         <nav className="flex gap-4 text-sm text-neutral-200">
           <a href="/framed-art">Framed Art</a>
           <a href="/services">Services</a>
+          <a href="/restoration">Repair &amp; Restoration</a>
           <a href="/about">About</a>
           <a href="/book" className="font-medium text-white">
             Book
