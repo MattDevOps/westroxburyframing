@@ -31,6 +31,26 @@ const TIPS = [
   },
 ];
 
+const FRAMED_GALLERY = [
+  // Moved from Services page (now stored in /public/framed-art)
+  { src: "/framed-art/01.webp", alt: "Custom framed sports memorabilia collage" },
+  { src: "/framed-art/02.webp", alt: "Framed photograph with Boston Celtics logo" },
+  { src: "/framed-art/04.webp", alt: "Framed Bruins poster with mat and logo" },
+  { src: "/framed-art/05.webp", alt: "Framed ballerina painting with gold frame" },
+  { src: "/framed-art/06.webp", alt: "Large framed colorful artwork" },
+  { src: "/framed-art/07.webp", alt: "Framed Roslindale map art" },
+  { src: "/framed-art/08.webp", alt: "Framed western landscape artwork" },
+  // New photos you provided (currently in /public/framed-art with temporary names)
+  { src: "/framed-art/brady-jersey.webp", alt: "Framed Tom Brady Patriots jersey" },
+  { src: "/framed-art/vintage-flag-large.webp", alt: "Large framed American flag" },
+  { src: "/framed-art/ems-patches-collage.webp", alt: "Framed EMS patches and numbers collage" },
+  { src: "/framed-art/lighthouse-tapestry.webp", alt: "Framed lighthouse and nautical tapestry" },
+  { src: "/framed-art/diploma-and-medal.webp", alt: "Framed diploma with medal on red mat" },
+  { src: "/framed-art/cowboy-sunset.webp", alt: "Framed painting of cowboy on horse at sunset" },
+  { src: "/framed-art/shop-owner-portrait.webp", alt: "Framer standing next to large framed artwork in shop" },
+  { src: "/framed-art/honor-certificate.webp", alt: "Framed honor certificate with decorative border and medallion" },
+];
+
 export default function FramedArtPage() {
   return (
     <div className="space-y-10">
@@ -74,6 +94,34 @@ export default function FramedArtPage() {
             </div>
           </div>
         ))}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="text-xl font-semibold">Framed art examples</h2>
+          <p className="text-sm text-neutral-600">
+            A selection of jerseys, flags, diplomas, artwork, and memorabilia we have custom framed.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FRAMED_GALLERY.map((img) => (
+            <div
+              key={img.src}
+              className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+            >
+              <div className="relative aspect-[4/5]">
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

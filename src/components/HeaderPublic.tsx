@@ -19,7 +19,6 @@ export default function HeaderPublic() {
           <a href="/custom-framing">Custom Framing</a>
           <a href="/framed-art">Framed Art</a>
           <a href="/services">Services</a>
-          <a href="/gallery">Gallery</a>
           <a href="/about">About</a>
           <a href="/book" className="font-medium text-white">
             Book

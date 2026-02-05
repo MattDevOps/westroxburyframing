@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 const SERVICES = [
   {
     title: "Custom & Handmade Frames",
@@ -66,17 +64,6 @@ const SERVICES = [
   },
 ];
 
-const GALLERY = [
-  { src: "/services/01.webp", alt: "Custom framed sports memorabilia collage" },
-  { src: "/services/02.webp", alt: "Framed photograph with Boston Celtics logo" },
-  { src: "/services/03.webp", alt: "Framed Boston Globe article layout" },
-  { src: "/services/04.webp", alt: "Framed Bruins poster with mat and logo" },
-  { src: "/services/05.webp", alt: "Framed ballerina painting with gold frame" },
-  { src: "/services/06.webp", alt: "Large framed colorful artwork" },
-  { src: "/services/07.webp", alt: "Framed Roslindale map art" },
-  { src: "/services/08.webp", alt: "Framed western landscape artwork" },
-];
-
 export default function Page() {
   return (
     <div className="space-y-10">
@@ -117,34 +104,6 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-xl font-semibold">Recent work</h2>
-          <p className="text-sm text-neutral-600">
-            A few examples of custom framing and restoration projects.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {GALLERY.map((img) => (
-            <div
-              key={img.src}
-              className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
-            >
-              <div className="relative aspect-[4/5]">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  priority={false}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
