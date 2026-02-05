@@ -1,3 +1,5 @@
+import { ContactForm } from "@/components/ContactForm";
+
 export default function Page() {
   return (
     <div className="space-y-10">
@@ -85,6 +87,16 @@ export default function Page() {
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
           />
+        </div>
+      </section>
+
+      <section className="max-w-3xl mx-auto w-full">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-xl font-semibold">Send us a message</h2>
+          <p className="text-sm text-neutral-700">
+            Prefer email? Fill out the form below and we&apos;ll get back to you as soon as we can.
+          </p>
+          <ContactForm />
         </div>
       </section>
     </div>

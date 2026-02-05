@@ -25,6 +25,34 @@ Thank you!`;
   });
 }
 
+export async function sendContactFormEmail(params: {
+  fromName: string;
+  fromEmail: string;
+  fromPhone?: string;
+  message: string;
+}) {
+  const subject = `New contact form submission from ${params.fromName}`;
+  const text = `New contact form submission
+
+Name: ${params.fromName}
+Email: ${params.fromEmail}
+Phone: ${params.fromPhone || "N/A"}
+
+Message:
+${params.message}
+
+— Website contact form`;
+
+  // Stub: integrate Postmark/SendGrid here.
+  console.log("EMAIL OUT", {
+    provider: env.EMAIL_PROVIDER,
+    to: "jake@westroxburyframing.com",
+    from: env.EMAIL_FROM,
+    subject,
+    text,
+  });
+}
+
 export async function sendInvoicePaidNotification(params: {
   to: string;
   orderNumber: string;
