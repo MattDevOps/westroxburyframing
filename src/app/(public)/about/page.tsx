@@ -1,18 +1,31 @@
+import Image from "next/image";
+
 export default function Page() {
   return (
     <div className="space-y-10">
-      <header className="space-y-3 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">About Us</h1>
-        <p className="text-lg font-medium">West Roxbury Framing</p>
-        <p className="max-w-3xl mx-auto text-neutral-700">
-          We are a family owned and operated fine art custom picture framing shop. Opened in 1981 and
-          based in West Roxbury, we serve Boston and surrounding neighborhoods and towns with a
-          commitment to quality service and fair prices. We offer all kinds of frame options to fit any
-          needs from old maps and paintings, posters, valuable prints and sports jerseys to all manner of
-          three dimensional objects; we can handle it all. We also offer limited frame and photo
-          restoration as well as rush same day services.
-        </p>
-      </header>
+      <section className="grid gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
+        <header className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight">About Us</h1>
+          <p className="text-lg font-medium">West Roxbury Framing</p>
+          <p className="max-w-3xl text-neutral-700">
+            We are a family owned and operated fine art custom picture framing shop. Opened in 1981 and
+            based in West Roxbury, we serve Boston and surrounding neighborhoods and towns with a
+            commitment to quality service and fair prices. We offer all kinds of frame options to fit any
+            needs from old maps and paintings, posters, valuable prints and sports jerseys to all manner
+            of three dimensional objects; we can handle it all. We also offer limited frame and photo
+            restoration as well as rush same day services.
+          </p>
+        </header>
+        <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shadow-md md:h-72">
+          <Image
+            src="/home/2024-legacy-award-mayor-wu.jpg"
+            alt="West Roxbury Framing receiving the 2024 Legacy Business Award with Mayor Wu"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 40vw"
+          />
+        </div>
+      </section>
 
       <section className="space-y-4">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">

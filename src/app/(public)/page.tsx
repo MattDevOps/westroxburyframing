@@ -4,8 +4,8 @@ import HomeGalleryStrip from "@/components/HomeGalleryStrip";
 export default function HomePage() {
   return (
     <div className="space-y-14">
-      <section className="rounded-2xl border border-amber-400 bg-amber-50 px-4 py-4 md:px-6 md:py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+      <section className="rounded-2xl border border-neutral-200 bg-white/80 px-4 py-4 md:px-6 md:py-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">
           We Earned the 2024 Boston Legacy Business Award
         </p>
         <p className="mt-1 text-lg font-semibold text-neutral-900">
@@ -16,7 +16,7 @@ export default function HomePage() {
             href="https://www.boston.gov/departments/small-business/legacy-business-program"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline underline-offset-2 decoration-amber-600 hover:text-amber-800"
+            className="underline underline-offset-2 decoration-neutral-500 hover:text-neutral-900"
           >
             West Roxbury Framing and its owner, Moses Hasson, was one of a select few business in Boston
             to earn the Legacy Business Award, acknowledging long-standing businesses with historic
@@ -76,6 +76,30 @@ export default function HomePage() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center rounded-2xl border border-neutral-200 bg-white/90 p-6 shadow-sm">
+        <div className="space-y-3">
+          <h2 className="text-2xl font-semibold">About Us</h2>
+          <p className="text-sm font-medium text-neutral-900">West Roxbury Framing</p>
+          <p className="text-sm leading-6 text-neutral-700">
+            We are a family owned and operated fine art custom picture framing shop. Opened in 1981 and
+            based in West Roxbury, we serve Boston and surrounding neighborhoods and towns with a
+            commitment to quality service and fair prices. We offer all kinds of frame options to fit any
+            needs from old maps and paintings, posters, valuable prints and sports jerseys to all manner
+            of three dimensional objects; we can handle it all. We also offer limited frame and photo
+            restoration as well as rush same day services.
+          </p>
+        </div>
+        <div className="relative h-56 w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-md md:h-64">
+          <Image
+            src="/home/2024-legacy-award-mayor-wu.jpg"
+            alt="West Roxbury Framing receiving the 2024 Legacy Business Award with Mayor Wu"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 40vw"
+          />
         </div>
       </section>
 
