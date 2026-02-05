@@ -4,9 +4,8 @@ export default function Page() {
       <header className="space-y-3 text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Book A Free Consultation</h1>
         <p className="max-w-2xl mx-auto text-neutral-700">
-          Schedule a complimentary framing consultation with West Roxbury Framing. You can meet with us
-          in person at our shop or talk over the phone about your artwork, photos, memorabilia, or
-          project ideas.
+          Schedule a complimentary framing consultation with us. You can meet with us in person at our
+          shop or talk over the phone about your artwork, photos, memorabilia, or project ideas.
         </p>
         <p className="max-w-2xl mx-auto text-neutral-700">
           Use the calendar below to pick a day and time that works best for you. You&apos;ll be able to
