@@ -32,18 +32,18 @@ export default function Page() {
           A small sample of photographs and artwork we have restored and preserved for our clients.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2">
           {RESTORATION_IMAGES.map((img) => (
             <div
               key={img.src}
               className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
             >
-              <div className="relative aspect-[4/5]">
+              <div className="relative aspect-[4/3] bg-neutral-100">
                 <Image
                   src={img.src}
                   alt={img.alt}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>

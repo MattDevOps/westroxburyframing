@@ -1,24 +1,82 @@
-import GalleryGrid from "@/components/GalleryGrid";
+import Image from "next/image";
+import HomeGalleryStrip from "@/components/HomeGalleryStrip";
 
 export default function HomePage() {
   return (
     <div className="space-y-14">
-      <section className="grid gap-8 md:grid-cols-2 md:items-center">
-        <div className="space-y-4">
+      <section className="rounded-2xl border border-amber-400 bg-amber-50 px-4 py-4 md:px-6 md:py-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+          We Earned the 2024 Boston Legacy Business Award
+        </p>
+        <p className="mt-1 text-lg font-semibold text-neutral-900">
+          West Roxbury Framing
+        </p>
+        <p className="mt-1 text-sm text-neutral-800">
+          <a
+            href="https://www.boston.gov/departments/small-business/legacy-business-program"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 decoration-amber-600 hover:text-amber-800"
+          >
+            West Roxbury Framing and its owner, Moses Hasson, was one of a select few business in Boston
+            to earn the Legacy Business Award, acknowledging long-standing businesses with historic
+            significance and a commitment to the community.
+          </a>
+        </p>
+      </section>
+
+      <section className="grid gap-10 md:grid-cols-2 md:items-center rounded-3xl bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-800 px-5 py-8 md:px-8 md:py-10 text-neutral-50 shadow-[0_30px_70px_rgba(0,0,0,0.65)]">
+        <div className="space-y-5">
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
             Custom Picture Framing in West Roxbury, MA
           </h1>
-          <p className="text-lg text-neutral-600">
-            Museum-quality framing for art, photos, diplomas, memorabilia, and objects — designed with you in-store.
+          <p className="text-lg text-neutral-200">
+            Museum-quality framing for art, photos, diplomas, memorabilia, and objects — designed with you
+            in-store.
           </p>
           <div className="flex flex-wrap gap-3">
-            <a className="rounded-xl bg-black px-5 py-3 text-white" href="/book">Book a consultation</a>
-            <a className="rounded-xl border border-neutral-300 px-5 py-3" href="/contact">Call / Directions</a>
+            <a className="rounded-xl bg-white px-5 py-3 text-sm font-medium text-black shadow-md hover:bg-neutral-100" href="/book">
+              Book a consultation
+            </a>
+            <a className="rounded-xl border border-neutral-500 px-5 py-3 text-sm font-medium text-neutral-100 hover:bg-neutral-800" href="/contact">
+              Call / Directions
+            </a>
           </div>
-          <p className="text-sm text-neutral-500">Walk-ins welcome • Fast turnaround • Full-service design</p>
+          <p className="text-sm text-neutral-400">Walk-ins welcome • Fast turnaround • Full-service design</p>
         </div>
 
-        <div className="aspect-[4/3] w-full rounded-2xl bg-neutral-100" />
+        <div className="relative h-[260px] md:h-[320px]">
+          <div className="absolute inset-0 rounded-[28px] bg-gradient-to-tr from-amber-500/20 via-fuchsia-500/10 to-sky-500/20 blur-3xl" />
+          <div className="relative h-full w-full">
+            <div className="absolute left-0 top-6 h-40 w-32 md:h-52 md:w-40 overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-[0_18px_45px_rgba(0,0,0,0.8)]">
+              <Image
+                src="/framed-art/brady-jersey.webp"
+                alt="Framed Patriots jersey"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 40vw, 20vw"
+              />
+            </div>
+            <div className="absolute right-1 md:right-4 top-0 h-40 w-32 md:h-52 md:w-40 overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-[0_18px_45px_rgba(0,0,0,0.8)]">
+              <Image
+                src="/framed-art/diploma-and-medal.webp"
+                alt="Framed diploma and medal"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 40vw, 20vw"
+              />
+            </div>
+            <div className="absolute left-10 md:left-16 bottom-0 h-40 w-40 md:h-52 md:w-56 overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-[0_22px_55px_rgba(0,0,0,0.95)]">
+              <Image
+                src="/framed-art/cowboy-sunset.webp"
+                alt="Framed western artwork"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 55vw, 28vw"
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 md:grid-cols-4">
@@ -30,11 +88,6 @@ export default function HomePage() {
             </div>
           </div>
         ))}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">Recent Work</h2>
-        <GalleryGrid />
       </section>
 
       <section className="rounded-2xl border border-neutral-200 p-6">

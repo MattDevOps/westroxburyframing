@@ -9,9 +9,9 @@ export default function HeaderPublic() {
           <Image
             src="/logo.png"
             alt="West Roxbury Framing"
-            width={140}
-            height={48}
-            className="h-12 w-auto"
+            width={180}
+            height={60}
+            className="h-14 w-auto"
             priority
           />
         </Link>
