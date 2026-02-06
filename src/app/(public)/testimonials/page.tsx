@@ -62,7 +62,15 @@ export default function TestimonialsPage() {
           with their art, photos, diplomas, and memorabilia.
         </p>
         <p className="text-sm text-neutral-600">
-          These reviews are pulled directly from our Google Business profile.
+          These reviews are pulled directly from our Google Business profile.{" "}
+          <a
+            href="https://www.google.com/maps/place/West+Roxbury+Framing/@42.287442,-71.150185/data=!3m1!4b1!4m6!3m5!1s0x89e37f2bfd283b73:0x4cbd8e522909889e!8m2!3d42.287442!4d-71.150185!16s%2Fg%2F11c0vx8x1h?entry=ttu&g_ep=EgoyMDI1MDIwNS4wIKXMDSoJLDEwMjEzMjg4ODk%3D"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-neutral-900"
+          >
+            View all reviews directly from our Google page →
+          </a>
         </p>
         <div className="flex items-center justify-center gap-2 text-sm text-amber-700">
           <span className="text-lg">★</span>
