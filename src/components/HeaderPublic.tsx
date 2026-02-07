@@ -1,78 +1,104 @@
- "use client";
+"use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const navLinks = [
+  { name: "Home", path: "/" },
+  { name: "About Us", path: "/about" },
+  { name: "Services", path: "/services" },
+  { name: "Framed Art", path: "/framed-art" },
+  { name: "Repair & Restoration", path: "/restoration" },
+  { name: "Testimonials", path: "/testimonials" },
+  { name: "Contact Us", path: "/contact" },
+];
 
 export default function HeaderPublic() {
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  const linkBase =
-    "transition-colors hover:text-white";
-
-  const activeClass =
-    "text-white border-b border-white pb-0.5";
-
-  function linkClass(path: string, extra?: string) {
-    const isActive =
-      path === "/"
-        ? pathname === "/"
-        : pathname === path || pathname.startsWith(path + "/");
-    return [
-      linkBase,
-      extra,
-      isActive ? activeClass : "text-neutral-200",
-    ]
-      .filter(Boolean)
-      .join(" ");
-  }
-
   return (
-    <header className="border-b border-neutral-800 bg-black/95">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Image
             src="/logo.png"
             alt="West Roxbury Framing"
             width={180}
-            height={60}
-            className="h-14 w-auto"
+            height={72}
+            className="h-14 md:h-16 w-auto object-contain"
             priority
           />
+          <span className="sr-only">West Roxbury Framing</span>
         </Link>
-        <nav className="flex gap-4 text-sm">
-          <Link href="/" className={linkClass("/")}>
-            Home
-          </Link>
-          <Link href="/framed-art" className={linkClass("/framed-art")}>
-            Framed Art
-          </Link>
-          <Link href="/services" className={linkClass("/services")}>
-            Services
-          </Link>
-          <Link href="/testimonials" className={linkClass("/testimonials")}>
-            Testimonials
-          </Link>
-          <Link href="/restoration" className={linkClass("/restoration")}>
-            Repair &amp; Restoration
-          </Link>
-          <Link href="/about" className={linkClass("/about")}>
-            About
-          </Link>
+
+        <div className="hidden lg:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              href={link.path}
+              className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${
+                pathname === link.path
+                  ? "text-gold border-b border-gold pb-0.5"
+                  : "text-foreground/70"
+              }`}
+            >
+              {link.name}
+            </Link>
+          ))}
           <Link
             href="/book"
-            className={linkClass(
-              "/book",
-              "font-medium"
-            )}
+            className="ml-2 px-5 py-2.5 bg-gold text-primary-foreground text-sm font-semibold tracking-wide uppercase rounded-sm hover:opacity-90 transition-colors"
           >
             Book
           </Link>
-          <Link href="/contact" className={linkClass("/contact")}>
-            Contact
-          </Link>
-        </nav>
+        </div>
+
+        <button
+          className="lg:hidden text-foreground"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
-    </header>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden bg-background border-b border-border overflow-hidden"
+          >
+            <div className="px-6 py-4 flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${
+                    pathname === link.path ? "text-gold" : "text-foreground/70"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <Link
+                href="/book"
+                onClick={() => setIsOpen(false)}
+                className="px-5 py-2.5 bg-gold text-primary-foreground text-sm font-semibold tracking-wide uppercase rounded-sm text-center"
+              >
+                Book
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
   );
 }
