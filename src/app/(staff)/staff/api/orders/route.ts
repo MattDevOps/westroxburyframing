@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       due_date: o.dueDate,
       customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
       total_cents: o.totalAmount,
-      paid: o.payments.length > 0,
+      paid: o.payments.length > 0 || (o.squareInvoiceStatus?.toUpperCase() === "PAID"),
       item_type: o.itemType,
     })),
   });

@@ -318,23 +318,60 @@ export default function OrderDetailPage() {
 
       {/* Payment */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
-        <div className="text-neutral-900 font-semibold">Payment</div>
+        <div className="flex items-center justify-between">
+          <div className="text-neutral-900 font-semibold">Payment</div>
+          {order.squareInvoiceId && (
+            <span
+              className={`text-sm px-2 py-1 rounded-lg border ${
+                order.squareInvoiceStatus?.toUpperCase() === "PAID"
+                  ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                  : "border-amber-300 text-amber-700 bg-amber-50"
+              }`}
+            >
+              {order.squareInvoiceStatus?.toUpperCase() === "PAID" ? "Paid" : "Unpaid"}
+            </span>
+          )}
+        </div>
 
         <SquareInvoiceButtons orderId={order.id} existingInvoiceId={order.squareInvoiceId || undefined} />
 
         {order.squareInvoiceId && (
-          <div className="text-sm text-neutral-700 mt-2">
-            Invoice: {order.squareInvoiceId}
+          <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 mt-2">
+            <span>Invoice: {order.squareInvoiceId}</span>
             {order.squareInvoiceUrl && (
               <a
                 href={order.squareInvoiceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-2 text-blue-600 hover:underline"
+                className="text-blue-600 hover:underline"
               >
                 View →
               </a>
             )}
+            <button
+              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-700 hover:bg-neutral-50"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/invoice/sync`, {
+                    method: "POST",
+                  });
+                  const raw = await res.text();
+                  let out: any = {};
+                  try {
+                    out = raw ? JSON.parse(raw) : {};
+                  } catch {}
+                  if (!res.ok) {
+                    alert(out.error || raw || `Sync failed (${res.status})`);
+                    return;
+                  }
+                  await refresh();
+                } catch (e: any) {
+                  alert(e?.message || "Sync failed - check console");
+                }
+              }}
+            >
+              Sync payment status
+            </button>
           </div>
         )}
       </div>

@@ -26,12 +26,12 @@ export async function POST(req: Request) {
   try { payload = JSON.parse(bodyText); } catch {}
 
   const eventType = payload?.type;
-  // Extract invoice ID from payment_made event - structure may vary
-  const invoiceId = 
-    payload?.data?.object?.payment?.invoice_id ||
+  // Extract invoice ID - for invoice.payment_made, data.id is the invoice ID
+  const invoiceId =
+    payload?.data?.id ||
     payload?.data?.object?.invoice?.id ||
-    payload?.data?.invoice_id ||
-    payload?.data?.id;
+    payload?.data?.object?.payment?.invoice_id ||
+    payload?.data?.invoice_id;
 
   console.log("Square webhook received:", eventType, invoiceId, JSON.stringify(payload, null, 2));
 
@@ -53,14 +53,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, message: "Invoice missing invoice_number" });
       }
 
-      // Extract order number from invoice number (format: ORDER123-full or ORDER123-deposit)
-      const orderNumberMatch = invoiceNumber.match(/^([^-]+)/);
-      if (!orderNumberMatch) {
+      // Extract order number from invoice number (format: WRX-000009-full or WRX-000009-deposit)
+      const orderNumber = invoiceNumber.replace(/-(?:full|deposit)$/i, "").trim();
+      if (!orderNumber) {
         console.warn("Could not extract order number from invoice number:", invoiceNumber);
         return NextResponse.json({ ok: true, message: "Could not extract order number" });
       }
-
-      const orderNumber = orderNumberMatch[1];
 
       // Find the order in the database
       const order = await prisma.order.findUnique({
