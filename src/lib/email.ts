@@ -38,7 +38,7 @@ async function sendViaPostmark(params: {
 }
 
 function getFrom(): string {
-  return process.env.EMAIL_FROM || "West Roxbury Framing <info@westroxburyframing.com>";
+  return process.env.EMAIL_FROM || "West Roxbury Framing <jake@westroxburyframing.com>";
 }
 
 export async function sendReadyForPickupEmail(params: {

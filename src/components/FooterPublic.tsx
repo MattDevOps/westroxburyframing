@@ -42,7 +42,7 @@ export default function FooterPublic() {
               </div>
               <div className="flex items-center gap-3">
                 <Mail size={16} className="text-gold shrink-0" />
-                <a href="mailto:info@westroxburyframing.com" className="text-muted-foreground text-sm hover:text-gold">info@westroxburyframing.com</a>
+                <a href="mailto:jake@westroxburyframing.com" className="text-muted-foreground text-sm hover:text-gold">jake@westroxburyframing.com</a>
               </div>
             </div>
           </div>

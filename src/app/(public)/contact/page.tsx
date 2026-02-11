@@ -51,7 +51,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-foreground text-sm mb-1">Email</h4>
-                  <a href="mailto:info@westroxburyframing.com" className="text-muted-foreground text-sm hover:text-gold">info@westroxburyframing.com</a>
+                  <a href="mailto:jake@westroxburyframing.com" className="text-muted-foreground text-sm hover:text-gold">jake@westroxburyframing.com</a>
                 </div>
               </div>
               <div className="flex items-start gap-4">
