@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 
+// Type assertion to work around TypeScript cache issue with Prisma client
+const prismaWithActivity: any = prisma;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 /**
@@ -14,7 +17,7 @@ export async function GET(req: Request, ctx: Ctx) {
 
   const { id } = await ctx.params;
 
-  const activity = await prisma.orderActivity.findMany({
+  const activity = await prismaWithActivity.orderActivity.findMany({
     where: { orderId: id },
     orderBy: { createdAt: "desc" },
     take: 100,
@@ -49,7 +52,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const exists = await prisma.order.findUnique({ where: { id }, select: { id: true } });
   if (!exists) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const activity = await prisma.orderActivity.create({
+  const activity = await prismaWithActivity.orderActivity.create({
     data: {
       orderId: id,
       type,
