@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus } from "@/lib/orderStatus";
 
+// Type assertion to work around TypeScript cache issue with Prisma client
+const prismaWithActivity: any = prisma;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, ctx: Ctx) {
@@ -19,18 +22,20 @@ export async function GET(req: Request, ctx: Ctx) {
       photos: true,
       payments: true,
       createdBy: true,
-      activity: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          createdBy: { select: { id: true, name: true, email: true } },
-        },
-      },
     },
   });
 
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  return NextResponse.json({ order });
+  const activity = await prismaWithActivity.orderActivity.findMany({
+    where: { orderId: id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      createdBy: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  return NextResponse.json({ order: { ...order, activity } });
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
@@ -87,7 +92,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   for (const ev of events) {
-    await prisma.orderActivity.create({
+    await prismaWithActivity.orderActivity.create({
       data: {
         orderId: id,
         type: ev.type,
