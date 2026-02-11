@@ -38,8 +38,9 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  orders   Order[]
-  activity ActivityLog[] @relation("ActorActivity")
+  orders        Order[]
+  activity      ActivityLog[]   @relation("ActorActivity")
+  orderActivity OrderActivity[]
 }
 
 model Customer {
@@ -98,7 +99,12 @@ model Order {
   specs    OrderSpecs?
   photos   OrderPhoto[]
   payments Payment[]
-  activity ActivityLog[] @relation("OrderActivity")
+
+  /// Existing generic activity log entries
+  activityLogs ActivityLog[] @relation("OrderActivityLog")
+
+  /// New dedicated order timeline entries (status changes, edits, invoice sent, etc.)
+  activity OrderActivity[]
 }
 
 model OrderSpecs {
@@ -171,8 +177,20 @@ model ActivityLog {
   actor       User?   @relation("ActorActivity", fields: [actorUserId], references: [id])
 
   orderId String?
-  order   Order?  @relation("OrderActivity", fields: [orderId], references: [id])
+  order   Order?  @relation("OrderActivityLog", fields: [orderId], references: [id])
 
   metadata  Json     @default("{}")
   createdAt DateTime @default(now())
+}
+
+model OrderActivity {
+  id              String   @id @default(uuid())
+  orderId         String
+  type            String
+  message         String
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User? @relation(fields: [createdByUserId], references: [id])
 }

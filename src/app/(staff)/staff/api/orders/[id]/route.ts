@@ -1,155 +1,107 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { normalizePhone, normalizeEmail } from "@/lib/ids";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { isValidOrderStatus } from "@/lib/orderStatus";
 
-export async function GET(req: Request, ctx: any) {
-  try {
-    const params = await ctx.params;
-    const id = String(params.id);
+type Ctx = { params: Promise<{ id: string }> };
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: { customer: true },
-    });
+export async function GET(req: Request, ctx: Ctx) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!order) {
-      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
-    }
+  const { id } = await ctx.params;
 
-    return NextResponse.json({ ok: true, order });
-  } catch (err: any) {
-    console.error("Order fetch failed:", err);
-    return NextResponse.json({ ok: false, error: err?.message || "Fetch failed" }, { status: 500 });
-  }
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      customer: true,
+      specs: true,
+      photos: true,
+      payments: true,
+      activity: true,
+      createdBy: true,
+    },
+  });
+
+  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+  return NextResponse.json({ order });
 }
 
-export async function PATCH(req: Request, ctx: any) {
-  try {
-    const params = await ctx.params;
-    const id = String(params.id);
-    const body = await req.json().catch(() => ({}));
+export async function PATCH(req: Request, ctx: Ctx) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Allow updating a safe subset of fields.
-    // Adjust these keys to match your Prisma schema if needed.
-    const data: any = {};
+  const { id } = await ctx.params;
 
-    // Handle field updates - support both snake_case and camelCase
-    if ("status" in body) data.status = body.status;
-    if ("intakeChannel" in body || "intake_channel" in body) {
-      data.intakeChannel = body.intakeChannel || body.intake_channel;
-    }
-    if ("dueDate" in body || "due_date" in body) {
-      data.dueDate = body.dueDate || body.due_date ? new Date(body.dueDate || body.due_date) : null;
-    }
-    if ("itemType" in body || "item_type" in body) {
-      data.itemType = body.itemType || body.item_type;
-    }
-    if ("itemDescription" in body || "item_description" in body) {
-      data.itemDescription = body.itemDescription || body.item_description || null;
-    }
-    if ("width" in body) data.width = body.width !== null && body.width !== undefined ? Number(body.width) : null;
-    if ("height" in body) data.height = body.height !== null && body.height !== undefined ? Number(body.height) : null;
-    if ("units" in body) data.units = body.units;
-    if ("notesInternal" in body || "notes_internal" in body) {
-      data.notesInternal = body.notesInternal || body.notes_internal || null;
-    }
-    if ("notesCustomer" in body || "notes_customer" in body) {
-      data.notesCustomer = body.notesCustomer || body.notes_customer || null;
-    }
-    if ("subtotalAmount" in body || "subtotal_amount" in body || "subtotal_cents" in body) {
-      data.subtotalAmount = Number(body.subtotalAmount || body.subtotal_amount || body.subtotal_cents || 0);
-    }
-    if ("taxAmount" in body || "tax_amount" in body || "tax_cents" in body) {
-      data.taxAmount = Number(body.taxAmount || body.tax_amount || body.tax_cents || 0);
-    }
-    if ("totalAmount" in body || "total_amount" in body || "total_cents" in body) {
-      data.totalAmount = Number(body.totalAmount || body.total_amount || body.total_cents || 0);
-    }
-    if ("currency" in body) data.currency = body.currency;
-    if ("paidInFull" in body || "paid_in_full" in body) {
-      data.paidInFull = Boolean(body.paidInFull ?? body.paid_in_full ?? true);
-    }
+  const body = await req.json().catch(() => ({}));
 
-    // Handle customer updates
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: { customer: true },
+  // Only allow editing “safe” fields
+  const data: any = {};
+
+  if ("orderNumber" in body) data.orderNumber = body.orderNumber ?? null;
+  if ("intakeChannel" in body) data.intakeChannel = body.intakeChannel ?? null;
+
+  if ("dueDate" in body) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+
+  if ("itemType" in body) data.itemType = body.itemType ?? null;
+  if ("itemDescription" in body) data.itemDescription = body.itemDescription ?? null;
+
+  if ("width" in body) data.width = body.width === "" || body.width == null ? null : Number(body.width);
+  if ("height" in body) data.height = body.height === "" || body.height == null ? null : Number(body.height);
+  if ("units" in body) data.units = body.units ?? null;
+
+  if ("notesInternal" in body) data.notesInternal = body.notesInternal ?? null;
+  if ("notesCustomer" in body) data.notesCustomer = body.notesCustomer ?? null;
+
+  // Optional: allow status change via PATCH too (Step 2 uses this)
+  if ("status" in body) {
+    const next = String(body.status || "").trim();
+    if (!isValidOrderStatus(next)) {
+      return NextResponse.json({ error: `Invalid status: ${next}` }, { status: 400 });
+    }
+    data.status = next;
+  }
+
+  // Optional: allow totals editing (if you want staff to override)
+  if ("subtotalAmount" in body) data.subtotalAmount = body.subtotalAmount == null ? null : Number(body.subtotalAmount);
+  if ("taxAmount" in body) data.taxAmount = body.taxAmount == null ? null : Number(body.taxAmount);
+  if ("totalAmount" in body) data.totalAmount = body.totalAmount == null ? null : Number(body.totalAmount);
+  if ("currency" in body) data.currency = body.currency ?? null;
+
+  // Load previous order to create a clean activity log message
+  const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+  if (!prev) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+  const updated = await prisma.order.update({ where: { id }, data });
+
+  // Create activity entry (your schema already hinted you have `activity`)
+  // If your model name differs, this will be the only part to adjust.
+  const events: Array<{ type: string; message: string }> = [];
+  events.push({ type: "edit", message: "Order updated" });
+
+  if ("status" in data && prev.status !== data.status) {
+    events.push({
+      type: "status_change",
+      message: `Status changed: ${prev.status || "—"} → ${data.status}`,
     });
+  }
 
-    if (!order) {
-      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
-    }
-
-    let customerUpdate: any = {};
-    if ("customerFirstName" in body || "customer_first_name" in body) {
-      customerUpdate.firstName = body.customerFirstName || body.customer_first_name;
-    }
-    if ("customerLastName" in body || "customer_last_name" in body) {
-      customerUpdate.lastName = body.customerLastName || body.customer_last_name;
-    }
-    if ("customerPhone" in body || "customer_phone" in body) {
-      const newPhone = normalizePhone(body.customerPhone || body.customer_phone || "");
-      if (newPhone && newPhone !== order.customer.phone) {
-        // Check if phone is already taken by another customer
-        const existing = await prisma.customer.findUnique({
-          where: { phone: newPhone },
-        });
-        if (existing && existing.id !== order.customerId) {
-          return NextResponse.json(
-            { ok: false, error: "Phone number already exists for another customer" },
-            { status: 400 }
-          );
-        }
-        customerUpdate.phone = newPhone;
-      }
-    }
-    if ("customerEmail" in body || "customer_email" in body) {
-      customerUpdate.email = normalizeEmail(body.customerEmail || body.customer_email);
-    }
-
-    // Update customer if there are changes
-    if (Object.keys(customerUpdate).length > 0) {
-      await prisma.customer.update({
-        where: { id: order.customerId },
-        data: customerUpdate,
+  try {
+    for (const ev of events) {
+      // @ts-ignore
+      await prisma.orderActivity.create({
+        data: {
+          orderId: id,
+          type: ev.type,
+          message: ev.message,
+          createdByUserId: userId,
+        },
       });
     }
-
-    const updated = await prisma.order.update({
-      where: { id },
-      data,
-      include: { customer: true },
-    });
-
-    return NextResponse.json({ ok: true, order: updated });
-  } catch (err: any) {
-    console.error("Order update failed:", err);
-    return NextResponse.json({ ok: false, error: err?.message || "Update failed" }, { status: 500 });
+  } catch {
+    // If activity table isn’t set up yet, don't block edits.
   }
-}
 
-export async function DELETE(req: Request, ctx: any) {
-  try {
-    const params = await ctx.params;
-    const id = String(params.id);
-
-    // Check if order exists
-    const order = await prisma.order.findUnique({
-      where: { id },
-    });
-
-    if (!order) {
-      return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
-    }
-
-    // Delete the order (cascade will handle related records like specs, photos, payments)
-    await prisma.order.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ ok: true, message: "Order deleted successfully" });
-  } catch (err: any) {
-    console.error("Order delete failed:", err);
-    return NextResponse.json({ ok: false, error: err?.message || "Delete failed" }, { status: 500 });
-  }
+  return NextResponse.json({ ok: true, order: updated });
 }
