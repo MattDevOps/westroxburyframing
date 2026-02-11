@@ -39,7 +39,9 @@ export default function KanbanBoard() {
                 <div className="text-xs text-neutral-600">{o.customer_name}</div>
                 <div className="mt-2 flex items-center gap-2 text-xs">
                   <span className="rounded-full border px-2 py-0.5">{o.item_type}</span>
-                  <span className="rounded-full border px-2 py-0.5">{o.paid ? "Paid" : "Unpaid"}</span>
+                  <span className="rounded-full border px-2 py-0.5">
+                    {o.paid_status === "paid" ? "Paid" : o.paid_status === "deposit" ? "Deposit received" : "Unpaid"}
+                  </span>
                 </div>
               </a>
             ))}

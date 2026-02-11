@@ -325,10 +325,16 @@ export default function OrderDetailPage() {
               className={`text-sm px-2 py-1 rounded-lg border ${
                 order.squareInvoiceStatus?.toUpperCase() === "PAID"
                   ? "border-emerald-300 text-emerald-700 bg-emerald-50"
-                  : "border-amber-300 text-amber-700 bg-amber-50"
+                  : order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID"
+                    ? "border-blue-300 text-blue-700 bg-blue-50"
+                    : "border-amber-300 text-amber-700 bg-amber-50"
               }`}
             >
-              {order.squareInvoiceStatus?.toUpperCase() === "PAID" ? "Paid" : "Unpaid"}
+              {order.squareInvoiceStatus?.toUpperCase() === "PAID"
+                ? "Paid"
+                : order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID"
+                  ? "Deposit received"
+                  : "Unpaid"}
             </span>
           )}
         </div>

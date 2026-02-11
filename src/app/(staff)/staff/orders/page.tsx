@@ -9,6 +9,7 @@ type OrderCard = {
   customer_name: string;
   total_cents: number;
   paid: boolean;
+  paid_status?: "unpaid" | "deposit" | "paid";
   item_type: string;
 };
 
@@ -30,12 +31,13 @@ const ALL_COLUMNS: { key: string; title: string }[] = [
   ...COMPLETED_COLUMNS,
 ];
 
-type TabType = "active" | "completed" | "all";
+type TabType = "active" | "all";
 
 export default function OrdersBoardPage() {
   const [orders, setOrders] = useState<OrderCard[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("active");
+  const [syncing, setSyncing] = useState(false);
 
   async function load() {
     setErr(null);
@@ -58,7 +60,6 @@ export default function OrdersBoardPage() {
 
   const currentColumns = useMemo(() => {
     if (activeTab === "active") return ACTIVE_COLUMNS;
-    if (activeTab === "completed") return COMPLETED_COLUMNS;
     return ALL_COLUMNS;
   }, [activeTab]);
 
@@ -137,6 +138,29 @@ export default function OrdersBoardPage() {
           >
             Refresh
           </button>
+          <button
+            className="rounded-xl border border-blue-300 px-4 py-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              try {
+                const res = await fetch("/staff/api/orders/invoice/sync-all", { method: "POST" });
+                const out = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                  alert(out.error || "Sync failed");
+                  return;
+                }
+                alert(out.message || `Synced ${out.synced} invoice(s).`);
+                await load();
+              } catch (e) {
+                alert("Sync failed");
+              } finally {
+                setSyncing(false);
+              }
+            }}
+          >
+            {syncing ? "Syncing…" : "Sync all invoices"}
+          </button>
         </div>
       </div>
 
@@ -155,16 +179,6 @@ export default function OrdersBoardPage() {
           Active Orders
         </button>
         <button
-          onClick={() => setActiveTab("completed")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "completed"
-              ? "text-neutral-900 border-b-2 border-neutral-900"
-              : "text-neutral-600 hover:text-neutral-900"
-          }`}
-        >
-          Completed Orders
-        </button>
-        <button
           onClick={() => setActiveTab("all")}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "all"
@@ -176,7 +190,7 @@ export default function OrdersBoardPage() {
         </button>
       </div>
 
-      <div className={`grid gap-4 ${activeTab === "all" ? "md:grid-cols-8" : activeTab === "completed" ? "md:grid-cols-3" : "md:grid-cols-4"}`}>
+      <div className={`grid gap-4 ${activeTab === "all" ? "md:grid-cols-8" : "md:grid-cols-4"}`}>
         {currentColumns.map((col) => (
           <div
             key={col.key}
@@ -185,23 +199,19 @@ export default function OrdersBoardPage() {
                 ? "border-blue-600 bg-blue-950/20"
                 : "border-neutral-800 bg-neutral-950/30"
             }`}
-            onDragOver={ACTIVE_COLUMNS.some(c => c.key === col.key) ? handleDragOver : undefined}
-            onDrop={ACTIVE_COLUMNS.some(c => c.key === col.key) ? (e) => handleDrop(e, col.key) : undefined}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, col.key)}
           >
             <div className="text-white font-semibold mb-3">{col.title}</div>
 
             <div className="space-y-3 min-h-[100px]">
-              {(grouped.get(col.key) || []).map((o) => {
-                const isDraggable = ACTIVE_COLUMNS.some(c => c.key === col.key);
-                return (
+              {(grouped.get(col.key) || []).map((o) => (
                 <div
                   key={o.id}
-                  draggable={isDraggable}
-                  onDragStart={isDraggable ? (e) => handleDragStart(e, o) : undefined}
-                  onDragEnd={isDraggable ? handleDragEnd : undefined}
-                  className={`rounded-2xl border p-4 transition-all overflow-hidden ${
-                    isDraggable ? "cursor-move" : "cursor-pointer"
-                  } ${
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, o)}
+                  onDragEnd={handleDragEnd}
+                  className={`rounded-2xl border p-4 transition-all overflow-hidden cursor-move ${
                     draggedOrder?.id === o.id
                       ? "opacity-50 border-blue-500 bg-blue-950/20"
                       : "border-neutral-800 bg-neutral-950/40 hover:bg-neutral-900/40 hover:border-neutral-700"
@@ -227,10 +237,18 @@ export default function OrdersBoardPage() {
                       <span
                         className={[
                           "rounded-full border px-2 py-1",
-                          o.paid ? "border-emerald-700 text-emerald-200" : "border-amber-700 text-amber-200",
+                          o.paid_status === "paid"
+                            ? "border-emerald-700 text-emerald-200"
+                            : o.paid_status === "deposit"
+                              ? "border-blue-600 text-blue-200"
+                              : "border-amber-700 text-amber-200",
                         ].join(" ")}
                       >
-                        {o.paid ? "Paid" : "Unpaid"}
+                        {o.paid_status === "paid"
+                          ? "Paid"
+                          : o.paid_status === "deposit"
+                            ? "Deposit received"
+                            : "Unpaid"}
                       </span>
                       <span className="ml-auto text-neutral-200 font-semibold text-sm md:text-base">
                         ${(o.total_cents / 100).toFixed(2)}
@@ -238,8 +256,7 @@ export default function OrdersBoardPage() {
                     </div>
                   </a>
                 </div>
-                );
-              })}
+              ))}
 
               {(grouped.get(col.key) || []).length === 0 ? (
                 <div className="text-sm text-neutral-500 py-4 text-center">

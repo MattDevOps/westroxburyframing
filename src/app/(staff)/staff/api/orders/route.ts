@@ -20,16 +20,27 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    orders: orders.map((o) => ({
-      id: o.id,
-      order_number: o.orderNumber,
-      status: o.status,
-      due_date: o.dueDate,
-      customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
-      total_cents: o.totalAmount,
-      paid: o.payments.length > 0 || (o.squareInvoiceStatus?.toUpperCase() === "PAID"),
-      item_type: o.itemType,
-    })),
+    orders: orders.map((o) => {
+      const invStatus = o.squareInvoiceStatus?.toUpperCase();
+      const hasPayment = o.payments.length > 0;
+      const paidStatus =
+        hasPayment || invStatus === "PAID"
+          ? "paid"
+          : invStatus === "PARTIALLY_PAID"
+            ? "deposit"
+            : "unpaid";
+      return {
+        id: o.id,
+        order_number: o.orderNumber,
+        status: o.status,
+        due_date: o.dueDate,
+        customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
+        total_cents: o.totalAmount,
+        paid: paidStatus !== "unpaid",
+        paid_status: paidStatus,
+        item_type: o.itemType,
+      };
+    }),
   });
 }
 
