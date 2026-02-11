@@ -112,24 +112,58 @@ export async function POST(req: Request, ctx: any) {
     }
 
     // Create new invoice
-    const result = await createAndSendInvoice({
-      locationId,
-      orderId: String(orderIdForInvoice),
-      kind,
-      depositPercent,
-      customerEmail,
-      customerGivenName:
-        (order as any).customer?.firstName ||
-        (order as any).customer?.first_name ||
-        undefined,
-      customerFamilyName:
-        (order as any).customer?.lastName ||
-        (order as any).customer?.last_name ||
-        undefined,
-      title: "West Roxbury Framing",
-      message: "Thank you for your order. You can pay your invoice securely online.",
-      lines,
-    });
+    let result;
+    try {
+      result = await createAndSendInvoice({
+        locationId,
+        orderId: String(orderIdForInvoice),
+        kind,
+        depositPercent,
+        customerEmail,
+        customerGivenName:
+          (order as any).customer?.firstName ||
+          (order as any).customer?.first_name ||
+          undefined,
+        customerFamilyName:
+          (order as any).customer?.lastName ||
+          (order as any).customer?.last_name ||
+          undefined,
+        title: "West Roxbury Framing",
+        message: "Thank you for your order. You can pay your invoice securely online.",
+        lines,
+      });
+    } catch (createErr: any) {
+      // If Square says invoice already exists, search for it and return the link
+      if (createErr?.message?.includes("already exists")) {
+        try {
+          const { squareFetch } = await import("@/lib/square/client");
+          const searchResult = await squareFetch("/v2/invoices/search", {
+            method: "POST",
+            body: JSON.stringify({
+              query: {
+                filter: {
+                  invoice_number: { exact: invoiceNumber },
+                },
+              },
+              limit: 1,
+            }),
+          });
+          const found = searchResult?.invoices?.[0];
+          if (found?.public_url) {
+            return NextResponse.json({
+              ok: true,
+              invoiceId: found.id,
+              status: found.status,
+              publicUrl: found.public_url,
+              message: `Invoice (${kind}) already exists. Use the link below to open it.`,
+            });
+          }
+        } catch (searchErr) {
+          console.warn("Failed to fetch existing invoice after duplicate error:", searchErr);
+        }
+      }
+      throw createErr;
+    }
 
     try {
       await prisma.order.update({
