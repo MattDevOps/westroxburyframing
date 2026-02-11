@@ -4,6 +4,52 @@ import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
 import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
+/**
+ * GET /staff/api/customers?q=
+ * List + search customers
+ */
+export async function GET(req: Request) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const q = (url.searchParams.get("q") || "").trim();
+
+  const customers = await prisma.customer.findMany({
+    where: q
+      ? {
+          OR: [
+            { firstName: { contains: q, mode: "insensitive" } },
+            { lastName: { contains: q, mode: "insensitive" } },
+            { email: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q } },
+          ],
+        }
+      : undefined,
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      email: true,
+      preferredContact: true,
+      marketingOptIn: true,
+      createdAt: true,
+    },
+  });
+
+  return NextResponse.json({ customers });
+}
+
+/**
+ * POST /staff/api/customers
+ * Create / upsert customer
+ * (your original logic, unchanged)
+ */
 export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,7 +59,11 @@ export async function POST(req: Request) {
   const email = normalizeEmail(body.email);
   const marketing = Boolean(body.marketing_opt_in);
 
-  if (!phone || String(body.first_name || "").length < 1 || String(body.last_name || "").length < 1) {
+  if (
+    !phone ||
+    String(body.first_name || "").length < 1 ||
+    String(body.last_name || "").length < 1
+  ) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 

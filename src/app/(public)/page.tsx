@@ -82,7 +82,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-foreground/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            West Roxbury Framing and its owner, Moses Hasson, was one of a select few businesses in Boston to earn the Legacy Business Award, acknowledging long-standing businesses with historic significance and a commitment to the community.
+            West Roxbury Framing was one of a select few businesses in Boston to earn the Legacy Business Award, acknowledging long-standing businesses with historic significance and a commitment to the community.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
