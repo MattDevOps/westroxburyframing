@@ -30,9 +30,33 @@ export async function POST(req: Request, ctx: any) {
         specs: true,
       },
     });
-
     if (!order) {
       return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
+    }
+
+    const orderData = order as any;
+    const totalCents = order.totalAmount || 0;
+
+    // When sending "full" after deposit was paid, invoice only the remaining balance
+    let invoiceAmountCents = totalCents;
+    if (kind === "full" && orderData.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID" && orderData.squareInvoiceId) {
+      try {
+        const { getInvoice } = await import("@/lib/square/invoices");
+        const depositInvoice = await getInvoice(orderData.squareInvoiceId);
+        const depositRequest = depositInvoice?.payment_requests?.find((r: any) => r.request_type === "DEPOSIT");
+        const pct = depositRequest?.percentage_requested ? parseFloat(depositRequest.percentage_requested) : 50;
+        const depositPaidCents = Math.max(1, Math.round((totalCents * pct) / 100));
+        const balanceCents = totalCents - depositPaidCents;
+        if (balanceCents <= 0) {
+          return NextResponse.json(
+            { ok: false, error: "Balance already paid in full." },
+            { status: 400 }
+          );
+        }
+        invoiceAmountCents = balanceCents;
+      } catch (e) {
+        console.warn("Could not fetch deposit invoice for balance calc:", e);
+      }
     }
 
     const customerEmail =
@@ -47,23 +71,20 @@ export async function POST(req: Request, ctx: any) {
       );
     }
 
-    const totalCents = order.totalAmount || 0;
-
-    if (totalCents < 1) {
+    if (invoiceAmountCents < 1) {
       return NextResponse.json(
         { ok: false, error: "Order total must be at least $0.01 to create an invoice." },
         { status: 400 }
       );
     }
 
-    // For now, generate a simple invoice line from the order total.
-    // We will later expand this to detailed material + labor lines from specs.
+    // For now, generate a simple invoice line. When deposit was paid, invoice only the balance.
     const lines = [
       {
-        name: "Custom framing",
+        name: invoiceAmountCents < totalCents ? "Balance due (deposit paid)" : "Custom framing",
         quantity: "1",
         basePriceMoney: {
-          amount: totalCents,
+          amount: invoiceAmountCents,
           currency: "USD" as const,
         },
       },
