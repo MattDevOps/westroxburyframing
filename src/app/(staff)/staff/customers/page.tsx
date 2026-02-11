@@ -23,24 +23,36 @@ export default function CustomersPage() {
   async function load(search?: string) {
     setLoading(true);
     setErr(null);
+
     const query = (search ?? q).trim();
 
     try {
       const res = await fetch(`/staff/api/customers?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
+        credentials: "same-origin", // ensure cookie is included
       });
 
       const raw = await res.text();
+
+      // Try parse JSON but keep raw no matter what
       let data: any = null;
       try {
         data = raw ? JSON.parse(raw) : null;
       } catch {}
 
-      if (!res.ok) throw new Error(data?.error || raw || "Failed to load customers");
+      if (!res.ok) {
+        // show status + server message
+        const msg =
+          data?.error ||
+          (raw?.slice?.(0, 300) || "") ||
+          `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
 
       setRows(data?.customers || []);
     } catch (e: any) {
-      setErr(e?.message || "Error");
+      // This will catch true network failures too
+      setErr(e?.message || "Failed to fetch");
     } finally {
       setLoading(false);
     }
@@ -95,16 +107,17 @@ export default function CustomersPage() {
         <button
           onClick={() => {
             setQ("");
-            load("");
+            load(""); // Clear means: reload the full list
           }}
           className="rounded-xl border border-neutral-300 px-4 py-3 text-sm"
+          title="Clear search and reload all customers"
         >
           Clear
         </button>
       </div>
 
       {err ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 whitespace-pre-wrap">
           {err}
         </div>
       ) : null}
