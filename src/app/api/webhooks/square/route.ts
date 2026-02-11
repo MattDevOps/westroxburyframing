@@ -102,7 +102,10 @@ export async function POST(req: Request) {
       const amountFormatted = `$${(paymentAmount / 100).toFixed(2)}`;
 
       // Send email notification to staff
-      const staffEmail = process.env.STAFF_NOTIFICATIONS_EMAIL || process.env.EMAIL_FROM;
+      const staffEmail =
+        process.env.STAFF_NOTIFICATIONS_EMAIL ||
+        process.env.EMAIL_FROM ||
+        "jake@westroxburyframing.com";
       if (staffEmail) {
         await sendInvoicePaidNotification({
           to: staffEmail,
