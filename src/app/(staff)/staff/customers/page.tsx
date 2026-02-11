@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type Customer = {
@@ -84,11 +85,11 @@ export default function CustomersPage() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, email, phone…"
           className="w-full max-w-lg rounded-xl border border-neutral-300 bg-white/5 px-4 py-3 text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") load(q);
+          }}
         />
-        <button
-          onClick={() => load(q)}
-          className="rounded-xl bg-black text-white px-4 py-3 text-sm"
-        >
+        <button onClick={() => load(q)} className="rounded-xl bg-black text-white px-4 py-3 text-sm">
           Search
         </button>
         <button
@@ -125,9 +126,10 @@ export default function CustomersPage() {
           filtered.map((c) => {
             const name = `${c.firstName || ""} ${c.lastName || ""}`.trim() || "Unnamed";
             return (
-              <div
+              <Link
                 key={c.id}
-                className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200"
+                href={`/staff/customers/${c.id}`}
+                className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50"
               >
                 <div className="col-span-4 font-medium">{name}</div>
                 <div className="col-span-3 text-neutral-600">{c.email || "—"}</div>
@@ -138,7 +140,7 @@ export default function CustomersPage() {
                 <div className="col-span-1 text-right text-neutral-600">
                   {c.marketingOptIn ? "Yes" : "No"}
                 </div>
-              </div>
+              </Link>
             );
           })
         )}

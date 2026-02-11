@@ -25,7 +25,7 @@ function NavLink({
         "text-sm px-2 py-1 rounded-md transition",
         active
           ? "bg-neutral-900 text-white"
-          : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100",
+          : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
       ].join(" ")}
     >
       {children}
@@ -35,7 +35,7 @@ function NavLink({
 
 export default function StaffTopbar() {
   return (
-    <header className="border-b border-neutral-800 bg-black/95">
+    <header className="border-b border-neutral-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center">
@@ -57,7 +57,7 @@ export default function StaffTopbar() {
         </div>
 
         <form action="/staff/api/auth/logout" method="post">
-          <button className="text-sm rounded-xl border border-neutral-700 text-neutral-100 px-3 py-2 hover:bg-neutral-900">
+          <button className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-3 py-2 hover:bg-neutral-100">
             Log out
           </button>
         </form>

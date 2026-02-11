@@ -6,7 +6,7 @@ import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
 /**
  * GET /staff/api/customers?q=
- * List + search customers
+ * List + search customers (for Customers page)
  */
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -48,22 +48,18 @@ export async function GET(req: Request) {
 /**
  * POST /staff/api/customers
  * Create / upsert customer
- * (your original logic, unchanged)
  */
 export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
+
   const phone = normalizePhone(String(body.phone || ""));
   const email = normalizeEmail(body.email);
   const marketing = Boolean(body.marketing_opt_in);
 
-  if (
-    !phone ||
-    String(body.first_name || "").length < 1 ||
-    String(body.last_name || "").length < 1
-  ) {
+  if (!phone || String(body.first_name || "").length < 1 || String(body.last_name || "").length < 1) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
