@@ -74,7 +74,14 @@ export default function TestimonialsPage() {
       </section>
 
       {loading && <div className="text-center text-muted-foreground text-sm py-12">Loading reviews…</div>}
-      {!loading && data && "error" in data && <div className="text-center text-sm text-red-400 py-12">{data.error}</div>}
+      {!loading && data && "error" in data && (
+        <div className="text-center text-sm py-12 space-y-2">
+          <p className="text-red-400">{data.error}</p>
+          {"debug" in data && (data as { debug?: string }).debug && (
+            <p className="text-muted-foreground font-mono text-xs max-w-xl mx-auto">{(data as { debug: string }).debug}</p>
+          )}
+        </div>
+      )}
 
       {!loading && reviews.length > 0 && (
         <section className="py-24">

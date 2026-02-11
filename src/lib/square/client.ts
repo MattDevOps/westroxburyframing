@@ -6,6 +6,8 @@ const BASE =
 // Pin a version so behavior doesn't change unexpectedly.
 const SQUARE_VERSION = process.env.SQUARE_VERSION || "2025-03-19";
 
+import crypto from "crypto";
+
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -46,7 +48,7 @@ function summarizeSquareErrors(json: any): string | null {
   return parts.length ? parts.join(" | ") : null;
 }
 
-export async function squareFetch(path: string, init: RequestInit = {}) {
+export async function squareFetch<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   const token = process.env.SQUARE_ACCESS_TOKEN;
   if (!token) throw new Error("Missing SQUARE_ACCESS_TOKEN");
 
@@ -85,7 +87,7 @@ export async function squareFetch(path: string, init: RequestInit = {}) {
       // leave json null
     }
 
-    if (res.ok) return json;
+    if (res.ok) return json as T;
 
     const detail =
       summarizeSquareErrors(json) ||
@@ -137,4 +139,35 @@ export async function squareFetch(path: string, init: RequestInit = {}) {
         (reqBody ? ` | body=${reqBody}` : "")
     );
   }
+}
+
+function safeEqual(a: string, b: string) {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
+
+/**
+ * Verify Square webhook signature from `x-square-hmacsha256-signature`.
+ *
+ * Square computes:
+ *   signature = base64( HMAC_SHA256(signatureKey, notificationUrl + requestBody) )
+ */
+export function verifySquareWebhookSignature(opts: {
+  signatureKey: string;
+  notificationUrl: string;
+  requestBody: string;
+  signatureHeader: string | null;
+}) {
+  const header = (opts.signatureHeader || "").trim();
+  if (!header) return false;
+
+  const payload = `${opts.notificationUrl}${opts.requestBody}`;
+  const digest = crypto
+    .createHmac("sha256", opts.signatureKey)
+    .update(payload, "utf8")
+    .digest("base64");
+
+  return safeEqual(digest, header);
 }
