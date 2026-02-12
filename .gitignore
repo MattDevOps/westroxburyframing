@@ -2,8 +2,22 @@ node_modules
 .next
 dist
 out
+
+# Env and secrets - NEVER commit
 .env
+.env.*
+!.env.example
+!.env.example.square
 .env.local
-.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Keys and credentials
+*.pem
+*.key
+secrets/
+credentials/
+
 .DS_Store
 *.log

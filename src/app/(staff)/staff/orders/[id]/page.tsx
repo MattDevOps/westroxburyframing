@@ -40,6 +40,7 @@ function typeLabel(t: string) {
   if (t === "note") return "Note";
   if (t === "payment") return "Payment";
   if (t === "invoice_sent") return "Invoice";
+  if (t === "refund") return "Refund";
   return t;
 }
 
@@ -50,6 +51,7 @@ function typeBadge(t: string) {
   if (t === "note") return `${base} border-amber-700/40 text-amber-300 bg-amber-900/10`;
   if (t === "payment") return `${base} border-green-700/40 text-green-300 bg-green-900/10`;
   if (t === "invoice_sent") return `${base} border-purple-700/40 text-purple-300 bg-purple-900/10`;
+  if (t === "refund") return `${base} border-red-700/40 text-red-300 bg-red-900/10`;
   return `${base} border-neutral-600 text-neutral-200 bg-neutral-900/20`;
 }
 
@@ -63,6 +65,7 @@ export default function OrderDetailPage() {
 
   const [note, setNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [refunding, setRefunding] = useState<string | null>(null);
 
   async function refresh() {
     if (!id) return;
@@ -380,25 +383,103 @@ export default function OrderDetailPage() {
             </button>
           </div>
         )}
+
+        {((order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID") ||
+          (order.squareInvoiceStatus?.toUpperCase() === "PAID")) && (
+          <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
+            <button
+              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-600 hover:bg-neutral-50"
+              onClick={async () => {
+                if (!confirm("Mark this invoice as unpaid? This only updates our records, not Square.")) return;
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/invoice/mark-unpaid`, {
+                    method: "POST",
+                  });
+                  const raw = await res.text();
+                  let out: any = {};
+                  try { out = raw ? JSON.parse(raw) : {}; } catch {}
+                  if (!res.ok) { alert(out.error || raw || "Failed"); return; }
+                  await refresh();
+                } catch (e: any) { alert(e?.message || "Failed"); }
+              }}
+            >
+              Mark as unpaid
+            </button>
+            <span className="text-neutral-400">|</span>
+            <span className="text-neutral-600 font-medium">Refund:</span>
+            <button
+              className="rounded-lg border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50 disabled:opacity-50"
+              disabled={!!refunding}
+              onClick={async () => {
+                if (!confirm("Refund the deposit? This cannot be undone.")) return;
+                setRefunding("deposit");
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/refund`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ kind: "deposit" }),
+                  });
+                  const raw = await res.text();
+                  let out: any = {};
+                  try { out = raw ? JSON.parse(raw) : {}; } catch {}
+                  if (!res.ok) { alert(out.error || raw || "Refund failed"); return; }
+                  alert(out.totalRefundedFormatted ? `Refunded ${out.totalRefundedFormatted}` : "Refund complete");
+                  await fetch(`/staff/api/orders/${order.id}/invoice/sync`, { method: "POST" });
+                  await refresh();
+                } catch (e: any) { alert(e?.message || "Refund failed"); }
+                finally { setRefunding(null); }
+              }}
+            >
+              {refunding === "deposit" ? "Refunding…" : "Refund deposit"}
+            </button>
+            {order.squareInvoiceStatus?.toUpperCase() === "PAID" && (
+              <button
+                className="rounded-lg border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                disabled={!!refunding}
+                onClick={async () => {
+                  if (!confirm("Refund the full invoice (or balance)? This cannot be undone.")) return;
+                  setRefunding("full");
+                  try {
+                    const res = await fetch(`/staff/api/orders/${order.id}/refund`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ kind: "full" }),
+                    });
+                    const raw = await res.text();
+                    let out: any = {};
+                    try { out = raw ? JSON.parse(raw) : {}; } catch {}
+                    if (!res.ok) { alert(out.error || raw || "Refund failed"); return; }
+                    alert(out.totalRefundedFormatted ? `Refunded ${out.totalRefundedFormatted}` : "Refund complete");
+                    await fetch(`/staff/api/orders/${order.id}/invoice/sync`, { method: "POST" });
+                    await refresh();
+                  } catch (e: any) { alert(e?.message || "Refund failed"); }
+                  finally { setRefunding(null); }
+                }}
+              >
+                {refunding === "full" ? "Refunding…" : "Refund full invoice"}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Edit modal (unchanged) */}
+      {/* Edit modal */}
       {isEditing && editData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Edit Order</h2>
-              <button className="text-neutral-400 hover:text-white" onClick={() => setIsEditing(false)}>
+              <h2 className="text-xl font-semibold text-neutral-900">Edit Order</h2>
+              <button className="text-neutral-500 hover:text-neutral-900" onClick={() => setIsEditing(false)}>
                 ✕
               </button>
             </div>
 
-            <div className="border-b border-neutral-700 pb-4 mb-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Customer Information</h3>
+            <div className="border-b border-neutral-200 pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-3">Customer Information</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="First Name">
                   <input
-                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
                     value={editData.customerFirstName}
                     onChange={(e) => setEditData({ ...editData, customerFirstName: e.target.value })}
                     placeholder="First name"
@@ -407,7 +488,7 @@ export default function OrderDetailPage() {
 
                 <Field label="Last Name">
                   <input
-                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
                     value={editData.customerLastName}
                     onChange={(e) => setEditData({ ...editData, customerLastName: e.target.value })}
                     placeholder="Last name"
@@ -416,7 +497,7 @@ export default function OrderDetailPage() {
 
                 <Field label="Phone">
                   <input
-                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
                     value={editData.customerPhone}
                     onChange={(e) => setEditData({ ...editData, customerPhone: e.target.value })}
                     placeholder="Phone number"
@@ -425,7 +506,7 @@ export default function OrderDetailPage() {
 
                 <Field label="Email">
                   <input
-                    className="rounded-xl border border-neutral-700 bg-neutral-950/40 px-3 py-2 text-sm text-neutral-100"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
                     type="email"
                     value={editData.customerEmail}
                     onChange={(e) => setEditData({ ...editData, customerEmail: e.target.value })}
@@ -435,20 +516,18 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            <div className="border-b border-neutral-700 pb-4 mb-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Order Information</h3>
+            <div className="border-b border-neutral-200 pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-3">Order Information</h3>
             </div>
-
-            {/* (Keep your existing modal fields as-is) */}
 
             <div className="flex gap-2 justify-end pt-4">
               <button
-                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900"
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
               </button>
-              <button className="rounded-xl bg-white text-black px-4 py-2 text-sm hover:bg-neutral-200" onClick={saveEdit}>
+              <button className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800" onClick={saveEdit}>
                 Save Changes
               </button>
             </div>
