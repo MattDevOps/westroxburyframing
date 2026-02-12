@@ -234,7 +234,8 @@ export default function CustomerDetailPage({
           ) : (
             <div className="space-y-2">
               {orders.map((o) => {
-                const total = Number(o.totalAmount ?? 0);
+                const totalCents = Number(o.totalAmount ?? 0);
+                const totalDollars = totalCents / 100;
 
                 return (
                   <a
@@ -248,7 +249,7 @@ export default function CustomerDetailPage({
                         {o.status || ""}
                       </div>
                       <div className="text-sm text-neutral-600">
-                        ${total.toFixed(2)}
+                        ${totalDollars.toFixed(2)}
                       </div>
                     </div>
                     <div className="text-xs text-neutral-500 mt-1">
