@@ -31,6 +31,17 @@ export default function OrderForm() {
   const [width, setW] = useState<number>(0);
   const [height, setH] = useState<number>(0);
 
+  // Specs
+  const [frameCode, setFrameCode] = useState("");
+  const [frameVendor, setFrameVendor] = useState("");
+  const [mat1Code, setMat1Code] = useState("");
+  const [mat2Code, setMat2Code] = useState("");
+  const [glassType, setGlassType] = useState("");
+  const [mountType, setMountType] = useState("");
+  const [backingType, setBackingType] = useState("");
+  const [spacers, setSpacers] = useState(false);
+  const [specialtyType, setSpecialtyType] = useState("");
+
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
 
@@ -76,7 +87,17 @@ export default function OrderForm() {
           tax_cents: Math.round(tax * 100),
           total_cents: Math.round(total * 100),
         },
-        specs: {},
+        specs: {
+          frame_code: frameCode || null,
+          frame_vendor: frameVendor || null,
+          mat_1_code: mat1Code || null,
+          mat_2_code: mat2Code || null,
+          glass_type: glassType || null,
+          mount_type: mountType || null,
+          backing_type: backingType || null,
+          spacers,
+          specialty_type: specialtyType || null,
+        },
       }),
     });
 
@@ -181,6 +202,58 @@ export default function OrderForm() {
               onChange={(e) => setH(Number(e.target.value))}
             />
           </Field>
+        </div>
+      </div>
+
+      {/* Specs */}
+      <div className="space-y-2">
+        <div className="text-lg font-semibold">Frame Specs</div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Frame Code" hint="Moulding code / SKU">
+            <input className="rounded-xl border p-3" placeholder="e.g. LJ-2028" value={frameCode} onChange={(e) => setFrameCode(e.target.value)} />
+          </Field>
+          <Field label="Frame Vendor" hint="Larson-Juhl, Roma, etc.">
+            <input className="rounded-xl border p-3" placeholder="Vendor" value={frameVendor} onChange={(e) => setFrameVendor(e.target.value)} />
+          </Field>
+          <Field label="Mat 1 Code">
+            <input className="rounded-xl border p-3" placeholder="Primary mat" value={mat1Code} onChange={(e) => setMat1Code(e.target.value)} />
+          </Field>
+          <Field label="Mat 2 Code">
+            <input className="rounded-xl border p-3" placeholder="Secondary mat (optional)" value={mat2Code} onChange={(e) => setMat2Code(e.target.value)} />
+          </Field>
+          <Field label="Glass Type">
+            <select className="rounded-xl border p-3" value={glassType} onChange={(e) => setGlassType(e.target.value)}>
+              <option value="">Select glass...</option>
+              <option value="regular">Regular Clear</option>
+              <option value="non-glare">Non-Glare</option>
+              <option value="uv">UV Protection</option>
+              <option value="museum">Museum Glass</option>
+              <option value="acrylic">Acrylic / Plexi</option>
+              <option value="optium">Optium Museum Acrylic</option>
+              <option value="none">None</option>
+            </select>
+          </Field>
+          <Field label="Mount Type">
+            <select className="rounded-xl border p-3" value={mountType} onChange={(e) => setMountType(e.target.value)}>
+              <option value="">Select mount...</option>
+              <option value="dry">Dry Mount</option>
+              <option value="float">Float Mount</option>
+              <option value="hinge">Hinge Mount</option>
+              <option value="shadow">Shadow Box</option>
+              <option value="stretch">Canvas Stretch</option>
+              <option value="none">None</option>
+            </select>
+          </Field>
+          <Field label="Backing Type">
+            <input className="rounded-xl border p-3" placeholder="Foam core, coroplast, etc." value={backingType} onChange={(e) => setBackingType(e.target.value)} />
+          </Field>
+          <Field label="Specialty Type">
+            <input className="rounded-xl border p-3" placeholder="Conservation, archival, etc." value={specialtyType} onChange={(e) => setSpecialtyType(e.target.value)} />
+          </Field>
+          <div className="flex items-center gap-2 pt-6">
+            <input type="checkbox" checked={spacers} onChange={(e) => setSpacers(e.target.checked)} />
+            <span className="text-sm font-medium text-neutral-800">Spacers</span>
+          </div>
         </div>
       </div>
 

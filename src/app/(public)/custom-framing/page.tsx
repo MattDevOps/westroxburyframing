@@ -1,0 +1,316 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Frame, Upload, CheckCircle, ArrowRight } from "lucide-react";
+
+const ITEM_TYPES = [
+    { value: "art", label: "Art / Print" },
+    { value: "photo", label: "Photograph" },
+    { value: "diploma", label: "Diploma / Certificate" },
+    { value: "object", label: "Object / Shadowbox" },
+    { value: "memorabilia", label: "Memorabilia / Jersey" },
+    { value: "mirror", label: "Mirror" },
+    { value: "canvas", label: "Canvas" },
+    { value: "restoration", label: "Restoration / Repair" },
+    { value: "other", label: "Other" },
+];
+
+export default function CustomFramingPage() {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [itemType, setItemType] = useState("");
+    const [description, setDescription] = useState("");
+    const [notes, setNotes] = useState("");
+    const [optIn, setOptIn] = useState(false);
+
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<{ orderNumber: string } | null>(null);
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError(null);
+        setSubmitting(true);
+
+        try {
+            const res = await fetch("/api/public/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    phone,
+                    item_type: itemType,
+                    description,
+                    notes,
+                    marketing_opt_in: optIn,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Something went wrong. Please try again.");
+                return;
+            }
+
+            setSuccess({ orderNumber: data.order_number });
+        } catch {
+            setError("Unable to submit. Please try again or call us at 617-327-3890.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    if (success) {
+        return (
+            <div className="min-h-screen bg-background">
+                <section className="pt-32 pb-16 bg-secondary">
+                    <div className="max-w-7xl mx-auto px-6 text-center">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <CheckCircle size={64} className="text-gold mx-auto mb-6" />
+                            <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
+                                Request <span className="text-gold">Received!</span>
+                            </h1>
+                            <p className="text-muted-foreground max-w-2xl mx-auto mb-2">
+                                Thank you for your custom framing request. Your order reference is:
+                            </p>
+                            <p className="text-gold text-2xl font-bold mb-6">{success.orderNumber}</p>
+                            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+                                We&apos;ll review your request and reach out to discuss pricing and options.
+                                Most orders are reviewed within one business day.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <Link
+                                    href="/"
+                                    className="px-8 py-3.5 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors"
+                                >
+                                    Back to Home
+                                </Link>
+                                <Link
+                                    href="/contact"
+                                    className="px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
+                                >
+                                    Contact Us
+                                </Link>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Header */}
+            <section className="pt-32 pb-16 bg-secondary">
+                <div className="max-w-7xl mx-auto px-6 text-center">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="font-serif text-5xl md:text-6xl font-bold text-foreground mb-4"
+                    >
+                        Custom <span className="text-gold">Framing</span>
+                    </motion.h1>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Tell us about your framing project and we&apos;ll get back to you with a personalized quote.
+                        No obligation — just expert advice from Boston&apos;s trusted framers since 1981.
+                    </p>
+                </div>
+            </section>
+
+            {/* Form */}
+            <section className="py-24">
+                <div className="max-w-3xl mx-auto px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mb-12"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <Frame size={24} className="text-gold" />
+                            <h2 className="font-serif text-2xl font-bold text-foreground">
+                                How It <span className="text-gold">Works</span>
+                            </h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            {[
+                                { step: "1", title: "Describe", desc: "Tell us what you'd like framed" },
+                                { step: "2", title: "We Quote", desc: "We review and send you a price" },
+                                { step: "3", title: "We Frame", desc: "Drop off or visit for final details" },
+                            ].map((s) => (
+                                <div key={s.step} className="flex items-start gap-3">
+                                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-sm font-bold">
+                                        {s.step}
+                                    </span>
+                                    <div>
+                                        <h3 className="text-foreground font-semibold text-sm">{s.title}</h3>
+                                        <p className="text-muted-foreground text-sm">{s.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    <motion.form
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        onSubmit={handleSubmit}
+                        className="bg-card rounded-sm border border-border p-8 space-y-8"
+                    >
+                        {/* Contact Info */}
+                        <div>
+                            <h3 className="font-serif text-xl text-foreground mb-4">Your Information</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">First Name *</label>
+                                    <input
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required
+                                        placeholder="First name"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Last Name *</label>
+                                    <input
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required
+                                        placeholder="Last name"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Email</label>
+                                    <input
+                                        type="email"
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="you@email.com"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Phone</label>
+                                    <input
+                                        type="tel"
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="617-555-1234"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-muted-foreground text-xs mt-2">* Phone or email required so we can reach you.</p>
+                        </div>
+
+                        {/* Item Details */}
+                        <div>
+                            <h3 className="font-serif text-xl text-foreground mb-4">What Are You Framing?</h3>
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Item Type *</label>
+                                    <select
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                        value={itemType}
+                                        onChange={(e) => setItemType(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">Select what you&apos;re framing...</option>
+                                        {ITEM_TYPES.map((t) => (
+                                            <option key={t.value} value={t.value}>
+                                                {t.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Description</label>
+                                    <textarea
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors min-h-[100px] resize-y"
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        placeholder="Tell us about your piece — size, condition, any specific framing preferences, etc."
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-foreground/70">Additional Notes</label>
+                                    <textarea
+                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors min-h-[80px] resize-y"
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        placeholder="Timeline, budget considerations, questions, etc."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Opt-in */}
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="mt-0.5 accent-[hsl(45,60%,55%)]"
+                                checked={optIn}
+                                onChange={(e) => setOptIn(e.target.checked)}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                                Keep me in the loop! Sign me up for occasional emails about framing tips, seasonal specials, and shop updates.
+                            </span>
+                        </label>
+
+                        {error && (
+                            <div className="rounded-sm border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="w-full px-8 py-4 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {submitting ? (
+                                "Submitting..."
+                            ) : (
+                                <>
+                                    Submit Framing Request
+                                    <ArrowRight size={16} />
+                                </>
+                            )}
+                        </button>
+                    </motion.form>
+
+                    <div className="mt-8 text-center">
+                        <p className="text-muted-foreground text-sm">
+                            Prefer to talk in person?{" "}
+                            <Link href="/book" className="text-gold hover:text-gold-light underline underline-offset-2">
+                                Book a free consultation
+                            </Link>{" "}
+                            or{" "}
+                            <Link href="/contact" className="text-gold hover:text-gold-light underline underline-offset-2">
+                                contact us directly
+                            </Link>
+                            .
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}

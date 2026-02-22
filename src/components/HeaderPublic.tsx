@@ -11,6 +11,7 @@ const navLinks = [
   { name: "Home", path: "/" },
   { name: "About Us", path: "/about" },
   { name: "Services", path: "/services" },
+  { name: "Custom Framing", path: "/custom-framing" },
   { name: "Framed Art", path: "/framed-art" },
   { name: "Repair & Restoration", path: "/restoration" },
   { name: "Testimonials", path: "/testimonials" },
@@ -41,11 +42,10 @@ export default function HeaderPublic() {
             <Link
               key={link.path}
               href={link.path}
-              className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${
-                pathname === link.path
+              className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${pathname === link.path
                   ? "text-gold border-b border-gold pb-0.5"
                   : "text-foreground/70"
-              }`}
+                }`}
             >
               {link.name}
             </Link>
@@ -81,9 +81,8 @@ export default function HeaderPublic() {
                   key={link.path}
                   href={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${
-                    pathname === link.path ? "text-gold" : "text-foreground/70"
-                  }`}
+                  className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${pathname === link.path ? "text-gold" : "text-foreground/70"
+                    }`}
                 >
                   {link.name}
                 </Link>

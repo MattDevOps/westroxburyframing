@@ -135,3 +135,42 @@ West Roxbury, MA`;
   }
   return result;
 }
+
+export async function sendNewWebLeadNotification(params: {
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  itemType: string;
+  description: string;
+  notes: string;
+}) {
+  const to =
+    process.env.STAFF_NOTIFICATIONS_EMAIL || "jake@westroxburyframing.com";
+  const subject = `New Web Order: ${params.orderNumber} from ${params.customerName}`;
+  const text = `New Custom Framing Request (Web Lead)
+
+Order: ${params.orderNumber}
+Customer: ${params.customerName}
+Email: ${params.customerEmail}
+Phone: ${params.customerPhone}
+
+Item Type: ${params.itemType}
+Description: ${params.description}
+Notes: ${params.notes}
+
+Log in to the staff app to review and price this order.
+
+— West Roxbury Framing Website`;
+
+  const result = await sendViaPostmark({
+    to,
+    from: getFrom(),
+    subject,
+    text,
+  });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to, subject, text });
+  }
+  return result;
+}

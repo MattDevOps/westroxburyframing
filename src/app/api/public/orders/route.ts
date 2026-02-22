@@ -1,0 +1,136 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
+import { syncMailchimpCustomer } from "@/lib/mailchimp";
+import { sendNewWebLeadNotification } from "@/lib/email";
+
+/**
+ * POST /api/public/orders
+ * Public-facing order intake (web leads). No auth required.
+ */
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+
+        const firstName = (body.first_name ?? "").toString().trim();
+        const lastName = (body.last_name ?? "").toString().trim();
+        const phone = normalizePhone(body.phone ?? "");
+        const email = normalizeEmail(body.email);
+        const itemType = (body.item_type ?? "").toString().trim();
+        const description = (body.description ?? "").toString().trim();
+        const notes = (body.notes ?? "").toString().trim();
+        const marketing = Boolean(body.marketing_opt_in);
+
+        if (!firstName || !lastName || !itemType) {
+            return NextResponse.json(
+                { error: "Name and item type are required." },
+                { status: 400 },
+            );
+        }
+
+        if (!phone && !email) {
+            return NextResponse.json(
+                { error: "Please provide a phone number or email so we can reach you." },
+                { status: 400 },
+            );
+        }
+
+        // Upsert customer by phone (or create new if no phone, keyed by generated placeholder)
+        const customerPhone = phone || `web-${Date.now()}`;
+        const customer = await prisma.customer.upsert({
+            where: { phone: customerPhone },
+            create: {
+                firstName,
+                lastName,
+                phone: customerPhone,
+                email,
+                preferredContact: "email",
+                marketingOptIn: marketing,
+                marketingOptInAt: marketing ? new Date() : null,
+            },
+            update: {
+                firstName,
+                lastName,
+                email: email || undefined,
+                marketingOptIn: marketing,
+                marketingOptInAt: marketing ? new Date() : undefined,
+            },
+        });
+
+        // Sync to Mailchimp if opted in
+        if (marketing && email) {
+            syncMailchimpCustomer(customer).catch(() => null);
+        }
+
+        // Generate order number
+        const last = await prisma.order.findFirst({
+            orderBy: { createdAt: "desc" },
+            select: { orderNumber: true },
+        });
+        const orderNumber = nextOrderNumber(last?.orderNumber);
+
+        // Find a staff user to use as creator (first admin)
+        const adminUser = await prisma.user.findFirst({
+            where: { role: "admin" },
+            select: { id: true },
+        });
+
+        if (!adminUser) {
+            return NextResponse.json(
+                { error: "System not configured. Please contact us directly." },
+                { status: 500 },
+            );
+        }
+
+        // Create order
+        const order = await prisma.order.create({
+            data: {
+                orderNumber,
+                customerId: customer.id,
+                intakeChannel: "web_lead",
+                itemType,
+                itemDescription: description || null,
+                notesCustomer: notes || null,
+                subtotalAmount: 0,
+                taxAmount: 0,
+                totalAmount: 0,
+                currency: "USD",
+                paidInFull: false,
+                createdByUserId: adminUser.id,
+            },
+        });
+
+        // Log activity
+        await prisma.activityLog.create({
+            data: {
+                entityType: "order",
+                entityId: order.id,
+                orderId: order.id,
+                action: "web_lead_submitted",
+                metadata: { orderNumber, customerName: `${firstName} ${lastName}` },
+            },
+        });
+
+        // Notify staff via email
+        sendNewWebLeadNotification({
+            orderNumber,
+            customerName: `${firstName} ${lastName}`,
+            customerEmail: email || "N/A",
+            customerPhone: phone || "N/A",
+            itemType,
+            description: description || "N/A",
+            notes: notes || "N/A",
+        }).catch((err) => console.error("Failed to send web lead notification:", err));
+
+        return NextResponse.json({
+            ok: true,
+            order_number: orderNumber,
+        });
+    } catch (error) {
+        console.error("Error creating web lead order:", error);
+        return NextResponse.json(
+            { error: "Something went wrong. Please try again or contact us directly." },
+            { status: 500 },
+        );
+    }
+}

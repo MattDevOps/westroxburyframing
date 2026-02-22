@@ -50,9 +50,11 @@ export default function StaffTopbar() {
           </Link>
 
           <nav className="flex gap-2 text-neutral-200">
+            <NavLink href="/staff/dashboard">Dashboard</NavLink>
             <NavLink href="/staff/orders">Orders</NavLink>
             <NavLink href="/staff/orders/new">New order</NavLink>
             <NavLink href="/staff/customers">Customers</NavLink>
+            <NavLink href="/staff/users">Users</NavLink>
           </nav>
         </div>
 

@@ -39,9 +39,21 @@ export default function OrdersBoardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("active");
   const [syncing, setSyncing] = useState(false);
 
+  // Search & filter state
+  const [searchQ, setSearchQ] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [filterItemType, setFilterItemType] = useState("");
+
   async function load() {
     setErr(null);
-    const res = await fetch("/staff/api/orders?limit=200", { cache: "no-store" });
+    const params = new URLSearchParams({ limit: "200" });
+    if (searchQ.trim()) params.set("q", searchQ.trim());
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
+    if (filterItemType) params.set("item_type", filterItemType);
+
+    const res = await fetch(`/staff/api/orders?${params}`, { cache: "no-store" });
     const out = await res.json();
     if (!res.ok) {
       setErr(out.error || "Failed to load orders");
@@ -54,7 +66,7 @@ export default function OrdersBoardPage() {
     load();
     const t = setInterval(load, 8000);
     return () => clearInterval(t);
-  }, []);
+  }, [searchQ, dateFrom, dateTo, filterItemType]);
 
   const [draggedOrder, setDraggedOrder] = useState<OrderCard | null>(null);
 
@@ -166,25 +178,81 @@ export default function OrdersBoardPage() {
 
       {err ? <div className="text-sm text-red-400">{err}</div> : null}
 
+      {/* Search & Filters */}
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            placeholder="Search orders, customers, phone…"
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">From</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">To</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">Item type</label>
+          <select
+            value={filterItemType}
+            onChange={(e) => setFilterItemType(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          >
+            <option value="">All types</option>
+            <option value="art">Art / Print</option>
+            <option value="photo">Photo</option>
+            <option value="diploma">Diploma / Certificate</option>
+            <option value="object">Object / Shadowbox</option>
+            <option value="memorabilia">Memorabilia / Jersey</option>
+            <option value="mirror">Mirror</option>
+            <option value="canvas">Canvas</option>
+            <option value="restoration">Restoration</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        {(searchQ || dateFrom || dateTo || filterItemType) && (
+          <button
+            onClick={() => { setSearchQ(""); setDateFrom(""); setDateTo(""); setFilterItemType(""); }}
+            className="rounded-xl border border-neutral-300 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-2 border-b border-neutral-300">
         <button
           onClick={() => setActiveTab("active")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "active"
-              ? "text-neutral-900 border-b-2 border-neutral-900"
-              : "text-neutral-600 hover:text-neutral-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "active"
+            ? "text-neutral-900 border-b-2 border-neutral-900"
+            : "text-neutral-600 hover:text-neutral-900"
+            }`}
         >
           Active Orders
         </button>
         <button
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "all"
-              ? "text-neutral-900 border-b-2 border-neutral-900"
-              : "text-neutral-600 hover:text-neutral-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "all"
+            ? "text-neutral-900 border-b-2 border-neutral-900"
+            : "text-neutral-600 hover:text-neutral-900"
+            }`}
         >
           All Orders
         </button>
@@ -194,11 +262,10 @@ export default function OrdersBoardPage() {
         {currentColumns.map((col) => (
           <div
             key={col.key}
-            className={`rounded-2xl border p-4 transition-colors ${
-              draggedOrder && draggedOrder.status !== col.key
-                ? "border-blue-600 bg-blue-950/20"
-                : "border-neutral-800 bg-neutral-950/30"
-            }`}
+            className={`rounded-2xl border p-4 transition-colors ${draggedOrder && draggedOrder.status !== col.key
+              ? "border-blue-600 bg-blue-950/20"
+              : "border-neutral-800 bg-neutral-950/30"
+              }`}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, col.key)}
           >
@@ -211,11 +278,10 @@ export default function OrdersBoardPage() {
                   draggable
                   onDragStart={(e) => handleDragStart(e, o)}
                   onDragEnd={handleDragEnd}
-                  className={`rounded-2xl border p-4 transition-all overflow-hidden cursor-move ${
-                    draggedOrder?.id === o.id
-                      ? "opacity-50 border-blue-500 bg-blue-950/20"
-                      : "border-neutral-800 bg-neutral-950/40 hover:bg-neutral-900/40 hover:border-neutral-700"
-                  }`}
+                  className={`rounded-2xl border p-4 transition-all overflow-hidden cursor-move ${draggedOrder?.id === o.id
+                    ? "opacity-50 border-blue-500 bg-blue-950/20"
+                    : "border-neutral-800 bg-neutral-950/40 hover:bg-neutral-900/40 hover:border-neutral-700"
+                    }`}
                 >
                   <a
                     href={`/staff/orders/${o.id}`}

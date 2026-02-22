@@ -117,7 +117,7 @@ export default function OrderDetailPage() {
       let out: any = null;
       try {
         out = raw ? JSON.parse(raw) : null;
-      } catch {}
+      } catch { }
 
       if (!res.ok) {
         alert(out?.error || raw || "Failed to add note");
@@ -263,6 +263,132 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {/* Specs */}
+      {order.specs && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+          <div className="text-neutral-900 font-semibold">Frame Specs</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+            {order.specs.frameCode && (
+              <div><span className="font-medium text-neutral-600">Frame:</span> <span className="text-neutral-900">{order.specs.frameCode}</span></div>
+            )}
+            {order.specs.frameVendor && (
+              <div><span className="font-medium text-neutral-600">Vendor:</span> <span className="text-neutral-900">{order.specs.frameVendor}</span></div>
+            )}
+            {order.specs.mat1Code && (
+              <div><span className="font-medium text-neutral-600">Mat 1:</span> <span className="text-neutral-900">{order.specs.mat1Code}</span></div>
+            )}
+            {order.specs.mat2Code && (
+              <div><span className="font-medium text-neutral-600">Mat 2:</span> <span className="text-neutral-900">{order.specs.mat2Code}</span></div>
+            )}
+            {order.specs.glassType && (
+              <div><span className="font-medium text-neutral-600">Glass:</span> <span className="text-neutral-900">{order.specs.glassType}</span></div>
+            )}
+            {order.specs.mountType && (
+              <div><span className="font-medium text-neutral-600">Mount:</span> <span className="text-neutral-900">{order.specs.mountType}</span></div>
+            )}
+            {order.specs.backingType && (
+              <div><span className="font-medium text-neutral-600">Backing:</span> <span className="text-neutral-900">{order.specs.backingType}</span></div>
+            )}
+            {order.specs.spacers && (
+              <div><span className="font-medium text-neutral-600">Spacers:</span> <span className="text-neutral-900">Yes</span></div>
+            )}
+            {order.specs.specialtyType && (
+              <div><span className="font-medium text-neutral-600">Specialty:</span> <span className="text-neutral-900">{order.specs.specialtyType}</span></div>
+            )}
+            {!order.specs.frameCode && !order.specs.glassType && !order.specs.mountType && !order.specs.mat1Code && (
+              <div className="col-span-full text-neutral-500">No specs entered yet.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Photos */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-neutral-900 font-semibold">Photos</div>
+          <label className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 cursor-pointer">
+            Upload Photo
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={async (e) => {
+                const files = e.target.files;
+                if (!files) return;
+                for (const file of Array.from(files)) {
+                  if (file.size > 5 * 1024 * 1024) {
+                    alert(`File ${file.name} is too large (max 5MB)`);
+                    continue;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const dataUrl = reader.result as string;
+                    try {
+                      const res = await fetch(`/staff/api/orders/${order.id}/photos`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ url: dataUrl, caption: file.name }),
+                      });
+                      if (!res.ok) {
+                        const out = await res.json().catch(() => ({}));
+                        alert(out.error || "Upload failed");
+                      }
+                      await refresh();
+                    } catch {
+                      alert("Upload failed");
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+
+        {(!order.photos || order.photos.length === 0) ? (
+          <div className="text-sm text-neutral-500">No photos uploaded yet.</div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {order.photos.map((p: any) => (
+              <div key={p.id} className="relative group rounded-lg overflow-hidden border border-neutral-200">
+                <img
+                  src={p.url}
+                  alt={p.caption || "Order photo"}
+                  className="w-full aspect-square object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    className="rounded-lg bg-red-600 text-white px-3 py-1.5 text-xs"
+                    onClick={async () => {
+                      if (!confirm("Delete this photo?")) return;
+                      try {
+                        await fetch(`/staff/api/orders/${order.id}/photos`, {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ photo_id: p.id }),
+                        });
+                        await refresh();
+                      } catch {
+                        alert("Failed to delete photo");
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+                {p.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-2 py-1 truncate">
+                    {p.caption}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Activity timeline (A) */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -325,13 +451,12 @@ export default function OrderDetailPage() {
           <div className="text-neutral-900 font-semibold">Payment</div>
           {order.squareInvoiceId && (
             <span
-              className={`text-sm px-2 py-1 rounded-lg border ${
-                order.squareInvoiceStatus?.toUpperCase() === "PAID"
-                  ? "border-emerald-300 text-emerald-700 bg-emerald-50"
-                  : order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID"
-                    ? "border-blue-300 text-blue-700 bg-blue-50"
-                    : "border-amber-300 text-amber-700 bg-amber-50"
-              }`}
+              className={`text-sm px-2 py-1 rounded-lg border ${order.squareInvoiceStatus?.toUpperCase() === "PAID"
+                ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                : order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID"
+                  ? "border-blue-300 text-blue-700 bg-blue-50"
+                  : "border-amber-300 text-amber-700 bg-amber-50"
+                }`}
             >
               {order.squareInvoiceStatus?.toUpperCase() === "PAID"
                 ? "Paid"
@@ -368,7 +493,7 @@ export default function OrderDetailPage() {
                   let out: any = {};
                   try {
                     out = raw ? JSON.parse(raw) : {};
-                  } catch {}
+                  } catch { }
                   if (!res.ok) {
                     alert(out.error || raw || `Sync failed (${res.status})`);
                     return;
@@ -386,68 +511,42 @@ export default function OrderDetailPage() {
 
         {((order.squareInvoiceStatus?.toUpperCase() === "PARTIALLY_PAID") ||
           (order.squareInvoiceStatus?.toUpperCase() === "PAID")) && (
-          <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
-            <button
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-600 hover:bg-neutral-50"
-              onClick={async () => {
-                if (!confirm("Mark this invoice as unpaid? This only updates our records, not Square.")) return;
-                try {
-                  const res = await fetch(`/staff/api/orders/${order.id}/invoice/mark-unpaid`, {
-                    method: "POST",
-                  });
-                  const raw = await res.text();
-                  let out: any = {};
-                  try { out = raw ? JSON.parse(raw) : {}; } catch {}
-                  if (!res.ok) { alert(out.error || raw || "Failed"); return; }
-                  await refresh();
-                } catch (e: any) { alert(e?.message || "Failed"); }
-              }}
-            >
-              Mark as unpaid
-            </button>
-            <span className="text-neutral-400">|</span>
-            <span className="text-neutral-600 font-medium">Refund:</span>
-            <button
-              className="rounded-lg border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50 disabled:opacity-50"
-              disabled={!!refunding}
-              onClick={async () => {
-                if (!confirm("Refund the deposit? This cannot be undone.")) return;
-                setRefunding("deposit");
-                try {
-                  const res = await fetch(`/staff/api/orders/${order.id}/refund`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ kind: "deposit" }),
-                  });
-                  const raw = await res.text();
-                  let out: any = {};
-                  try { out = raw ? JSON.parse(raw) : {}; } catch {}
-                  if (!res.ok) { alert(out.error || raw || "Refund failed"); return; }
-                  alert(out.totalRefundedFormatted ? `Refunded ${out.totalRefundedFormatted}` : "Refund complete");
-                  await fetch(`/staff/api/orders/${order.id}/invoice/sync`, { method: "POST" });
-                  await refresh();
-                } catch (e: any) { alert(e?.message || "Refund failed"); }
-                finally { setRefunding(null); }
-              }}
-            >
-              {refunding === "deposit" ? "Refunding…" : "Refund deposit"}
-            </button>
-            {order.squareInvoiceStatus?.toUpperCase() === "PAID" && (
+            <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
+              <button
+                className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-600 hover:bg-neutral-50"
+                onClick={async () => {
+                  if (!confirm("Mark this invoice as unpaid? This only updates our records, not Square.")) return;
+                  try {
+                    const res = await fetch(`/staff/api/orders/${order.id}/invoice/mark-unpaid`, {
+                      method: "POST",
+                    });
+                    const raw = await res.text();
+                    let out: any = {};
+                    try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                    if (!res.ok) { alert(out.error || raw || "Failed"); return; }
+                    await refresh();
+                  } catch (e: any) { alert(e?.message || "Failed"); }
+                }}
+              >
+                Mark as unpaid
+              </button>
+              <span className="text-neutral-400">|</span>
+              <span className="text-neutral-600 font-medium">Refund:</span>
               <button
                 className="rounded-lg border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50 disabled:opacity-50"
                 disabled={!!refunding}
                 onClick={async () => {
-                  if (!confirm("Refund the full invoice (or balance)? This cannot be undone.")) return;
-                  setRefunding("full");
+                  if (!confirm("Refund the deposit? This cannot be undone.")) return;
+                  setRefunding("deposit");
                   try {
                     const res = await fetch(`/staff/api/orders/${order.id}/refund`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ kind: "full" }),
+                      body: JSON.stringify({ kind: "deposit" }),
                     });
                     const raw = await res.text();
                     let out: any = {};
-                    try { out = raw ? JSON.parse(raw) : {}; } catch {}
+                    try { out = raw ? JSON.parse(raw) : {}; } catch { }
                     if (!res.ok) { alert(out.error || raw || "Refund failed"); return; }
                     alert(out.totalRefundedFormatted ? `Refunded ${out.totalRefundedFormatted}` : "Refund complete");
                     await fetch(`/staff/api/orders/${order.id}/invoice/sync`, { method: "POST" });
@@ -456,11 +555,37 @@ export default function OrderDetailPage() {
                   finally { setRefunding(null); }
                 }}
               >
-                {refunding === "full" ? "Refunding…" : "Refund full invoice"}
+                {refunding === "deposit" ? "Refunding…" : "Refund deposit"}
               </button>
-            )}
-          </div>
-        )}
+              {order.squareInvoiceStatus?.toUpperCase() === "PAID" && (
+                <button
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  disabled={!!refunding}
+                  onClick={async () => {
+                    if (!confirm("Refund the full invoice (or balance)? This cannot be undone.")) return;
+                    setRefunding("full");
+                    try {
+                      const res = await fetch(`/staff/api/orders/${order.id}/refund`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ kind: "full" }),
+                      });
+                      const raw = await res.text();
+                      let out: any = {};
+                      try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                      if (!res.ok) { alert(out.error || raw || "Refund failed"); return; }
+                      alert(out.totalRefundedFormatted ? `Refunded ${out.totalRefundedFormatted}` : "Refund complete");
+                      await fetch(`/staff/api/orders/${order.id}/invoice/sync`, { method: "POST" });
+                      await refresh();
+                    } catch (e: any) { alert(e?.message || "Refund failed"); }
+                    finally { setRefunding(null); }
+                  }}
+                >
+                  {refunding === "full" ? "Refunding…" : "Refund full invoice"}
+                </button>
+              )}
+            </div>
+          )}
       </div>
 
       {/* Edit modal */}

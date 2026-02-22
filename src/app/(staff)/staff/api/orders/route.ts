@@ -9,9 +9,39 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "";
-  const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 200);
+  const q = (searchParams.get("q") || "").trim();
+  const from = searchParams.get("from") || "";
+  const to = searchParams.get("to") || "";
+  const itemType = (searchParams.get("item_type") || "").trim();
 
-  const where = status ? { status: status as any } : {};
+  // Build WHERE clause
+  const where: Record<string, unknown> = {};
+  if (status) where.status = status;
+  if (itemType) where.itemType = itemType;
+
+  // Date range filter
+  if (from || to) {
+    const createdAt: Record<string, Date> = {};
+    if (from) createdAt.gte = new Date(from);
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      createdAt.lte = toDate;
+    }
+    where.createdAt = createdAt;
+  }
+
+  // Text search
+  if (q) {
+    where.OR = [
+      { orderNumber: { contains: q, mode: "insensitive" } },
+      { customer: { firstName: { contains: q, mode: "insensitive" } } },
+      { customer: { lastName: { contains: q, mode: "insensitive" } } },
+      { customer: { phone: { contains: q } } },
+    ];
+  }
+
   const orders = await prisma.order.findMany({
     where,
     take: limit,

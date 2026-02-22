@@ -102,5 +102,27 @@ export async function PATCH(req: Request, ctx: Ctx) {
     });
   }
 
+  // Update specs if provided
+  if (body.specs && typeof body.specs === "object") {
+    const specsData: Record<string, unknown> = {};
+    if ("frame_code" in body.specs) specsData.frameCode = body.specs.frame_code || null;
+    if ("frame_vendor" in body.specs) specsData.frameVendor = body.specs.frame_vendor || null;
+    if ("mat_1_code" in body.specs) specsData.mat1Code = body.specs.mat_1_code || null;
+    if ("mat_2_code" in body.specs) specsData.mat2Code = body.specs.mat_2_code || null;
+    if ("glass_type" in body.specs) specsData.glassType = body.specs.glass_type || null;
+    if ("mount_type" in body.specs) specsData.mountType = body.specs.mount_type || null;
+    if ("backing_type" in body.specs) specsData.backingType = body.specs.backing_type || null;
+    if ("spacers" in body.specs) specsData.spacers = Boolean(body.specs.spacers);
+    if ("specialty_type" in body.specs) specsData.specialtyType = body.specs.specialty_type || null;
+
+    if (Object.keys(specsData).length > 0) {
+      await prisma.orderSpecs.upsert({
+        where: { orderId: id },
+        create: { orderId: id, ...specsData },
+        update: specsData,
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true, order: updated });
 }
