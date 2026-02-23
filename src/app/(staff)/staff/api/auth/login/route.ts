@@ -2,8 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { COOKIE_NAME, hashPassword, signStaffCookie } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/ids";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+
+const limiter = rateLimit({ limit: 5, windowSeconds: 300 }); // 5 attempts per 5 min
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed } = limiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many login attempts. Please wait 5 minutes." },
+      { status: 429 },
+    );
+  }
+
   const body = await req.json();
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");

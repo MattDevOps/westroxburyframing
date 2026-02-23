@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { sendContactFormEmail } from "@/lib/email";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+
+const limiter = rateLimit({ limit: 5, windowSeconds: 300 }); // 5 per 5 min
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { allowed } = limiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await request.json();
 

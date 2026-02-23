@@ -3,12 +3,24 @@ import { prisma } from "@/lib/db";
 import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
 import { syncMailchimpCustomer } from "@/lib/mailchimp";
 import { sendNewWebLeadNotification } from "@/lib/email";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+
+const limiter = rateLimit({ limit: 5, windowSeconds: 600 }); // 5 per 10 min
 
 /**
  * POST /api/public/orders
  * Public-facing order intake (web leads). No auth required.
  */
 export async function POST(request: Request) {
+    const ip = getClientIp(request);
+    const { allowed } = limiter.check(ip);
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many submissions. Please wait a few minutes and try again." },
+            { status: 429 },
+        );
+    }
+
     try {
         const body = await request.json();
 

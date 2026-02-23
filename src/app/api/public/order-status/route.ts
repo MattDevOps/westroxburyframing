@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+
+const limiter = rateLimit({ limit: 10, windowSeconds: 60 }); // 10 per minute
 
 /**
  * POST /api/public/order-status
@@ -7,6 +10,15 @@ import { prisma } from "@/lib/db";
  * Returns order status, due date, item info, and payment link (if any).
  */
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { allowed } = limiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment and try again." },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await request.json();
 
