@@ -4,7 +4,7 @@ import { COOKIE_NAME, hashPassword, signStaffCookie } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
-const limiter = rateLimit({ limit: 5, windowSeconds: 300 }); // 5 attempts per 5 min
+const limiter = rateLimit({ limit: 30, windowSeconds: 300 }); // 30 attempts per 5 min
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);

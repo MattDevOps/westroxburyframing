@@ -5,7 +5,7 @@ import { syncMailchimpCustomer } from "@/lib/mailchimp";
 import { sendNewWebLeadNotification } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
-const limiter = rateLimit({ limit: 5, windowSeconds: 600 }); // 5 per 10 min
+const limiter = rateLimit({ limit: 15, windowSeconds: 600 }); // 15 per 10 min
 
 /**
  * POST /api/public/orders

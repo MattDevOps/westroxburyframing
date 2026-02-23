@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { sendContactFormEmail } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
-const limiter = rateLimit({ limit: 5, windowSeconds: 300 }); // 5 per 5 min
+const limiter = rateLimit({ limit: 15, windowSeconds: 300 }); // 15 per 5 min
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
