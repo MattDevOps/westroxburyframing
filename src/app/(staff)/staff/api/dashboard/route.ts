@@ -149,14 +149,19 @@ export async function GET(req: Request) {
   });
 
   // --- NEW: Recent activity (last 15 events) ---
-  const recentActivity = await (prisma as any).orderActivity.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 15,
-    include: {
-      order: { select: { orderNumber: true } },
-      createdByUser: { select: { name: true } },
-    },
-  });
+  let recentActivity: any[] = [];
+  try {
+    recentActivity = await prisma.orderActivity.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 15,
+      include: {
+        order: { select: { orderNumber: true } },
+        createdBy: { select: { name: true } },
+      },
+    });
+  } catch (e) {
+    console.error("Failed to load recent activity:", e);
+  }
 
   return NextResponse.json({
     totalOrders,
@@ -193,7 +198,7 @@ export async function GET(req: Request) {
       message: a.message,
       orderNumber: a.order?.orderNumber || null,
       orderId: a.orderId,
-      userName: a.createdByUser?.name || "System",
+      userName: a.createdBy?.name || "System",
       createdAt: a.createdAt.toISOString(),
     })),
   });
