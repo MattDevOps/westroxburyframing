@@ -12,6 +12,7 @@ type Customer = {
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
   createdAt?: string;
+  _count?: { orders: number };
 };
 
 export default function CustomersPage() {
@@ -124,9 +125,10 @@ export default function CustomersPage() {
 
       <div className="rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="grid grid-cols-12 gap-3 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-600">
-          <div className="col-span-4">Customer</div>
+          <div className="col-span-3">Customer</div>
           <div className="col-span-3">Email</div>
           <div className="col-span-2">Phone</div>
+          <div className="col-span-1">Orders</div>
           <div className="col-span-2">Preferred</div>
           <div className="col-span-1 text-right">Opt-in</div>
         </div>
@@ -138,15 +140,17 @@ export default function CustomersPage() {
         ) : (
           filtered.map((c) => {
             const name = `${c.firstName || ""} ${c.lastName || ""}`.trim() || "Unnamed";
+            const orderCount = c._count?.orders ?? 0;
             return (
               <Link
                 key={c.id}
                 href={`/staff/customers/${c.id}`}
                 className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50"
               >
-                <div className="col-span-4 font-medium">{name}</div>
+                <div className="col-span-3 font-medium">{name}</div>
                 <div className="col-span-3 text-neutral-600">{c.email || "—"}</div>
                 <div className="col-span-2 text-neutral-600">{c.phone || "—"}</div>
+                <div className="col-span-1 text-neutral-600">{orderCount}</div>
                 <div className="col-span-2 text-neutral-600">
                   {c.preferredContact === "call" ? "Call" : "Email"}
                 </div>

@@ -58,9 +58,11 @@ export default function OrderForm() {
   const total = useMemo(() => afterDiscount + tax, [afterDiscount, tax]);
 
   const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   async function createOrder(asEstimate = false) {
     setErr(null);
+    setInfo(null);
 
     // Create/Upsert customer
     const cRes = await fetch("/staff/api/customers", {
@@ -80,6 +82,11 @@ export default function OrderForm() {
     if (!cRes.ok) {
       setErr(cOut.error || "Customer error");
       return;
+    }
+
+    // Show notice if an existing customer was matched
+    if (cOut.existing && cOut.message) {
+      setInfo(cOut.message);
     }
 
     const oRes = await fetch("/staff/api/orders", {
@@ -129,7 +136,7 @@ export default function OrderForm() {
       <div className="space-y-2">
         <div className="text-lg font-semibold">Customer</div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Phone (required)" hint="Used as the unique customer lookup key">
+          <Field label="Phone" hint="Phone or email required — used to look up existing customers">
             <input
               className="rounded-xl border p-3"
               placeholder="e.g. 6175551234"
@@ -138,7 +145,7 @@ export default function OrderForm() {
             />
           </Field>
 
-          <Field label="Email (optional)" hint="Required if opting into marketing emails">
+          <Field label="Email" hint="Phone or email required — used to look up existing customers">
             <input
               className="rounded-xl border p-3"
               placeholder="name@email.com"
@@ -344,6 +351,12 @@ export default function OrderForm() {
           </div>
         </div>
       </div>
+
+      {info && (
+        <div className="rounded-xl border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+          ℹ️ {info}
+        </div>
+      )}
 
       {err && <div className="text-sm text-red-600">{err}</div>}
 
