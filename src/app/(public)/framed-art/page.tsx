@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 const TIPS = [
   { title: "Make Sure The Frame Matches The Photo And The Room", body: "A great frame should feel like it belongs to both the artwork and the space it lives in. We help you balance style, era, and materials so your framed art looks intentional in any room in Boston.", img: "/framed-art/01.jpg", alt: "Person considering frame options in front of artwork" },
@@ -10,7 +11,7 @@ const TIPS = [
   { title: "Choose Whether You Want A Mat Board", body: "Mat boards create breathing room around your art, protect it from the glass, and can completely change the look of a piece. From clean white to layered museum-style mats, we'll help you decide what fits your artwork and your taste.", img: "/framed-art/04.jpg", alt: "Hands positioning an empty picture frame on a tabletop" },
 ];
 
-const FRAMED_GALLERY = [
+const FALLBACK_GALLERY = [
   { src: "/framed-art/01.webp", alt: "Custom framed sports memorabilia collage" },
   { src: "/framed-art/02.webp", alt: "Framed photograph with Boston Celtics logo" },
   { src: "/framed-art/04.webp", alt: "Framed Bruins poster with mat and logo" },
@@ -28,7 +29,44 @@ const FRAMED_GALLERY = [
   { src: "/framed-art/honor-certificate.webp", alt: "Framed honor certificate with decorative border and medallion" },
 ];
 
+interface GalleryItem {
+  id: string;
+  title: string | null;
+  description: string | null;
+  category: string;
+  imageUrl: string;
+}
+
 export default function FramedArtPage() {
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/public/gallery")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.items && data.items.length > 0) {
+          setGalleryItems(data.items);
+        }
+      })
+      .catch(() => {
+        // Use fallback
+      });
+  }, []);
+
+  // Use DB items if available, else fallback
+  const gallery = galleryItems
+    ? galleryItems.map((item) => ({
+        src: item.imageUrl,
+        alt: item.title || item.description || "Custom framed artwork",
+        title: item.title,
+        description: item.description,
+      }))
+    : FALLBACK_GALLERY.map((item) => ({
+        ...item,
+        title: null as string | null,
+        description: null as string | null,
+      }));
+
   return (
     <div className="min-h-screen bg-background">
       <section className="pt-32 pb-16 bg-secondary">
@@ -71,11 +109,28 @@ export default function FramedArtPage() {
           </motion.h2>
           <p className="text-muted-foreground text-sm mb-10">A selection of jerseys, flags, diplomas, artwork, and memorabilia we have custom framed.</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FRAMED_GALLERY.map((img) => (
-              <div key={img.src} className="overflow-hidden rounded-sm border border-border bg-card">
+            {gallery.map((img) => (
+              <div key={img.src} className="overflow-hidden rounded-sm border border-border bg-card group">
                 <div className="relative aspect-[4/5]">
-                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    unoptimized={img.src.startsWith("http")}
+                  />
                 </div>
+                {(img.title || img.description) && (
+                  <div className="p-4">
+                    {img.title && (
+                      <h3 className="text-sm font-medium text-foreground">{img.title}</h3>
+                    )}
+                    {img.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{img.description}</p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

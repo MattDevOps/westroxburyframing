@@ -1,29 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+const STAFF_NAV = [
+  { href: "/staff/dashboard", label: "Dashboard" },
+  { href: "/staff/orders", label: "Orders" },
+  { href: "/staff/orders/incomplete", label: "Incomplete" },
+  { href: "/staff/orders/new", label: "New order" },
+  { href: "/staff/appointments", label: "Appts" },
+  { href: "/staff/customers", label: "Customers" },
+  { href: "/staff/gallery", label: "Gallery" },
+  { href: "/staff/reports", label: "Reports" },
+  { href: "/staff/users", label: "Users" },
+];
+
 function NavLink({
   href,
   children,
+  onClick,
 }: {
   href: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
   const pathname = usePathname();
 
   const active =
     pathname === href ||
-    (href !== "/staff/orders" && !href.startsWith("/staff/orders") && pathname.startsWith(href)) ||
+    (href !== "/staff/orders" &&
+      !href.startsWith("/staff/orders") &&
+      pathname.startsWith(href)) ||
     (href === "/staff/orders" && pathname === "/staff/orders") ||
     (href.startsWith("/staff/orders/") && pathname.startsWith(href));
 
   return (
     <a
       href={href}
+      onClick={onClick}
       className={[
-        "text-sm px-2 py-1 rounded-md transition",
+        "text-sm px-3 py-2 rounded-md transition block",
         active
           ? "bg-neutral-900 text-white"
           : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
@@ -35,37 +53,88 @@ function NavLink({
 }
 
 export default function StaffTopbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center">
+    <header className="border-b border-neutral-200 bg-white no-print">
+      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4 md:gap-6">
+          <Link href="/" className="flex items-center shrink-0">
             <Image
               src="/logo.png"
               alt="West Roxbury Framing"
               width={140}
               height={48}
-              className="h-12 w-auto"
+              className="h-10 md:h-12 w-auto"
               priority
             />
           </Link>
 
-          <nav className="flex gap-2 text-neutral-200">
-            <NavLink href="/staff/dashboard">Dashboard</NavLink>
-            <NavLink href="/staff/orders">Orders</NavLink>
-            <NavLink href="/staff/orders/incomplete">Incomplete</NavLink>
-            <NavLink href="/staff/orders/new">New order</NavLink>
-            <NavLink href="/staff/customers">Customers</NavLink>
-            <NavLink href="/staff/users">Users</NavLink>
+          {/* Desktop nav */}
+          <nav className="hidden lg:flex gap-1">
+            {STAFF_NAV.map((link) => (
+              <NavLink key={link.href} href={link.href}>
+                {link.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
 
-        <form action="/staff/api/auth/logout" method="post">
-          <button className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-3 py-2 hover:bg-neutral-100">
-            Log out
+        <div className="flex items-center gap-3">
+          <form action="/staff/api/auth/logout" method="post">
+            <button className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-3 py-2 hover:bg-neutral-100">
+              Log out
+            </button>
+          </form>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="lg:hidden p-2 rounded-md hover:bg-neutral-100"
+            aria-label="Toggle navigation"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {mobileOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
           </button>
-        </form>
+        </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3">
+          <nav className="flex flex-col gap-1">
+            {STAFF_NAV.map((link) => (
+              <NavLink
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

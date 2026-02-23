@@ -8,8 +8,8 @@ export async function GET(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status") || "";
-  const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 200);
+  const statusParams = searchParams.getAll("status").filter(Boolean);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 5000);
   const q = (searchParams.get("q") || "").trim();
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
@@ -17,7 +17,8 @@ export async function GET(req: Request) {
 
   // Build WHERE clause
   const where: Record<string, unknown> = {};
-  if (status) where.status = status;
+  if (statusParams.length === 1) where.status = statusParams[0];
+  else if (statusParams.length > 1) where.status = { in: statusParams };
   if (itemType) where.itemType = itemType;
 
   // Date range filter

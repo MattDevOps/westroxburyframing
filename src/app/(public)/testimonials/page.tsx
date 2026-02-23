@@ -108,6 +108,27 @@ export default function TestimonialsPage() {
           </div>
         </section>
       )}
+
+      {/* Leave a Review CTA */}
+      <section className="py-16 bg-secondary">
+        <div className="max-w-xl mx-auto px-6 text-center space-y-4">
+          <h2 className="font-serif text-2xl font-bold text-foreground">
+            Love your framing? <span className="text-gold">Share the love!</span>
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Your feedback helps other Bostonians find quality framing. If you had a great experience, we&apos;d love a Google review.
+          </p>
+          <a
+            href="https://www.google.com/maps/place/West+Roxbury+Framing/@42.287442,-71.150185/data=!3m1!4b1!4m6!3m5!1s0x89e37f2bfd283b73:0x4cbd8e522909889e!8m2!3d42.287442!4d-71.150185!16s%2Fg%2F11c0vx8x1h?entry=ttu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-opacity"
+          >
+            <Star size={16} className="fill-current" />
+            Leave a Google Review
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

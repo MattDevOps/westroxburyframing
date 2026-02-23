@@ -25,6 +25,7 @@ export default function FooterPublic() {
               <Link href="/testimonials" className="text-muted-foreground text-sm hover:text-gold transition-colors">Testimonials</Link>
               <Link href="/contact" className="text-muted-foreground text-sm hover:text-gold transition-colors">Contact Us</Link>
               <Link href="/book" className="text-muted-foreground text-sm hover:text-gold transition-colors">Book Appointment</Link>
+              <Link href="/order-status" className="text-muted-foreground text-sm hover:text-gold transition-colors">Track Your Order</Link>
               <Link href="/policies" className="text-muted-foreground text-sm hover:text-gold transition-colors">Privacy Policy</Link>
             </div>
           </div>

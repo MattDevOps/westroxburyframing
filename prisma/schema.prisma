@@ -187,6 +187,18 @@ model ActivityLog {
   createdAt DateTime @default(now())
 }
 
+model GalleryItem {
+  id          String   @id @default(uuid())
+  title       String?
+  description String?
+  category    String   @default("custom_framing") // custom_framing, restoration, memorabilia, etc.
+  imageUrl    String
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model OrderActivity {
   id              String   @id @default(uuid())
   orderId         String
