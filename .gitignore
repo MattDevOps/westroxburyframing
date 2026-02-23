@@ -26,3 +26,5 @@ credentials/
 test-results/
 playwright-report/
 blob-report/
+.vercel
+.env*.local
