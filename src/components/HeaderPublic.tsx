@@ -46,12 +46,12 @@ export default function HeaderPublic() {
           <span className="sr-only">West Roxbury Framing</span>
         </Link>
 
-        <div className="hidden lg:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               href={link.path}
-              className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${pathname === link.path
+              className={`font-nav text-[13px] font-medium tracking-[0.18em] uppercase transition-colors hover:text-gold ${pathname === link.path
                   ? "text-gold border-b border-gold pb-0.5"
                   : "text-foreground/70"
                 }`}
@@ -61,13 +61,13 @@ export default function HeaderPublic() {
           ))}
           <Link
             href="/book"
-            className="ml-2 px-5 py-2.5 bg-gold text-primary-foreground text-sm font-semibold tracking-wide uppercase rounded-sm hover:opacity-90 transition-colors"
+            className="ml-2 px-5 py-2.5 bg-gold text-primary-foreground font-nav text-[13px] font-semibold tracking-[0.18em] uppercase rounded-sm hover:opacity-90 transition-colors"
           >
             Book
           </Link>
           <Link
             href={loggedIn ? "/account" : "/login"}
-            className="flex items-center gap-1.5 text-sm font-medium tracking-wide uppercase text-foreground/70 hover:text-gold transition-colors"
+            className="flex items-center gap-1.5 font-nav text-[13px] font-medium tracking-[0.18em] uppercase text-foreground/70 hover:text-gold transition-colors"
           >
             <User size={16} />
             {loggedIn ? "My Account" : "Sign In"}
@@ -97,7 +97,7 @@ export default function HeaderPublic() {
                   key={link.path}
                   href={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`text-sm font-medium tracking-wide uppercase transition-colors hover:text-gold ${pathname === link.path ? "text-gold" : "text-foreground/70"
+                  className={`font-nav text-[13px] font-medium tracking-[0.18em] uppercase transition-colors hover:text-gold ${pathname === link.path ? "text-gold" : "text-foreground/70"
                     }`}
                 >
                   {link.name}
@@ -106,7 +106,7 @@ export default function HeaderPublic() {
               <Link
                 href={loggedIn ? "/account" : "/login"}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-1.5 text-sm font-medium tracking-wide uppercase text-foreground/70 hover:text-gold transition-colors"
+                className="flex items-center gap-1.5 font-nav text-[13px] font-medium tracking-[0.18em] uppercase text-foreground/70 hover:text-gold transition-colors"
               >
                 <User size={16} />
                 {loggedIn ? "My Account" : "Sign In"}
@@ -114,7 +114,7 @@ export default function HeaderPublic() {
               <Link
                 href="/book"
                 onClick={() => setIsOpen(false)}
-                className="px-5 py-2.5 bg-gold text-primary-foreground text-sm font-semibold tracking-wide uppercase rounded-sm text-center"
+                className="px-5 py-2.5 bg-gold text-primary-foreground font-nav text-[13px] font-semibold tracking-[0.18em] uppercase rounded-sm text-center"
               >
                 Book
               </Link>
