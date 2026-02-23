@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { staffLogin } from "./helpers/auth";
 
 test.describe("Staff Dashboard", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
 
   test("dashboard loads with KPI cards", async ({ page }) => {
     await page.goto("/staff/dashboard");

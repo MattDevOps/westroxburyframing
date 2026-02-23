@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { staffLogin, testPhone, testSuffix } from "./helpers/auth";
+import { testPhone, testSuffix } from "./helpers/auth";
 
 /**
  * Helper: create a new order via the staff UI and return the order detail URL.
@@ -42,9 +42,6 @@ async function createTestOrder(page: Page) {
 }
 
 test.describe("Order Workflow", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
 
   test("new order page loads with all sections", async ({ page }) => {
     await page.goto("/staff/orders/new");

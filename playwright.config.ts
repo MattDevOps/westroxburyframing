@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
 
 /**
  * ──── HEADLESS TOGGLE ────
@@ -16,6 +17,8 @@ const headless = process.env.HEADLESS !== "false";
  */
 const baseURL = process.env.BASE_URL || "http://localhost:3000";
 
+const staffAuthFile = path.join(__dirname, "e2e", ".auth", "staff.json");
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false, // run sequentially — tests depend on data created by earlier tests
@@ -24,6 +27,8 @@ export default defineConfig({
   workers: 1,
   reporter: "html",
   timeout: 30_000,
+
+  globalSetup: "./e2e/global-setup.ts",
 
   use: {
     baseURL,
@@ -35,8 +40,28 @@ export default defineConfig({
 
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        // No storageState — auth tests need a clean slate
+      },
+      testMatch: /01-auth.*\.spec\.ts/,
+    },
+    {
+      name: "staff",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: staffAuthFile,
+      },
+      testMatch: /0[2-6].*\.spec\.ts/,
+    },
+    {
+      name: "public",
+      use: {
+        ...devices["Desktop Chrome"],
+        // No storageState — public tests run unauthenticated
+      },
+      testMatch: /07.*\.spec\.ts/,
     },
   ],
 

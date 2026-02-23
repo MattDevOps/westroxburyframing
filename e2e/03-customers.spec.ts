@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { staffLogin, testPhone, testSuffix } from "./helpers/auth";
+import { testPhone, testSuffix } from "./helpers/auth";
 
 test.describe("Customer Management", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
 
   test("customers page loads", async ({ page }) => {
     await page.goto("/staff/customers");

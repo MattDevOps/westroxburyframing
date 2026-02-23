@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { staffLogin, testPhone, testSuffix } from "./helpers/auth";
+import { testPhone, testSuffix } from "./helpers/auth";
 
 /**
  * Helper: create a paid order to test invoice features.
@@ -32,9 +32,6 @@ async function createPaidOrder(page: Page) {
 }
 
 test.describe("Invoice & Payments", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
 
   test("order detail shows invoice section", async ({ page }) => {
     await createPaidOrder(page);

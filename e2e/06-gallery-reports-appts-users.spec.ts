@@ -1,11 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { staffLogin, testSuffix } from "./helpers/auth";
+import { testSuffix } from "./helpers/auth";
 
 test.describe("Gallery Management", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
-
   test("gallery page loads", async ({ page }) => {
     await page.goto("/staff/gallery");
     await expect(
@@ -47,10 +43,6 @@ test.describe("Gallery Management", () => {
 });
 
 test.describe("Reports", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
-
   test("reports page loads with filters", async ({ page }) => {
     await page.goto("/staff/reports");
     await expect(
@@ -81,10 +73,6 @@ test.describe("Reports", () => {
 });
 
 test.describe("Appointments", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
-
   test("appointments page loads", async ({ page }) => {
     await page.goto("/staff/appointments");
     await expect(
@@ -112,10 +100,6 @@ test.describe("Appointments", () => {
 });
 
 test.describe("Users Management", () => {
-  test.beforeEach(async ({ page }) => {
-    await staffLogin(page);
-  });
-
   test("users page loads and shows current admin", async ({ page }) => {
     await page.goto("/staff/users");
     await expect(
