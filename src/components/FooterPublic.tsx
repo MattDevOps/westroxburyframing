@@ -24,6 +24,8 @@ export default function FooterPublic() {
               <Link href="/restoration" className="text-muted-foreground text-sm hover:text-gold transition-colors">Repair & Restoration</Link>
               <Link href="/testimonials" className="text-muted-foreground text-sm hover:text-gold transition-colors">Testimonials</Link>
               <Link href="/contact" className="text-muted-foreground text-sm hover:text-gold transition-colors">Contact Us</Link>
+              <Link href="/book" className="text-muted-foreground text-sm hover:text-gold transition-colors">Book Appointment</Link>
+              <Link href="/policies" className="text-muted-foreground text-sm hover:text-gold transition-colors">Privacy Policy</Link>
             </div>
           </div>
 
@@ -49,7 +51,7 @@ export default function FooterPublic() {
 
           <div>
             <h4 className="font-serif text-lg text-foreground mb-4">Hours</h4>
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-col gap-3 text-sm text-muted-foreground">
               <div className="flex items-start gap-3">
                 <Clock size={16} className="text-gold mt-0.5 shrink-0" />
                 <div>
@@ -58,6 +60,8 @@ export default function FooterPublic() {
                   <p>Sunday: 10:30am – 4:30pm</p>
                 </div>
               </div>
+              <p className="text-gold text-xs font-semibold uppercase tracking-wide">Walk-ins always welcome</p>
+              <p className="text-xs text-muted-foreground">Free parking available on Centre St and behind the building.</p>
             </div>
           </div>
         </div>

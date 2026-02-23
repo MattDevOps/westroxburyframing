@@ -8,11 +8,13 @@ datasource db {
 }
 
 enum OrderStatus {
+  estimate
   new_design
   awaiting_materials
   in_production
   quality_check
   ready_for_pickup
+  on_hold
   picked_up
   completed
   cancelled
@@ -82,6 +84,8 @@ model Order {
   notesCustomer   String?
 
   subtotalAmount Int
+  discountType   String  @default("none") // "none" | "percent" | "fixed"
+  discountValue  Decimal @default(0)
   taxAmount      Int
   totalAmount    Int
   currency       String  @default("USD")

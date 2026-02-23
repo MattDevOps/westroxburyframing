@@ -91,18 +91,34 @@ export default function HomePage() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
-              href="/services"
+              href="/book"
               className="px-8 py-3.5 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors"
             >
-              Our Services
+              Book a Design Consultation
             </Link>
-            <Link
-              href="/contact"
+            <a
+              href="tel:16173273890"
               className="px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
             >
-              Get In Touch
-            </Link>
+              Call Now
+            </a>
+            <a
+              href="https://maps.google.com/?q=1741+Centre+St+West+Roxbury+MA+02132"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
+            >
+              Get Directions
+            </a>
           </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="mt-6 text-foreground/50 text-sm"
+          >
+            Walk-ins welcome · Free parking available
+          </motion.p>
         </div>
       </section>
 
@@ -134,8 +150,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* About */}
+      {/* How It Works */}
       <section className="py-24 bg-background">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
+            >
+              How It <span className="text-gold">Works</span>
+            </motion.h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Three simple steps from your artwork to a beautifully framed piece.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { step: "1", title: "Bring It In", desc: "Walk in or book an appointment. Bring your art, photo, or memorabilia — we'll take it from there." },
+              { step: "2", title: "Design Together", desc: "Our experts help you choose the perfect frame, mat, and glass to complement your piece and your space." },
+              { step: "3", title: "We Frame & You Pick Up", desc: "We craft your custom frame with care. We'll let you know when it's ready — most orders done in about a week." },
+            ].map((s, i) => (
+              <motion.div
+                key={s.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-5">
+                  {s.step}
+                </div>
+                <h3 className="font-serif text-xl text-foreground mb-3">{s.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About */}
+      <section className="py-24 bg-secondary">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
@@ -256,17 +313,42 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="font-serif text-4xl md:text-5xl font-bold text-foreground"
+              className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
             >
               What Our Clients <span className="text-gold">Say</span>
             </motion.h2>
+            <p className="text-muted-foreground text-sm">100+ five-star Google reviews</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {[
+              { name: "Sarah M.", text: "Moses is incredible! He framed my grandmother's antique photographs and they look absolutely stunning. The attention to detail is unmatched." },
+              { name: "James R.", text: "Best framing shop in Boston. Had a Tom Brady jersey shadowboxed and the result was museum quality. Fast turnaround and fair prices." },
+              { name: "Linda K.", text: "I've been coming here for years. They framed my daughter's diploma and it looks beautiful. The whole family trusts West Roxbury Framing." },
+            ].map((review, i) => (
+              <motion.div
+                key={review.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-card p-8 rounded-sm border border-border"
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, j) => (
+                    <span key={j} className="text-gold text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-foreground/80 text-sm leading-relaxed mb-6 italic">&ldquo;{review.text}&rdquo;</p>
+                <p className="text-gold font-semibold text-sm">{review.name}</p>
+              </motion.div>
+            ))}
           </div>
           <div className="text-center">
             <Link
               href="/testimonials"
               className="inline-block px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
             >
-              Read Our Reviews
+              Read All Reviews
             </Link>
           </div>
         </div>
@@ -297,6 +379,88 @@ export default function HomePage() {
                 <span className="text-foreground/80 text-sm">{service}</span>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Visit Us — map, hours, parking */}
+      <section className="py-24 bg-background">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
+            >
+              Visit <span className="text-gold">Us</span>
+            </motion.h2>
+            <p className="text-gold text-sm font-semibold tracking-wide uppercase">Walk-ins always welcome</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-6"
+            >
+              <div>
+                <h3 className="font-serif text-xl text-foreground mb-2">Address</h3>
+                <p className="text-foreground/70 text-sm">1741 Centre St, West Roxbury, MA 02132</p>
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-foreground mb-2">Hours</h3>
+                <div className="text-foreground/70 text-sm space-y-1">
+                  <p>Monday – Friday: 9:30am – 6pm</p>
+                  <p>Saturday: Closed</p>
+                  <p>Sunday: 10:30am – 4:30pm</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-foreground mb-2">Parking</h3>
+                <p className="text-foreground/70 text-sm">
+                  Free street parking is available directly in front of the shop on Centre Street. Additional parking in the municipal lot behind the building.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-foreground mb-2">Contact</h3>
+                <div className="text-foreground/70 text-sm space-y-1">
+                  <p>Phone: <a href="tel:16173273890" className="text-gold hover:text-gold-light">617-327-3890</a></p>
+                  <p>Email: <a href="mailto:jake@westroxburyframing.com" className="text-gold hover:text-gold-light">jake@westroxburyframing.com</a></p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="tel:16173273890"
+                  className="px-6 py-3 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors"
+                >
+                  Call Now
+                </a>
+                <a
+                  href="https://maps.google.com/?q=1741+Centre+St+West+Roxbury+MA+02132"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
+                >
+                  Get Directions
+                </a>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="aspect-video rounded-sm overflow-hidden border border-border"
+            >
+              <iframe
+                title="West Roxbury Framing on Google Maps"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2951.5821502373105!2d-71.1501852!3d42.28744220000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89e37f2bfd283b73%3A0x4cbd8e522909889e!2sWest%20Roxbury%20Framing!5e0!3m2!1sen!2sus!4v1770278426960!5m2!1sen!2sus"
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </motion.div>
           </div>
         </div>
       </section>

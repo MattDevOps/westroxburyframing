@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Frame, Upload, CheckCircle, ArrowRight } from "lucide-react";
+import { Frame, Upload, CheckCircle, ArrowRight, X, ImageIcon } from "lucide-react";
 
 const ITEM_TYPES = [
     { value: "art", label: "Art / Print" },
@@ -27,9 +27,40 @@ export default function CustomFramingPage() {
     const [notes, setNotes] = useState("");
     const [optIn, setOptIn] = useState(false);
 
+    const [photos, setPhotos] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<{ orderNumber: string } | null>(null);
+
+    function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+        const files = e.target.files;
+        if (!files) return;
+
+        const remaining = 6 - photos.length;
+        const toProcess = Array.from(files).slice(0, remaining);
+
+        for (const file of toProcess) {
+            if (file.size > 5 * 1024 * 1024) {
+                setError(`File "${file.name}" is too large (max 5MB). Please choose a smaller image.`);
+                continue;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                setPhotos((prev) => [...prev.slice(0, 5), dataUrl]);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Reset file input so the same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+
+    function removePhoto(index: number) {
+        setPhotos((prev) => prev.filter((_, i) => i !== index));
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -49,6 +80,7 @@ export default function CustomFramingPage() {
                     description,
                     notes,
                     marketing_opt_in: optIn,
+                    photos,
                 }),
             });
 
@@ -258,6 +290,51 @@ export default function CustomFramingPage() {
                                         placeholder="Timeline, budget considerations, questions, etc."
                                     />
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Photo Upload */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <ImageIcon size={20} className="text-gold" />
+                                <h3 className="font-serif text-xl text-foreground">Upload Photos</h3>
+                            </div>
+                            <p className="text-muted-foreground text-sm mb-4">
+                                Upload up to 6 photos of your artwork or item. This helps us give you a more accurate quote. (Max 5MB per image)
+                            </p>
+
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
+                                {photos.map((dataUrl, i) => (
+                                    <div key={i} className="relative aspect-square rounded-sm overflow-hidden border border-border group">
+                                        <img
+                                            src={dataUrl}
+                                            alt={`Upload ${i + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removePhoto(i)}
+                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {photos.length < 6 && (
+                                    <label className="aspect-square rounded-sm border-2 border-dashed border-border hover:border-gold/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-gold">
+                                        <Upload size={20} />
+                                        <span className="text-[10px] font-medium uppercase tracking-wide">Add</span>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="hidden"
+                                            onChange={handlePhotoSelect}
+                                        />
+                                    </label>
+                                )}
                             </div>
                         </div>
 

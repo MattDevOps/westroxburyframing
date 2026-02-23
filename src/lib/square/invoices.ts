@@ -208,6 +208,77 @@ export async function getInvoice(invoiceId: string) {
   return inv?.invoice;
 }
 
+/**
+ * Update a Square invoice's line items when the order total changes.
+ * Only works on DRAFT or SENT invoices (not PAID/CANCELLED).
+ * We cancel the old invoice and create a new one with updated amounts.
+ */
+export async function updateInvoiceForOrderEdit(params: {
+  squareInvoiceId: string;
+  newTotalCents: number;
+  locationId: string;
+  orderId: string;
+  customerEmail: string;
+  customerGivenName?: string;
+  customerFamilyName?: string;
+}): Promise<{ invoiceId: string; status: string; publicUrl: string } | null> {
+  try {
+    const existing = await getInvoice(params.squareInvoiceId);
+    if (!existing) {
+      console.warn("[Square] Invoice not found for update:", params.squareInvoiceId);
+      return null;
+    }
+
+    const status = (existing.status || "").toUpperCase();
+
+    // Can't modify paid or cancelled invoices
+    if (status === "PAID" || status === "CANCELED" || status === "REFUNDED") {
+      console.log(`[Square] Invoice ${params.squareInvoiceId} is ${status}, skipping update`);
+      return null;
+    }
+
+    // Cancel the existing invoice
+    try {
+      await squareFetch(`/v2/invoices/${params.squareInvoiceId}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ version: existing.version }),
+      });
+      console.log(`[Square] Cancelled old invoice ${params.squareInvoiceId}`);
+    } catch (cancelErr) {
+      console.warn("[Square] Failed to cancel old invoice:", cancelErr);
+      // Continue anyway — we'll create a new one
+    }
+
+    // Create a fresh invoice with the new total
+    const result = await createAndSendInvoice({
+      locationId: params.locationId,
+      orderId: params.orderId,
+      kind: "full",
+      customerEmail: params.customerEmail,
+      customerGivenName: params.customerGivenName,
+      customerFamilyName: params.customerFamilyName,
+      title: "West Roxbury Framing (Updated)",
+      message: "Your invoice has been updated with revised pricing.",
+      lines: [
+        {
+          name: "Custom framing (revised)",
+          quantity: "1",
+          basePriceMoney: { amount: params.newTotalCents, currency: "USD" },
+        },
+      ],
+    });
+
+    return {
+      invoiceId: result.invoiceId,
+      status: result.status,
+      publicUrl: result.publicUrl || "",
+    };
+  } catch (err) {
+    console.error("[Square] Failed to update invoice for order edit:", err);
+    return null;
+  }
+}
+
 export async function duplicateInvoice(existingInvoiceId: string) {
   // Fetch the existing invoice
   const existingInvoice = await getInvoice(existingInvoiceId);

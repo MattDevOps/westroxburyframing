@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus } from "@/lib/orderStatus";
+import { updateInvoiceForOrderEdit } from "@/lib/square/invoices";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
 const prismaWithActivity: any = prisma;
@@ -75,11 +76,26 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if ("taxAmount" in body) data.taxAmount = body.taxAmount == null ? null : Number(body.taxAmount);
   if ("totalAmount" in body) data.totalAmount = body.totalAmount == null ? null : Number(body.totalAmount);
   if ("currency" in body) data.currency = body.currency ?? null;
+  if ("paidInFull" in body) data.paidInFull = Boolean(body.paidInFull);
 
-  const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+  // Discount fields
+  if ("discountType" in body) data.discountType = body.discountType ?? "none";
+  if ("discountValue" in body) data.discountValue = body.discountValue == null ? 0 : Number(body.discountValue);
+
+  const prev = await prisma.order.findUnique({
+    where: { id },
+    select: {
+      status: true,
+      totalAmount: true,
+      squareInvoiceId: true,
+      squareInvoiceStatus: true,
+      orderNumber: true,
+      customerId: true,
+    },
+  });
   if (!prev) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const updated = await prisma.order.update({ where: { id }, data });
+  const updated = await prisma.order.update({ where: { id }, data, include: { customer: true } });
 
   const events: Array<{ type: string; message: string }> = [];
   events.push({ type: "edit", message: "Order updated" });
@@ -100,6 +116,53 @@ export async function PATCH(req: Request, ctx: Ctx) {
         createdByUserId: userId,
       },
     });
+  }
+
+  // If total changed and a Square invoice exists, update the invoice
+  const totalChanged = "totalAmount" in data && prev.totalAmount !== data.totalAmount;
+  if (totalChanged && prev.squareInvoiceId) {
+    const locationId = process.env.SQUARE_LOCATION_ID;
+    const customerEmail = updated.customer?.email;
+    if (locationId && customerEmail) {
+      const invoiceResult = await updateInvoiceForOrderEdit({
+        squareInvoiceId: prev.squareInvoiceId,
+        newTotalCents: updated.totalAmount,
+        locationId,
+        orderId: updated.orderNumber,
+        customerEmail,
+        customerGivenName: updated.customer?.firstName || undefined,
+        customerFamilyName: updated.customer?.lastName || undefined,
+      });
+      if (invoiceResult) {
+        await prisma.order.update({
+          where: { id },
+          data: {
+            squareInvoiceId: invoiceResult.invoiceId,
+            squareInvoiceUrl: invoiceResult.publicUrl,
+            squareInvoiceStatus: invoiceResult.status,
+          },
+        });
+        events.push({
+          type: "invoice_sent",
+          message: `Invoice updated with revised total: $${(updated.totalAmount / 100).toFixed(2)}`,
+        });
+      }
+    }
+  }
+
+  // Update customer info if provided
+  if (body.customerFirstName || body.customerLastName || body.customerPhone || body.customerEmail) {
+    const order_ = await prisma.order.findUnique({ where: { id }, select: { customerId: true } });
+    if (order_) {
+      const custData: Record<string, unknown> = {};
+      if ("customerFirstName" in body) custData.firstName = String(body.customerFirstName || "");
+      if ("customerLastName" in body) custData.lastName = String(body.customerLastName || "");
+      if ("customerPhone" in body && body.customerPhone) custData.phone = String(body.customerPhone);
+      if ("customerEmail" in body) custData.email = body.customerEmail ? String(body.customerEmail) : null;
+      if (Object.keys(custData).length > 0) {
+        await prisma.customer.update({ where: { id: order_.customerId }, data: custData });
+      }
+    }
   }
 
   // Update specs if provided

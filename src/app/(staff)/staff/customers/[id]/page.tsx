@@ -22,6 +22,7 @@ export default function CustomerDetailPage({
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [stats, setStats] = useState<{ lifetimeValueCents: number; totalOrders: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export default function CustomerDetailPage({
 
       setCustomer(data.customer);
       setOrders(data.orders || []);
+      setStats(data.stats || null);
     } catch (e: any) {
       setErr(e?.message || "Error");
     } finally {
@@ -120,6 +122,16 @@ export default function CustomerDetailPage({
           <p className="text-neutral-600 text-sm mt-1">
             {customer.email || "—"} · {customer.phone || "—"}
           </p>
+          {stats && (
+            <div className="flex gap-4 mt-2">
+              <span className="text-sm font-medium text-neutral-900">
+                Lifetime value: <span className="text-emerald-700">${(stats.lifetimeValueCents / 100).toFixed(2)}</span>
+              </span>
+              <span className="text-sm text-neutral-600">
+                {stats.totalOrders} order{stats.totalOrders !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -236,25 +248,55 @@ export default function CustomerDetailPage({
               {orders.map((o) => {
                 const totalCents = Number(o.totalAmount ?? 0);
                 const totalDollars = totalCents / 100;
+                const statusLabel: Record<string, string> = {
+                  estimate: "Estimate",
+                  new_design: "New / Design",
+                  awaiting_materials: "Awaiting Materials",
+                  in_production: "In Production",
+                  quality_check: "Quality Check",
+                  ready_for_pickup: "Ready for Pickup",
+                  on_hold: "On Hold",
+                  picked_up: "Picked Up",
+                  completed: "Completed",
+                  cancelled: "Cancelled",
+                };
+
+                const isEstimate = o.status === "estimate";
 
                 return (
                   <a
                     key={o.id}
                     href={`/staff/orders/${o.id}`}
-                    className="block rounded-xl border border-neutral-200 px-4 py-3 hover:bg-neutral-50"
+                    className={`block rounded-xl border px-4 py-3 hover:bg-neutral-50 ${
+                      isEstimate ? "border-red-200 bg-red-50/30" : "border-neutral-200"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium">
-                        {o.orderNumber ? `#${o.orderNumber}` : "Order"} ·{" "}
-                        {o.status || ""}
+                        {o.orderNumber ? `#${o.orderNumber}` : "Order"}
+                        {isEstimate && <span className="ml-2 text-xs text-red-600 font-normal">(Estimate)</span>}
                       </div>
-                      <div className="text-sm text-neutral-600">
+                      <div className="text-sm font-medium text-neutral-900">
                         ${totalDollars.toFixed(2)}
                       </div>
                     </div>
-                    <div className="text-xs text-neutral-500 mt-1">
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                        o.status === "estimate" ? "border-red-300 text-red-700 bg-red-50" :
+                        o.status === "on_hold" ? "border-orange-300 text-orange-700 bg-orange-50" :
+                        o.status === "cancelled" ? "border-red-200 text-red-700 bg-red-50" :
+                        o.status === "completed" || o.status === "picked_up" ? "border-emerald-200 text-emerald-700 bg-emerald-50" :
+                        "border-blue-200 text-blue-700 bg-blue-50"
+                      }`}>
+                        {statusLabel[o.status] || o.status}
+                      </span>
+                      {o.itemType && (
+                        <span className="text-xs text-neutral-500">{o.itemType}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-neutral-400 mt-1">
                       {o.createdAt
-                        ? new Date(o.createdAt).toLocaleString()
+                        ? new Date(o.createdAt).toLocaleDateString()
                         : ""}
                     </div>
                   </a>

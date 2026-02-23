@@ -44,12 +44,22 @@ export default function OrderForm() {
 
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<"none" | "percent" | "fixed">("none");
+  const [discountValue, setDiscountValue] = useState<number>(0);
 
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
+  const discountAmountDollars = useMemo(() => {
+    if (discountType === "percent") return subtotal * discountValue / 100;
+    if (discountType === "fixed") return discountValue;
+    return 0;
+  }, [discountType, discountValue, subtotal]);
+
+  const afterDiscount = useMemo(() => Math.max(0, subtotal - discountAmountDollars), [subtotal, discountAmountDollars]);
+
+  const total = useMemo(() => afterDiscount + tax, [afterDiscount, tax]);
 
   const [err, setErr] = useState<string | null>(null);
 
-  async function createOrder() {
+  async function createOrder(asEstimate = false) {
     setErr(null);
 
     // Create/Upsert customer
@@ -82,6 +92,9 @@ export default function OrderForm() {
         width,
         height,
         units: "in",
+        status: asEstimate ? "estimate" : "new_design",
+        discount_type: discountType,
+        discount_value: discountValue,
         pricing: {
           subtotal_cents: Math.round(subtotal * 100),
           tax_cents: Math.round(tax * 100),
@@ -287,17 +300,64 @@ export default function OrderForm() {
             />
           </Field>
 
-          <Field label="Total ($)" hint="Subtotal + tax">
-            <input className="rounded-xl border p-3 bg-neutral-50" readOnly value={total.toFixed(2)} />
+          <Field label="Total ($)" hint="After discount + tax">
+            <input className="rounded-xl border p-3 bg-neutral-50 font-semibold" readOnly value={total.toFixed(2)} />
           </Field>
+        </div>
+
+        {/* Discount */}
+        <div className="mt-4 pt-4 border-t border-neutral-100">
+          <div className="text-sm font-semibold text-neutral-800 mb-3">Discount (optional)</div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="Discount Type">
+              <select
+                className="rounded-xl border p-3"
+                value={discountType}
+                onChange={(e) => { setDiscountType(e.target.value as any); setDiscountValue(0); }}
+              >
+                <option value="none">No discount</option>
+                <option value="percent">Percentage (%)</option>
+                <option value="fixed">Fixed amount ($)</option>
+              </select>
+            </Field>
+
+            {discountType !== "none" && (
+              <Field label={discountType === "percent" ? "Discount (%)" : "Discount ($)"}>
+                <input
+                  type="number"
+                  step={discountType === "percent" ? "1" : "0.01"}
+                  min={0}
+                  className="rounded-xl border p-3"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                />
+              </Field>
+            )}
+
+            {discountAmountDollars > 0 && (
+              <div className="flex items-end pb-1">
+                <div className="text-sm text-red-600 font-medium">
+                  Saves: ${discountAmountDollars.toFixed(2)}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {err && <div className="text-sm text-red-600">{err}</div>}
 
-      <button className="rounded-xl bg-black px-5 py-3 text-white" onClick={createOrder}>
-        Create Order
-      </button>
+      <div className="flex gap-3">
+        <button className="rounded-xl bg-black px-5 py-3 text-white" onClick={() => createOrder(false)}>
+          Create Order
+        </button>
+        <button
+          className="rounded-xl border border-red-300 px-5 py-3 text-red-700 bg-red-50 hover:bg-red-100"
+          onClick={() => createOrder(true)}
+        >
+          Save as Estimate
+        </button>
+      </div>
     </div>
   );
 }

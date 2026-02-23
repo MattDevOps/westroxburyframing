@@ -100,6 +100,20 @@ export async function POST(request: Request) {
             },
         });
 
+        // Save uploaded photos (base64 data URLs) if any
+        const photos: string[] = Array.isArray(body.photos) ? body.photos : [];
+        for (const photoUrl of photos.slice(0, 6)) {
+            if (typeof photoUrl === "string" && photoUrl.startsWith("data:image/")) {
+                await prisma.orderPhoto.create({
+                    data: {
+                        orderId: order.id,
+                        url: photoUrl,
+                        caption: "Uploaded by customer",
+                    },
+                });
+            }
+        }
+
         // Log activity
         await prisma.activityLog.create({
             data: {
@@ -107,7 +121,7 @@ export async function POST(request: Request) {
                 entityId: order.id,
                 orderId: order.id,
                 action: "web_lead_submitted",
-                metadata: { orderNumber, customerName: `${firstName} ${lastName}` },
+                metadata: { orderNumber, customerName: `${firstName} ${lastName}`, photoCount: photos.length },
             },
         });
 

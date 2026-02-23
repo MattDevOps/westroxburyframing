@@ -17,12 +17,20 @@ export async function POST(request: Request) {
       );
     }
 
-    await sendContactFormEmail({
+    const result = await sendContactFormEmail({
       fromName: name,
       fromEmail: email,
       fromPhone: phone || undefined,
       message,
     });
+
+    if (!result.ok) {
+      console.error("Contact form email failed:", result.error);
+      return NextResponse.json(
+        { error: "Your message was received but email delivery failed. We'll follow up." },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

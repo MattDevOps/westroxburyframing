@@ -85,3 +85,115 @@
     display: none;
   }
 }
+
+/* ========== PRINT STYLES ========== */
+@media print {
+  /* Reset to white background, black text */
+  body {
+    background: white !important;
+    color: black !important;
+    font-family: 'Raleway', Arial, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Hide navigation, buttons, non-essential UI */
+  .print\:hidden,
+  nav,
+  header,
+  footer,
+  aside,
+  button,
+  select,
+  [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Remove card styling */
+  .print\:border-0 {
+    border: none !important;
+  }
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+  .print\:mt-2 {
+    margin-top: 0.5rem !important;
+  }
+  .print\:mb-0 {
+    margin-bottom: 0 !important;
+  }
+
+  /* Header area */
+  h1 {
+    font-size: 18pt !important;
+    font-weight: bold !important;
+    color: black !important;
+    margin-bottom: 4pt !important;
+  }
+
+  /* Clean up links */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  /* Work order grid cleanup */
+  .rounded-2xl {
+    border-radius: 0 !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  /* Add business header for work order prints */
+  .p-6::before {
+    content: "WEST ROXBURY FRAMING — WORK ORDER";
+    display: block;
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2pt solid black;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Blind estimate: hide item codes and vendor info when class is present */
+  .blind-hide {
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure grid prints nicely */
+  .grid {
+    display: grid !important;
+  }
+
+  /* Make sure text is black */
+  .text-neutral-900,
+  .text-neutral-800,
+  .text-neutral-700,
+  .text-neutral-600,
+  .text-neutral-500 {
+    color: #222 !important;
+  }
+
+  .font-medium {
+    font-weight: 600 !important;
+  }
+
+  .text-red-600 {
+    color: #dc2626 !important;
+  }
+}

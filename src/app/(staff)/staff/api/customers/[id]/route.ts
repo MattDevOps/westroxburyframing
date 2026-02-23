@@ -39,10 +39,23 @@ export async function GET(req: Request, ctx: Ctx) {
       totalAmount: true,
       currency: true,
       orderNumber: true,
+      itemType: true,
     },
   });
 
-  return NextResponse.json({ customer, orders });
+  // Compute lifetime stats
+  const allOrders = await prisma.order.aggregate({
+    where: { customerId: id, status: { notIn: ["cancelled"] } },
+    _sum: { totalAmount: true },
+    _count: true,
+  });
+
+  const stats = {
+    lifetimeValueCents: allOrders._sum.totalAmount ?? 0,
+    totalOrders: allOrders._count,
+  };
+
+  return NextResponse.json({ customer, orders, stats });
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {

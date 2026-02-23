@@ -15,8 +15,9 @@ function NavLink({
 
   const active =
     pathname === href ||
-    (href !== "/staff/orders" && pathname.startsWith(href)) ||
-    (href === "/staff/orders" && pathname.startsWith("/staff/orders"));
+    (href !== "/staff/orders" && !href.startsWith("/staff/orders") && pathname.startsWith(href)) ||
+    (href === "/staff/orders" && pathname === "/staff/orders") ||
+    (href.startsWith("/staff/orders/") && pathname.startsWith(href));
 
   return (
     <a
@@ -52,6 +53,7 @@ export default function StaffTopbar() {
           <nav className="flex gap-2 text-neutral-200">
             <NavLink href="/staff/dashboard">Dashboard</NavLink>
             <NavLink href="/staff/orders">Orders</NavLink>
+            <NavLink href="/staff/orders/incomplete">Incomplete</NavLink>
             <NavLink href="/staff/orders/new">New order</NavLink>
             <NavLink href="/staff/customers">Customers</NavLink>
             <NavLink href="/staff/users">Users</NavLink>

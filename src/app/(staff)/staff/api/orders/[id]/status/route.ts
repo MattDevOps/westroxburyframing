@@ -1,36 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import { sendReadyForPickupEmail } from "@/lib/email";
 
-function getIdFromUrl(req: Request) {
-  const segments = new URL(req.url).pathname.split("/").filter(Boolean);
-  // .../staff/api/orders/:id/status
-  return segments[segments.length - 2] || "";
-}
+// Type assertion to work around TypeScript cache issue with Prisma client
+const prismaWithActivity: any = prisma;
 
-export async function POST(req: Request) {
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function POST(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const id = getIdFromUrl(req);
+  const { id } = await ctx.params;
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   const body = await req.json();
   const status = String(body.status || "");
 
-  const valid = new Set([
-    "new_design",
-    "awaiting_materials",
-    "in_production",
-    "quality_check",
-    "ready_for_pickup",
-    "picked_up",
-    "completed",
-    "cancelled",
-  ]);
+  if (!isValidOrderStatus(status)) {
+    return NextResponse.json({ error: `Invalid status: ${status}` }, { status: 400 });
+  }
 
-  if (!valid.has(status)) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+  if (!prev) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
   const order = await prisma.order.update({
     where: { id },
@@ -38,6 +32,10 @@ export async function POST(req: Request) {
     include: { customer: true },
   });
 
+  const fromLabel = ORDER_STATUS_LABEL[prev.status as keyof typeof ORDER_STATUS_LABEL] || prev.status;
+  const toLabel = ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] || status;
+
+  // Write to both ActivityLog (legacy) and OrderActivity (timeline)
   await prisma.activityLog.create({
     data: {
       entityType: "order",
@@ -45,7 +43,16 @@ export async function POST(req: Request) {
       orderId: order.id,
       action: "status_changed",
       actorUserId: userId,
-      metadata: { to: status },
+      metadata: { from: prev.status, to: status },
+    },
+  });
+
+  await prismaWithActivity.orderActivity.create({
+    data: {
+      orderId: order.id,
+      type: "status_change",
+      message: `Status changed: ${fromLabel} → ${toLabel}`,
+      createdByUserId: userId,
     },
   });
 

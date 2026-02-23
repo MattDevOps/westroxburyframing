@@ -65,6 +65,7 @@ export async function GET(req: Request) {
         status: o.status,
         due_date: o.dueDate,
         customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
+        customer_email: o.customer.email || "",
         total_cents: o.totalAmount,
         paid: paidStatus !== "unpaid",
         paid_status: paidStatus,
@@ -95,10 +96,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
+  // Determine initial status (default: new_design, or "estimate" if requested)
+  const requestedStatus = body.status === "estimate" ? "estimate" : "new_design";
+
   const order = await prisma.order.create({
     data: {
       orderNumber,
       customerId: body.customer_id,
+      status: requestedStatus as any,
       intakeChannel: body.intake_channel || "walk_in",
       dueDate: body.due_date ? new Date(body.due_date) : null,
       itemType: body.item_type,
@@ -109,6 +114,8 @@ export async function POST(req: Request) {
       notesInternal: body.notes_internal || null,
       notesCustomer: body.notes_customer || null,
       subtotalAmount: subtotal,
+      discountType: body.discount_type || "none",
+      discountValue: body.discount_value != null ? Number(body.discount_value) : 0,
       taxAmount: tax,
       totalAmount: total,
       currency: "USD",

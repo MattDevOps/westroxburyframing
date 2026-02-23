@@ -24,11 +24,13 @@ const STATUS_FLOW = [
 ] as const;
 
 const STATUS_LABEL: Record<string, string> = {
+  estimate: "Estimate",
   new_design: "New / Design",
   awaiting_materials: "Awaiting Materials",
   in_production: "In Production",
   quality_check: "Quality Check",
   ready_for_pickup: "Ready for Pickup",
+  on_hold: "On Hold",
   picked_up: "Picked Up",
   completed: "Completed",
   cancelled: "Cancelled",
@@ -62,6 +64,7 @@ export default function OrderDetailPage() {
   const [data, setData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [blindPrint, setBlindPrint] = useState(false);
 
   const [note, setNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -89,6 +92,19 @@ export default function OrderDetailPage() {
   const activity = useMemo(() => (order?.activity || []) as any[], [order]);
 
   if (!order) return <div className="p-6 text-neutral-700">Loading...</div>;
+
+  const isEstimate = order.status === "estimate";
+  const isOnHold = order.status === "on_hold";
+
+  // Discount display helpers
+  const discountType = order.discountType || "none";
+  const discountValue = Number(order.discountValue || 0);
+  const hasDiscount = discountType !== "none" && discountValue > 0;
+  const discountAmountCents = discountType === "percent"
+    ? Math.round(order.subtotalAmount * discountValue / 100)
+    : discountType === "fixed"
+      ? Math.round(discountValue * 100)
+      : 0;
 
   async function setStatus(next: string) {
     const res = await fetch(`/staff/api/orders/${order.id}/status`, {
@@ -148,12 +164,32 @@ export default function OrderDetailPage() {
       totalAmount: (order.totalAmount / 100).toFixed(2),
       currency: order.currency || "USD",
       paidInFull: order.paidInFull ?? true,
+      discountType: order.discountType || "none",
+      discountValue: discountType === "fixed" ? discountValue.toFixed(2) : String(discountValue),
       customerFirstName: order.customer.firstName || "",
       customerLastName: order.customer.lastName || "",
       customerPhone: order.customer.phone || "",
       customerEmail: order.customer.email || "",
     });
     setIsEditing(true);
+  }
+
+  // Recalculate total when discount changes in edit mode
+  function recalcWithDiscount(ed: any) {
+    const sub = Math.round(Number(ed.subtotalAmount) * 100);
+    const dType = ed.discountType || "none";
+    const dVal = Number(ed.discountValue) || 0;
+    let discCents = 0;
+    if (dType === "percent") discCents = Math.round(sub * dVal / 100);
+    else if (dType === "fixed") discCents = Math.round(dVal * 100);
+    const afterDiscount = Math.max(0, sub - discCents);
+    const taxRate = sub > 0 ? (Math.round(Number(ed.taxAmount) * 100) / sub) : 0;
+    const tax = Math.round(afterDiscount * taxRate);
+    return {
+      ...ed,
+      totalAmount: ((afterDiscount + tax) / 100).toFixed(2),
+      taxAmount: (tax / 100).toFixed(2),
+    };
   }
 
   async function saveEdit() {
@@ -176,6 +212,8 @@ export default function OrderDetailPage() {
         totalAmount: Math.round(Number(editData.totalAmount) * 100),
         currency: editData.currency,
         paidInFull: editData.paidInFull,
+        discountType: editData.discountType,
+        discountValue: Number(editData.discountValue) || 0,
         customerFirstName: editData.customerFirstName,
         customerLastName: editData.customerLastName,
         customerPhone: editData.customerPhone,
@@ -192,23 +230,58 @@ export default function OrderDetailPage() {
     await refresh();
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-start justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 print:mb-0">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">{order.orderNumber}</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            {order.orderNumber}
+            {isEstimate && (
+              <span className="ml-3 text-sm font-medium px-2 py-1 rounded-lg border border-red-300 text-red-700 bg-red-50">
+                ESTIMATE
+              </span>
+            )}
+            {isOnHold && (
+              <span className="ml-3 text-sm font-medium px-2 py-1 rounded-lg border border-orange-300 text-orange-700 bg-orange-50">
+                ON HOLD
+              </span>
+            )}
+          </h1>
           <div className="text-neutral-700">
             {order.customer.firstName} {order.customer.lastName}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 print:hidden">
+          {isEstimate && (
+            <button
+              className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm hover:bg-emerald-700"
+              onClick={() => {
+                if (confirm("Activate this estimate? It will become an active order.")) {
+                  setStatus("new_design");
+                }
+              }}
+            >
+              Activate Estimate
+            </button>
+          )}
           <button
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={startEdit}
           >
             Edit Order
           </button>
-
+          <button
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+            onClick={handlePrint}
+            title="Print work order"
+          >
+            🖨️ Print
+          </button>
           <a
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders"
@@ -218,8 +291,9 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Status controls */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:border-0 print:p-0">
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
           <select
             className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
             value={order.status}
@@ -235,7 +309,7 @@ export default function OrderDetailPage() {
           <button
             className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={() => {
-              const idx = STATUS_FLOW.indexOf(order.status);
+              const idx = STATUS_FLOW.indexOf(order.status as any);
               if (idx < 0 || idx === STATUS_FLOW.length - 1) return;
               setStatus(STATUS_FLOW[idx + 1]);
             }}
@@ -246,39 +320,137 @@ export default function OrderDetailPage() {
           <button
             className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             onClick={() => {
-              const idx = STATUS_FLOW.indexOf(order.status);
+              const idx = STATUS_FLOW.indexOf(order.status as any);
               if (idx <= 0) return;
               setStatus(STATUS_FLOW[idx - 1]);
             }}
           >
             ← Back
           </button>
+
+          {!isOnHold && !isEstimate && order.status !== "completed" && order.status !== "cancelled" && order.status !== "picked_up" && (
+            <button
+              className="rounded-xl border border-orange-300 px-3 py-2 text-sm text-orange-700 bg-orange-50 hover:bg-orange-100"
+              onClick={() => setStatus("on_hold")}
+            >
+              Put On Hold
+            </button>
+          )}
         </div>
 
-        <div className="text-neutral-800">
-          <span className="font-medium">Item:</span> {order.itemType}
+        {/* Order info grid — visible in print */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div>
+            <span className="font-medium text-neutral-600">Status:</span>{" "}
+            <span className="text-neutral-900">{STATUS_LABEL[order.status] || order.status}</span>
+          </div>
+          <div>
+            <span className="font-medium text-neutral-600">Item:</span>{" "}
+            <span className="text-neutral-900">{order.itemType}</span>
+          </div>
+          <div>
+            <span className="font-medium text-neutral-600">Subtotal:</span>{" "}
+            <span className="text-neutral-900">${(order.subtotalAmount / 100).toFixed(2)}</span>
+          </div>
+          {hasDiscount && (
+            <div>
+              <span className="font-medium text-neutral-600">Discount:</span>{" "}
+              <span className="text-red-600 font-medium">
+                {discountType === "percent" ? `${discountValue}%` : `$${discountValue.toFixed(2)}`}
+                {" "}(-${(discountAmountCents / 100).toFixed(2)})
+              </span>
+            </div>
+          )}
+          <div>
+            <span className="font-medium text-neutral-600">Tax:</span>{" "}
+            <span className="text-neutral-900">${(order.taxAmount / 100).toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="font-medium text-neutral-600">Total:</span>{" "}
+            <span className="text-neutral-900 font-semibold">${(order.totalAmount / 100).toFixed(2)}</span>
+          </div>
+          {order.dueDate && (
+            <div>
+              <span className="font-medium text-neutral-600">Due:</span>{" "}
+              <span className="text-neutral-900">{new Date(order.dueDate).toLocaleDateString()}</span>
+            </div>
+          )}
+          <div>
+            <span className="font-medium text-neutral-600">Channel:</span>{" "}
+            <span className="text-neutral-900">
+              {order.intakeChannel === "walk_in" ? "Walk-in" : order.intakeChannel === "appointment" ? "Appointment" : "Web Lead"}
+            </span>
+          </div>
+          {(order.width || order.height) && (
+            <div>
+              <span className="font-medium text-neutral-600">Size:</span>{" "}
+              <span className="text-neutral-900">
+                {order.width ? Number(order.width) : "—"} × {order.height ? Number(order.height) : "—"} {order.units || "in"}
+              </span>
+            </div>
+          )}
+          {order.itemDescription && (
+            <div className="col-span-2">
+              <span className="font-medium text-neutral-600">Description:</span>{" "}
+              <span className="text-neutral-900">{order.itemDescription}</span>
+            </div>
+          )}
+          <div className="print:block hidden">
+            <span className="font-medium text-neutral-600">Customer:</span>{" "}
+            <span className="text-neutral-900">
+              {order.customer.firstName} {order.customer.lastName}
+              {order.customer.phone && ` · ${order.customer.phone}`}
+              {order.customer.email && ` · ${order.customer.email}`}
+            </span>
+          </div>
         </div>
-        <div className="text-neutral-800">
-          <span className="font-medium">Total:</span> ${(order.totalAmount / 100).toFixed(2)}
-        </div>
+
+        {(order.notesInternal || order.notesCustomer) && (
+          <div className="border-t border-neutral-100 pt-3 space-y-2 text-sm">
+            {order.notesInternal && !blindPrint && (
+              <div className="blind-hide">
+                <span className="font-medium text-neutral-600">Internal notes:</span>{" "}
+                <span className="text-neutral-800">{order.notesInternal}</span>
+              </div>
+            )}
+            {order.notesCustomer && (
+              <div>
+                <span className="font-medium text-neutral-600">Customer notes:</span>{" "}
+                <span className="text-neutral-800">{order.notesCustomer}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Specs */}
       {order.specs && (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:border-0 print:p-0 print:mt-2">
           <div className="text-neutral-900 font-semibold">Frame Specs</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
             {order.specs.frameCode && (
-              <div><span className="font-medium text-neutral-600">Frame:</span> <span className="text-neutral-900">{order.specs.frameCode}</span></div>
+              <div>
+                <span className="font-medium text-neutral-600">Frame:</span>{" "}
+                <span className={`text-neutral-900 ${blindPrint ? "blind-hide" : ""}`}>{order.specs.frameCode}</span>
+              </div>
             )}
             {order.specs.frameVendor && (
-              <div><span className="font-medium text-neutral-600">Vendor:</span> <span className="text-neutral-900">{order.specs.frameVendor}</span></div>
+              <div className={blindPrint ? "blind-hide" : ""}>
+                <span className="font-medium text-neutral-600">Vendor:</span>{" "}
+                <span className="text-neutral-900">{order.specs.frameVendor}</span>
+              </div>
             )}
             {order.specs.mat1Code && (
-              <div><span className="font-medium text-neutral-600">Mat 1:</span> <span className="text-neutral-900">{order.specs.mat1Code}</span></div>
+              <div>
+                <span className="font-medium text-neutral-600">Mat 1:</span>{" "}
+                <span className={`text-neutral-900 ${blindPrint ? "blind-hide" : ""}`}>{order.specs.mat1Code}</span>
+              </div>
             )}
             {order.specs.mat2Code && (
-              <div><span className="font-medium text-neutral-600">Mat 2:</span> <span className="text-neutral-900">{order.specs.mat2Code}</span></div>
+              <div>
+                <span className="font-medium text-neutral-600">Mat 2:</span>{" "}
+                <span className={`text-neutral-900 ${blindPrint ? "blind-hide" : ""}`}>{order.specs.mat2Code}</span>
+              </div>
             )}
             {order.specs.glassType && (
               <div><span className="font-medium text-neutral-600">Glass:</span> <span className="text-neutral-900">{order.specs.glassType}</span></div>
@@ -302,8 +474,30 @@ export default function OrderDetailPage() {
         </div>
       )}
 
+      {/* Print options — only visible on screen */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
+        <div className="text-neutral-900 font-semibold">Print Options</div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={blindPrint}
+              onChange={(e) => setBlindPrint(e.target.checked)}
+              className="rounded"
+            />
+            Blind estimate (hide item codes & vendor info on print)
+          </label>
+          <button
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+            onClick={handlePrint}
+          >
+            🖨️ Print Work Order
+          </button>
+        </div>
+      </div>
+
       {/* Photos */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
           <div className="text-neutral-900 font-semibold">Photos</div>
           <label className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 cursor-pointer">
@@ -389,8 +583,8 @@ export default function OrderDetailPage() {
         )}
       </div>
 
-      {/* Activity timeline (A) */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4">
+      {/* Activity timeline */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4 print:hidden">
         <div className="flex items-center justify-between">
           <div className="text-neutral-900 font-semibold">Activity</div>
           <button
@@ -407,7 +601,7 @@ export default function OrderDetailPage() {
             className="flex-1 rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add an internal note (e.g., “Ordered museum glass from Larson”)…"
+            placeholder="Add an internal note…"
             onKeyDown={(e) => {
               if (e.key === "Enter") addNote();
             }}
@@ -425,7 +619,7 @@ export default function OrderDetailPage() {
           <div className="text-sm text-neutral-600">No activity yet.</div>
         ) : (
           <div className="space-y-2">
-            {activity.map((a) => {
+            {activity.map((a: any) => {
               const who = a.createdBy?.name || a.createdBy?.email || "Staff";
               const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "";
               return (
@@ -446,7 +640,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Payment */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
           <div className="text-neutral-900 font-semibold">Payment</div>
           {order.squareInvoiceId && (
@@ -643,6 +837,202 @@ export default function OrderDetailPage() {
 
             <div className="border-b border-neutral-200 pb-4 mb-4">
               <h3 className="text-lg font-semibold text-neutral-900 mb-3">Order Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Status">
+                  <select
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.status}
+                    onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                  >
+                    {Object.entries(STATUS_LABEL).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Intake Channel">
+                  <select
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.intakeChannel}
+                    onChange={(e) => setEditData({ ...editData, intakeChannel: e.target.value })}
+                  >
+                    <option value="walk_in">Walk-in</option>
+                    <option value="appointment">Appointment</option>
+                    <option value="web_lead">Web Lead</option>
+                  </select>
+                </Field>
+
+                <Field label="Item Type">
+                  <input
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.itemType}
+                    onChange={(e) => setEditData({ ...editData, itemType: e.target.value })}
+                    placeholder="e.g. art, photo, diploma"
+                  />
+                </Field>
+
+                <Field label="Due Date">
+                  <input
+                    type="date"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.dueDate}
+                    onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Width">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.width}
+                    onChange={(e) => setEditData({ ...editData, width: e.target.value })}
+                    placeholder="Width"
+                  />
+                </Field>
+
+                <Field label="Height">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.height}
+                    onChange={(e) => setEditData({ ...editData, height: e.target.value })}
+                    placeholder="Height"
+                  />
+                </Field>
+
+                <Field label="Units">
+                  <select
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.units}
+                    onChange={(e) => setEditData({ ...editData, units: e.target.value })}
+                  >
+                    <option value="in">Inches</option>
+                    <option value="cm">Centimeters</option>
+                  </select>
+                </Field>
+
+                <Field label="Item Description">
+                  <input
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.itemDescription}
+                    onChange={(e) => setEditData({ ...editData, itemDescription: e.target.value })}
+                    placeholder="Description of the piece"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div className="border-b border-neutral-200 pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-3">Pricing</h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                <Field label="Subtotal ($)">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.subtotalAmount}
+                    onChange={(e) => {
+                      const updated = { ...editData, subtotalAmount: e.target.value };
+                      setEditData(recalcWithDiscount(updated));
+                    }}
+                  />
+                </Field>
+
+                <Field label="Tax ($)">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.taxAmount}
+                    onChange={(e) => setEditData({ ...editData, taxAmount: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Total ($)">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 font-semibold"
+                    value={editData.totalAmount}
+                    onChange={(e) => setEditData({ ...editData, totalAmount: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              {/* Discount */}
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <h4 className="text-sm font-semibold text-neutral-800 mb-3">Discount</h4>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Field label="Discount Type">
+                    <select
+                      className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                      value={editData.discountType}
+                      onChange={(e) => {
+                        const updated = { ...editData, discountType: e.target.value, discountValue: "0" };
+                        setEditData(recalcWithDiscount(updated));
+                      }}
+                    >
+                      <option value="none">No discount</option>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="fixed">Fixed amount ($)</option>
+                    </select>
+                  </Field>
+
+                  {editData.discountType !== "none" && (
+                    <Field label={editData.discountType === "percent" ? "Discount (%)" : "Discount ($)"}>
+                      <input
+                        type="number"
+                        step={editData.discountType === "percent" ? "1" : "0.01"}
+                        min="0"
+                        className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                        value={editData.discountValue}
+                        onChange={(e) => {
+                          const updated = { ...editData, discountValue: e.target.value };
+                          setEditData(recalcWithDiscount(updated));
+                        }}
+                      />
+                    </Field>
+                  )}
+
+                  {editData.discountType !== "none" && Number(editData.discountValue) > 0 && (
+                    <div className="flex items-end">
+                      <div className="text-sm text-red-600 font-medium pb-2">
+                        Saves: ${(() => {
+                          const sub = Math.round(Number(editData.subtotalAmount) * 100);
+                          const dVal = Number(editData.discountValue) || 0;
+                          if (editData.discountType === "percent") return (sub * dVal / 100 / 100).toFixed(2);
+                          return dVal.toFixed(2);
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="pb-4 mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-3">Notes</h3>
+              <div className="grid gap-4">
+                <Field label="Internal Notes (staff only)">
+                  <textarea
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 min-h-[80px]"
+                    value={editData.notesInternal}
+                    onChange={(e) => setEditData({ ...editData, notesInternal: e.target.value })}
+                    placeholder="Internal notes visible only to staff"
+                  />
+                </Field>
+
+                <Field label="Customer Notes">
+                  <textarea
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 min-h-[80px]"
+                    value={editData.notesCustomer}
+                    onChange={(e) => setEditData({ ...editData, notesCustomer: e.target.value })}
+                    placeholder="Notes from or for the customer"
+                  />
+                </Field>
+              </div>
             </div>
 
             <div className="flex gap-2 justify-end pt-4">
