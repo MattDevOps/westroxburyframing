@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 
 interface GalleryItem {
@@ -35,7 +35,10 @@ export default function GalleryManagementPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [published, setPublished] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -75,9 +78,59 @@ export default function GalleryManagementPage() {
     setShowForm(true);
   }
 
+  async function uploadFile(file: File) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Invalid file type. Use JPEG, PNG, WebP, or GIF.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File too large. Max 10MB.");
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/staff/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Upload failed");
+      }
+
+      const data = await res.json();
+      setImageUrl(data.url);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Upload failed";
+      setError(msg);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadFile(file);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
+  }
+
   async function handleSave() {
     if (!imageUrl.trim()) {
-      setError("Image URL is required");
+      setError("Image is required — upload a photo or paste a URL");
       return;
     }
     setSaving(true);
@@ -85,7 +138,6 @@ export default function GalleryManagementPage() {
 
     try {
       if (editingItem) {
-        // Update
         const res = await fetch(`/staff/api/gallery/${editingItem.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -96,7 +148,6 @@ export default function GalleryManagementPage() {
           throw new Error(d.error || "Update failed");
         }
       } else {
-        // Create
         const res = await fetch("/staff/api/gallery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,8 +161,9 @@ export default function GalleryManagementPage() {
 
       resetForm();
       await loadItems();
-    } catch (e: any) {
-      setError(e.message || "Save failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Save failed";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -202,20 +254,91 @@ export default function GalleryManagementPage() {
               </select>
             </div>
 
+            {/* Image Upload Area */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Image URL *
+                Image *
               </label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="/framed-art/example.webp or https://..."
-                className="w-full rounded-xl border border-neutral-300 px-4 py-2.5 text-sm"
-              />
-              <p className="text-xs text-neutral-500 mt-1">
-                Use a path like /framed-art/image.webp for local images, or a full URL for external images.
-              </p>
+
+              {!imageUrl ? (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                    dragOver
+                      ? "border-blue-400 bg-blue-50"
+                      : "border-neutral-300 hover:border-neutral-400 bg-neutral-50"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+
+                  {uploading ? (
+                    <div className="space-y-2">
+                      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                      <p className="text-sm text-blue-600 font-medium">Uploading…</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <svg className="w-10 h-10 mx-auto text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-neutral-600">
+                        <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-neutral-400">JPEG, PNG, WebP, or GIF — max 10MB</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="relative border border-neutral-200 rounded-xl p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="relative w-32 h-40 bg-neutral-100 rounded-lg overflow-hidden shrink-0">
+                      <Image
+                        src={imageUrl}
+                        alt={title || "Gallery preview"}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <p className="text-sm text-neutral-700 font-medium">Image uploaded ✓</p>
+                      <p className="text-xs text-neutral-400 truncate">{imageUrl}</p>
+                      <button
+                        type="button"
+                        onClick={() => { setImageUrl(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Remove and upload a different image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback: paste URL manually */}
+              {!imageUrl && (
+                <div className="mt-2">
+                  <details className="text-xs text-neutral-500">
+                    <summary className="cursor-pointer hover:text-neutral-700">Or paste an image URL instead</summary>
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full mt-2 rounded-xl border border-neutral-300 px-4 py-2.5 text-sm"
+                    />
+                  </details>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -242,26 +365,10 @@ export default function GalleryManagementPage() {
             </div>
           </div>
 
-          {/* Preview */}
-          {imageUrl && (
-            <div className="border border-neutral-200 rounded-xl p-4">
-              <p className="text-xs text-neutral-500 mb-2">Preview</p>
-              <div className="relative w-48 h-60 bg-neutral-100 rounded-xl overflow-hidden">
-                <Image
-                  src={imageUrl}
-                  alt={title || "Gallery preview"}
-                  fill
-                  className="object-cover"
-                  unoptimized={imageUrl.startsWith("http")}
-                />
-              </div>
-            </div>
-          )}
-
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || uploading}
               className="rounded-xl bg-black text-white px-5 py-2.5 text-sm disabled:opacity-50"
             >
               {saving ? "Saving…" : editingItem ? "Update" : "Add Item"}
@@ -300,7 +407,7 @@ export default function GalleryManagementPage() {
                   fill
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  unoptimized={item.imageUrl.startsWith("http")}
+                  unoptimized
                 />
                 {!item.published && (
                   <div className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
