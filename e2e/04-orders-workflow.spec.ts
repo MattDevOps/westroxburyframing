@@ -9,7 +9,7 @@ async function createTestOrder(page: Page) {
   const suffix = testSuffix();
 
   await page.goto("/staff/orders/new");
-  await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
 
   // Customer
   await page.getByPlaceholder("e.g. 6175551234").fill(phone);
@@ -30,7 +30,8 @@ async function createTestOrder(page: Page) {
 
   // Submit
   await page.getByRole("button", { name: /create order/i }).click();
-  await page.waitForURL(/\/staff\/orders\//, { timeout: 15_000 });
+  // Wait for redirect to order detail (UUID-based URL, not /new)
+  await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
 
   return {
     url: page.url(),
@@ -47,24 +48,24 @@ test.describe("Order Workflow", () => {
 
   test("new order page loads with all sections", async ({ page }) => {
     await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Item")).toBeVisible();
+    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Item", { exact: true })).toBeVisible();
     await expect(page.getByText("Frame Specs")).toBeVisible();
-    await expect(page.getByText("Pricing")).toBeVisible();
+    await expect(page.getByText("Pricing", { exact: true })).toBeVisible();
   });
 
   test("create order with full details", async ({ page }) => {
     const { url } = await createTestOrder(page);
 
-    // Should be on order detail page
-    expect(url).toMatch(/\/staff\/orders\//);
+    // Should be on order detail page (UUID, not /new)
+    expect(url).toMatch(/\/staff\/orders\/(?!new)[a-z0-9-]+/i);
 
     // Order detail should show the order number
     await expect(page.getByText(/WRX-/)).toBeVisible({ timeout: 10_000 });
     // Should show status
-    await expect(page.getByText(/new.*design/i)).toBeVisible();
+    await expect(page.locator("span").filter({ hasText: /New.*Design/i }).first()).toBeVisible();
     // Should show the total
-    await expect(page.getByText(/\$159\.38|\$150/)).toBeVisible();
+    await expect(page.getByText("$159.38")).toBeVisible();
   });
 
   test("create estimate order", async ({ page }) => {
@@ -72,7 +73,7 @@ test.describe("Order Workflow", () => {
     const suffix = testSuffix();
 
     await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
 
     // Customer
     await page.getByPlaceholder("e.g. 6175551234").fill(phone);
@@ -88,9 +89,9 @@ test.describe("Order Workflow", () => {
     const estimateBtn = page.getByRole("button", { name: /estimate/i });
     if (await estimateBtn.isVisible()) {
       await estimateBtn.click();
-      await page.waitForURL(/\/staff\/orders\//, { timeout: 15_000 });
-      // Should show estimate status
-      await expect(page.getByText(/estimate/i)).toBeVisible();
+      await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
+      // Should show estimate status badge
+      await expect(page.getByText("ESTIMATE", { exact: true })).toBeVisible();
     }
   });
 
@@ -182,9 +183,9 @@ test.describe("Order Workflow", () => {
     await page.waitForTimeout(2000);
 
     // Click through tabs
-    const activeTab = page.getByRole("button", { name: /active/i });
-    const estimatesTab = page.getByRole("button", { name: /estimates/i });
-    const allTab = page.getByRole("button", { name: /all/i });
+    const activeTab = page.getByRole("button", { name: /^active/i });
+    const estimatesTab = page.getByRole("button", { name: /^estimates/i });
+    const allTab = page.getByRole("button", { name: /all orders/i });
 
     if (await activeTab.isVisible()) {
       await activeTab.click();
@@ -194,7 +195,7 @@ test.describe("Order Workflow", () => {
       await estimatesTab.click();
       await page.waitForTimeout(1000);
       // Should show estimates column
-      await expect(page.getByText("Estimates")).toBeVisible();
+      await expect(page.getByText("Estimates").first()).toBeVisible();
     }
     if (await allTab.isVisible()) {
       await allTab.click();

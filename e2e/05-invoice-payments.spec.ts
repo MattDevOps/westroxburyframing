@@ -9,7 +9,7 @@ async function createPaidOrder(page: Page) {
   const suffix = testSuffix();
 
   await page.goto("/staff/orders/new");
-  await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
 
   await page.getByPlaceholder("e.g. 6175551234").fill(phone);
   await page.getByPlaceholder("First name").fill(`Invoice${suffix}`);
@@ -27,7 +27,8 @@ async function createPaidOrder(page: Page) {
   await numberInputs.nth(3).fill("15.63"); // tax
 
   await page.getByRole("button", { name: /create order/i }).click();
-  await page.waitForURL(/\/staff\/orders\//, { timeout: 15_000 });
+  // Wait for redirect to order detail (UUID-based URL, not /new)
+  await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
 }
 
 test.describe("Invoice & Payments", () => {
@@ -53,7 +54,6 @@ test.describe("Invoice & Payments", () => {
     await createPaidOrder(page);
 
     // The "Send Invoice" button should be visible since we provided an email
-    const sendBtn = page.getByRole("button", { name: /send.*invoice/i });
     // It may or may not be visible depending on Square config — just verify
     // the invoice section loaded without errors
     await expect(
@@ -75,7 +75,7 @@ test.describe("Invoice & Payments", () => {
     const suffix = testSuffix();
 
     await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
 
     await page.getByPlaceholder("e.g. 6175551234").fill(phone);
     await page.getByPlaceholder("First name").fill(`Disc${suffix}`);
@@ -85,12 +85,15 @@ test.describe("Invoice & Payments", () => {
     const numberInputs = page.locator('input[type="number"]');
     await numberInputs.nth(2).fill("200"); // subtotal
 
-    // Select percent discount if dropdown available
-    const discountSelect = page.locator('select').nth(1);
+    // Select percent discount — the discount type select is the 4th <select> on the page
+    // (Item type, Glass type, Mount type, Discount type)
+    const discountSelect = page.locator('select').nth(3);
     if (await discountSelect.isVisible().catch(() => false)) {
       await discountSelect.selectOption("percent");
-      // Fill discount value
-      const discountInput = numberInputs.nth(4);
+      await page.waitForTimeout(500);
+      // The discount value input appears after selecting a type
+      // Find the input labeled for discount value
+      const discountInput = page.locator('input[type="number"][step="1"]');
       if (await discountInput.isVisible().catch(() => false)) {
         await discountInput.fill("10");
       }
@@ -99,7 +102,7 @@ test.describe("Invoice & Payments", () => {
     await numberInputs.nth(3).fill("11.25"); // tax
 
     await page.getByRole("button", { name: /create order/i }).click();
-    await page.waitForURL(/\/staff\/orders\//, { timeout: 15_000 });
+    await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
 
     // Order should be created; verify total reflects discount
     await expect(page.getByText(/WRX-/)).toBeVisible({ timeout: 10_000 });

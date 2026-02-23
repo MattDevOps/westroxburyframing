@@ -22,7 +22,7 @@ test.describe("Customer Management", () => {
 
     // Go to new order (which creates the customer inline)
     await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
 
     // Fill customer fields
     await page.getByPlaceholder("e.g. 6175551234").fill(phone);
