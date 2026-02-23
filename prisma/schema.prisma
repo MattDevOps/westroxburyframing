@@ -50,8 +50,9 @@ model Customer {
   id               String    @id @default(uuid())
   firstName        String
   lastName         String
-  phone            String    @unique
-  email            String?
+  phone            String?   @unique
+  email            String?   @unique
+  passwordHash     String?   // null = staff-created (no login), set = customer account
   addressLine1     String?
   addressLine2     String?
   city             String?
