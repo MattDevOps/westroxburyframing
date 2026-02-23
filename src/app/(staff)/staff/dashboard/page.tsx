@@ -46,6 +46,8 @@ interface DashboardData {
   readyForPickup: ReadyForPickupOrder[];
   estimatesCount: number;
   onHoldCount: number;
+  arBalance: number;
+  invoicesPending: number;
   recentActivity: ActivityItem[];
 }
 
@@ -192,6 +194,16 @@ export default function DashboardPage() {
           label="On Hold"
           value={data.onHoldCount.toString()}
           accent={data.onHoldCount > 0 ? "amber" : undefined}
+        />
+        <KPICard
+          label="A/R Balance"
+          value={`$${(data.arBalance / 100).toFixed(0)}`}
+          accent={data.arBalance > 0 ? "amber" : undefined}
+        />
+        <KPICard
+          label="Invoices Pending"
+          value={data.invoicesPending.toString()}
+          accent={data.invoicesPending > 0 ? "blue" : undefined}
         />
       </div>
 

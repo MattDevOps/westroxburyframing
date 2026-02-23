@@ -50,12 +50,42 @@ export async function GET(req: Request, ctx: Ctx) {
     _count: true,
   });
 
+  // Fetch invoices for A/R
+  const invoices = await prisma.invoice.findMany({
+    where: { customerId: id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      invoiceNumber: true,
+      status: true,
+      totalAmount: true,
+      amountPaid: true,
+      balanceDue: true,
+      depositPercent: true,
+      depositAmount: true,
+      createdAt: true,
+      orders: { select: { id: true, orderNumber: true } },
+    },
+  });
+
+  // Calculate A/R balance (outstanding across all non-void/cancelled invoices)
+  const arBalance = invoices
+    .filter((i) => i.status !== "void" && i.status !== "cancelled" && i.status !== "paid")
+    .reduce((sum, i) => sum + i.balanceDue, 0);
+
+  const totalCollected = invoices
+    .filter((i) => i.status !== "void" && i.status !== "cancelled")
+    .reduce((sum, i) => sum + i.amountPaid, 0);
+
   const stats = {
     lifetimeValueCents: allOrders._sum.totalAmount ?? 0,
     totalOrders: allOrders._count,
+    arBalance,
+    totalCollected,
+    totalInvoices: invoices.length,
   };
 
-  return NextResponse.json({ customer, orders, stats });
+  return NextResponse.json({ customer, orders, invoices, stats });
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {

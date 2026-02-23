@@ -22,7 +22,14 @@ export default function CustomerDetailPage({
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
-  const [stats, setStats] = useState<{ lifetimeValueCents: number; totalOrders: number } | null>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    lifetimeValueCents: number;
+    totalOrders: number;
+    arBalance: number;
+    totalCollected: number;
+    totalInvoices: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -50,6 +57,7 @@ export default function CustomerDetailPage({
 
       setCustomer(data.customer);
       setOrders(data.orders || []);
+      setInvoices(data.invoices || []);
       setStats(data.stats || null);
     } catch (e: any) {
       setErr(e?.message || "Error");
@@ -123,13 +131,23 @@ export default function CustomerDetailPage({
             {customer.email || "—"} · {customer.phone || "—"}
           </p>
           {stats && (
-            <div className="flex gap-4 mt-2">
+            <div className="flex flex-wrap gap-4 mt-2">
               <span className="text-sm font-medium text-neutral-900">
                 Lifetime value: <span className="text-emerald-700">${(stats.lifetimeValueCents / 100).toFixed(2)}</span>
               </span>
               <span className="text-sm text-neutral-600">
                 {stats.totalOrders} order{stats.totalOrders !== 1 ? "s" : ""}
               </span>
+              {stats.arBalance > 0 && (
+                <span className="text-sm font-medium text-amber-700">
+                  A/R Balance: ${(stats.arBalance / 100).toFixed(2)}
+                </span>
+              )}
+              {stats.totalCollected > 0 && (
+                <span className="text-sm text-emerald-600">
+                  Collected: ${(stats.totalCollected / 100).toFixed(2)}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -153,6 +171,34 @@ export default function CustomerDetailPage({
       {msg && (
         <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm text-green-800">
           {msg}
+        </div>
+      )}
+
+      {/* A/R & Invoices Summary Bar */}
+      {invoices.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-neutral-200 bg-white p-3">
+            <div className="text-xs text-neutral-500">Total Invoiced</div>
+            <div className="text-lg font-bold text-neutral-900">
+              ${(invoices.filter((i: any) => i.status !== "void" && i.status !== "cancelled").reduce((s: number, i: any) => s + i.totalAmount, 0) / 100).toFixed(2)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+            <div className="text-xs text-emerald-600">Collected</div>
+            <div className="text-lg font-bold text-emerald-700">
+              ${((stats?.totalCollected || 0) / 100).toFixed(2)}
+            </div>
+          </div>
+          <div className={`rounded-xl border p-3 ${(stats?.arBalance || 0) > 0 ? "border-amber-200 bg-amber-50/50" : "border-emerald-200 bg-emerald-50/50"}`}>
+            <div className="text-xs" style={{ color: (stats?.arBalance || 0) > 0 ? "#b45309" : "#047857" }}>Outstanding</div>
+            <div className="text-lg font-bold" style={{ color: (stats?.arBalance || 0) > 0 ? "#b45309" : "#047857" }}>
+              ${((stats?.arBalance || 0) / 100).toFixed(2)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-white p-3">
+            <div className="text-xs text-neutral-500">Invoices</div>
+            <div className="text-lg font-bold text-neutral-900">{stats?.totalInvoices || 0}</div>
+          </div>
         </div>
       )}
 
@@ -306,6 +352,61 @@ export default function CustomerDetailPage({
           )}
         </div>
       </div>
+      {/* Invoices */}
+      {invoices.length > 0 && (
+        <div className="rounded-2xl border border-neutral-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-medium">Invoices</div>
+            <a
+              href={`/staff/invoices/new?customerId=${customer.id}`}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              + New Invoice
+            </a>
+          </div>
+
+          <div className="space-y-2">
+            {invoices.map((inv: any) => {
+              const statusColor: Record<string, string> = {
+                draft: "border-neutral-300 text-neutral-600 bg-neutral-50",
+                sent: "border-blue-300 text-blue-700 bg-blue-50",
+                partial: "border-amber-300 text-amber-700 bg-amber-50",
+                paid: "border-emerald-300 text-emerald-700 bg-emerald-50",
+                void: "border-red-200 text-red-600 bg-red-50",
+              };
+
+              return (
+                <a
+                  key={inv.id}
+                  href={`/staff/invoices/${inv.id}`}
+                  className="block rounded-xl border border-neutral-200 px-4 py-3 hover:bg-neutral-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{inv.invoiceNumber}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${statusColor[inv.status] || statusColor.draft}`}>
+                        {inv.status === "partial" ? "Partial" : inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium">${(inv.totalAmount / 100).toFixed(2)}</span>
+                  </div>
+                  {inv.balanceDue > 0 && inv.status !== "paid" && (
+                    <div className="text-xs text-amber-700 mt-1">Balance: ${(inv.balanceDue / 100).toFixed(2)}</div>
+                  )}
+                  <div className="flex gap-1 mt-1">
+                    {inv.orders?.map((o: any) => (
+                      <span key={o.id} className="text-xs text-neutral-400">{o.orderNumber}</span>
+                    ))}
+                  </div>
+                  <div className="text-xs text-neutral-400 mt-1">
+                    {new Date(inv.createdAt).toLocaleDateString()}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

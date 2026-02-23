@@ -23,6 +23,18 @@ export async function GET(req: Request, ctx: Ctx) {
       photos: true,
       payments: true,
       createdBy: true,
+      invoice: {
+        select: {
+          id: true,
+          invoiceNumber: true,
+          status: true,
+          totalAmount: true,
+          amountPaid: true,
+          balanceDue: true,
+          depositPercent: true,
+          depositAmount: true,
+        },
+      },
     },
   });
 

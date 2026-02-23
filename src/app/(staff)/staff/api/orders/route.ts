@@ -14,12 +14,14 @@ export async function GET(req: Request) {
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
   const itemType = (searchParams.get("item_type") || "").trim();
+  const customerId = searchParams.get("customerId") || "";
 
   // Build WHERE clause
   const where: Record<string, unknown> = {};
   if (statusParams.length === 1) where.status = statusParams[0];
   else if (statusParams.length > 1) where.status = { in: statusParams };
   if (itemType) where.itemType = itemType;
+  if (customerId) where.customerId = customerId;
 
   // Date range filter
   if (from || to) {
@@ -63,14 +65,18 @@ export async function GET(req: Request) {
       return {
         id: o.id,
         order_number: o.orderNumber,
+        orderNumber: o.orderNumber,
         status: o.status,
         due_date: o.dueDate,
         customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
         customer_email: o.customer.email || "",
         total_cents: o.totalAmount,
+        totalAmount: o.totalAmount,
         paid: paidStatus !== "unpaid",
         paid_status: paidStatus,
         item_type: o.itemType,
+        itemType: o.itemType || "",
+        invoiceId: o.invoiceId || null,
       };
     }),
   });

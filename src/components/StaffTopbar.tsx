@@ -10,6 +10,7 @@ const STAFF_NAV = [
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
   { href: "/staff/orders/new", label: "New order" },
+  { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
   { href: "/staff/gallery", label: "Gallery" },
@@ -28,13 +29,18 @@ function NavLink({
 }) {
   const pathname = usePathname();
 
+  // For exact matches, or sub-route matching (but orders/invoices need special handling)
+  const isOrdersRoot = href === "/staff/orders";
+  const isInvoicesRoot = href === "/staff/invoices";
   const active =
     pathname === href ||
-    (href !== "/staff/orders" &&
-      !href.startsWith("/staff/orders") &&
-      pathname.startsWith(href)) ||
-    (href === "/staff/orders" && pathname === "/staff/orders") ||
-    (href.startsWith("/staff/orders/") && pathname.startsWith(href));
+    (isOrdersRoot && pathname === "/staff/orders") ||
+    (isInvoicesRoot && pathname === "/staff/invoices") ||
+    (href.startsWith("/staff/orders/") && pathname.startsWith(href)) ||
+    (href.startsWith("/staff/invoices/") && pathname.startsWith(href)) ||
+    (!isOrdersRoot && !isInvoicesRoot &&
+     !href.startsWith("/staff/orders") && !href.startsWith("/staff/invoices") &&
+     pathname.startsWith(href));
 
   return (
     <a

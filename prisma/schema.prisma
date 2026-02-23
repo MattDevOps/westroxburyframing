@@ -40,9 +40,10 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  orders        Order[]
-  activity      ActivityLog[]   @relation("ActorActivity")
-  orderActivity OrderActivity[]
+  orders          Order[]
+  invoicesCreated Invoice[]       @relation("InvoiceCreatedBy")
+  activity        ActivityLog[]   @relation("ActorActivity")
+  orderActivity   OrderActivity[]
 }
 
 model Customer {
@@ -63,6 +64,7 @@ model Customer {
   updatedAt        DateTime  @updatedAt
 
   orders       Order[]
+  invoices     Invoice[]
   appointments Appointment[]
 }
 
@@ -94,6 +96,10 @@ model Order {
   squareInvoiceId     String?
   squareInvoiceUrl    String?
   squareInvoiceStatus String?
+
+  /// Link to the new Invoice model (Phase 2A). Null for legacy orders.
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
 
   createdByUserId String
   createdBy       User     @relation(fields: [createdByUserId], references: [id])
@@ -209,4 +215,55 @@ model OrderActivity {
 
   order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdBy User? @relation(fields: [createdByUserId], references: [id])
+}
+
+// ─── Phase 2A: Invoice Model ───────────────────────────────────
+
+model Invoice {
+  id              String   @id @default(uuid())
+  invoiceNumber   String   @unique
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+
+  subtotalAmount  Int      @default(0) // cents
+  discountAmount  Int      @default(0) // cents
+  taxAmount       Int      @default(0) // cents
+  totalAmount     Int      @default(0) // cents
+
+  depositPercent  Int?     // e.g. 50 for 50%
+  depositAmount   Int      @default(0) // cents (auto-calculated or manual)
+  amountPaid      Int      @default(0) // cents (sum of payments)
+  balanceDue      Int      @default(0) // cents (totalAmount - amountPaid)
+
+  currency        String   @default("USD")
+  status          String   @default("draft") // draft, sent, partial, paid, void, cancelled
+
+  squareInvoiceId  String?
+  squareInvoiceUrl String?
+
+  notes           String?
+
+  createdByUserId String
+  createdBy       User     @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders          Order[]
+  payments        InvoicePayment[]
+}
+
+model InvoicePayment {
+  id               String        @id @default(uuid())
+  invoiceId        String
+  invoice          Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount           Int           // cents
+  method           String        @default("square") // square, cash, check, other
+  squarePaymentId  String?       @unique
+  squareReceiptUrl String?
+  status           PaymentStatus @default(paid)
+  paidAt           DateTime
+  note             String?
+
+  createdAt        DateTime      @default(now())
 }

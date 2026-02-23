@@ -148,6 +148,22 @@ export async function GET(req: Request) {
     where: { status: "on_hold" },
   });
 
+  // --- A/R totals from Invoice model ---
+  let arBalance = 0;
+  let invoicesPending = 0;
+  try {
+    const outstandingInvoices = await prisma.invoice.findMany({
+      where: {
+        status: { in: ["draft", "sent", "partial"] },
+      },
+      select: { balanceDue: true },
+    });
+    arBalance = outstandingInvoices.reduce((sum, i) => sum + i.balanceDue, 0);
+    invoicesPending = outstandingInvoices.length;
+  } catch (e) {
+    console.error("Failed to load A/R totals:", e);
+  }
+
   // --- NEW: Recent activity (last 15 events) ---
   let recentActivity: any[] = [];
   try {
@@ -192,6 +208,8 @@ export async function GET(req: Request) {
     })),
     estimatesCount,
     onHoldCount,
+    arBalance,
+    invoicesPending,
     recentActivity: recentActivity.map((a: any) => ({
       id: a.id,
       type: a.type,

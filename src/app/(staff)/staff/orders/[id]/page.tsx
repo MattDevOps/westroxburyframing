@@ -639,10 +639,65 @@ export default function OrderDetailPage() {
         )}
       </div>
 
+      {/* Invoice Link */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
+        <div className="flex items-center justify-between">
+          <div className="text-neutral-900 font-semibold">Invoice</div>
+          {!order.invoice && (
+            <a
+              href={`/staff/invoices/new?customerId=${order.customer.id}&orderId=${order.id}`}
+              className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+            >
+              Create Invoice
+            </a>
+          )}
+        </div>
+
+        {order.invoice ? (
+          <a
+            href={`/staff/invoices/${order.invoice.id}`}
+            className="block rounded-xl border border-blue-200 bg-blue-50/50 p-4 hover:bg-blue-50 transition"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-semibold text-neutral-900">{order.invoice.invoiceNumber}</span>
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full border ${
+                  order.invoice.status === "paid"
+                    ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                    : order.invoice.status === "partial"
+                    ? "border-amber-300 text-amber-700 bg-amber-50"
+                    : order.invoice.status === "sent"
+                    ? "border-blue-300 text-blue-700 bg-blue-50"
+                    : "border-neutral-300 text-neutral-600 bg-neutral-50"
+                }`}>
+                  {order.invoice.status === "paid" ? "Paid" : order.invoice.status === "partial" ? "Partial" : order.invoice.status === "sent" ? "Sent" : "Draft"}
+                </span>
+              </div>
+              <div className="text-right text-sm">
+                <div className="font-semibold">${(order.invoice.totalAmount / 100).toFixed(2)}</div>
+                {order.invoice.balanceDue > 0 && (
+                  <div className="text-xs text-amber-700">Due: ${(order.invoice.balanceDue / 100).toFixed(2)}</div>
+                )}
+              </div>
+            </div>
+            {order.invoice.depositPercent && order.invoice.amountPaid > 0 && order.invoice.amountPaid < order.invoice.totalAmount && (
+              <div className="mt-2 w-full bg-neutral-200 rounded-full h-2">
+                <div
+                  className="bg-emerald-500 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (order.invoice.amountPaid / order.invoice.totalAmount) * 100)}%` }}
+                />
+              </div>
+            )}
+          </a>
+        ) : (
+          <p className="text-sm text-neutral-500">No invoice linked. Create one to track deposits and payments.</p>
+        )}
+      </div>
+
       {/* Payment */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
-          <div className="text-neutral-900 font-semibold">Payment</div>
+          <div className="text-neutral-900 font-semibold">Payment (Legacy)</div>
           {order.squareInvoiceId && (
             <span
               className={`text-sm px-2 py-1 rounded-lg border ${order.squareInvoiceStatus?.toUpperCase() === "PAID"
