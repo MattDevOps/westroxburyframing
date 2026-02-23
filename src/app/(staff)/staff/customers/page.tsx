@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Download, FileText, Shield, ChevronDown } from "lucide-react";
 
 type Customer = {
   id: string;
@@ -15,11 +16,26 @@ type Customer = {
   _count?: { orders: number };
 };
 
+type Backup = {
+  url: string;
+  pathname: string;
+  size: number;
+  uploadedAt: string;
+};
+
 export default function CustomersPage() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  // Export / backup state
+  const [showActions, setShowActions] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [showBackups, setShowBackups] = useState(false);
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
 
   async function load(search?: string) {
     setLoading(true);
@@ -30,19 +46,17 @@ export default function CustomersPage() {
     try {
       const res = await fetch(`/staff/api/customers?q=${encodeURIComponent(query)}`, {
         cache: "no-store",
-        credentials: "same-origin", // ensure cookie is included
+        credentials: "same-origin",
       });
 
       const raw = await res.text();
 
-      // Try parse JSON but keep raw no matter what
       let data: any = null;
       try {
         data = raw ? JSON.parse(raw) : null;
       } catch {}
 
       if (!res.ok) {
-        // show status + server message
         const msg =
           data?.error ||
           (raw?.slice?.(0, 300) || "") ||
@@ -52,7 +66,6 @@ export default function CustomersPage() {
 
       setRows(data?.customers || []);
     } catch (e: any) {
-      // This will catch true network failures too
       setErr(e?.message || "Failed to fetch");
     } finally {
       setLoading(false);
@@ -75,22 +88,161 @@ export default function CustomersPage() {
     });
   }, [q, rows]);
 
+  async function handleBackup() {
+    setBackingUp(true);
+    setBackupMsg(null);
+    try {
+      const res = await fetch("/staff/api/customers/backup", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        setBackupMsg(`Backup complete — ${data.backup.customerCount} customers saved.`);
+      } else {
+        setBackupMsg(`Backup failed: ${data.error || "Unknown error"}`);
+      }
+    } catch {
+      setBackupMsg("Backup failed: network error.");
+    } finally {
+      setBackingUp(false);
+    }
+  }
+
+  async function loadBackups() {
+    setShowBackups(!showBackups);
+    if (showBackups) return; // toggling off
+    setLoadingBackups(true);
+    try {
+      const res = await fetch("/staff/api/customers/backup");
+      const data = await res.json();
+      setBackups(data.backups || []);
+    } catch {
+      setBackups([]);
+    } finally {
+      setLoadingBackups(false);
+    }
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Customers</h1>
-          <p className="text-neutral-600 text-sm mt-1">Search and manage customer records.</p>
+          <p className="text-neutral-600 text-sm mt-1">
+            {rows.length > 0 && !loading ? `${rows.length} customers` : "Search and manage customer records."}
+          </p>
         </div>
 
-        <a
-          href="/staff/orders/new"
-          className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
-          title="Create a new order (customer created during order intake)"
-        >
-          New order
-        </a>
+        <div className="flex items-center gap-2">
+          {/* Export / Backup dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowActions(!showActions)}
+              className="flex items-center gap-1.5 rounded-xl border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
+            >
+              <Download size={14} />
+              Export
+              <ChevronDown size={14} className={showActions ? "rotate-180 transition-transform" : "transition-transform"} />
+            </button>
+
+            {showActions && (
+              <div className="absolute right-0 mt-1 w-56 bg-white border border-neutral-200 rounded-xl shadow-lg z-20 py-1">
+                <a
+                  href="/staff/api/customers/export?format=csv"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-neutral-50 w-full"
+                  onClick={() => setShowActions(false)}
+                >
+                  <FileText size={14} className="text-green-600" />
+                  Download CSV
+                </a>
+                <a
+                  href="/staff/api/customers/export?format=json"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-neutral-50 w-full"
+                  onClick={() => setShowActions(false)}
+                >
+                  <FileText size={14} className="text-blue-600" />
+                  Download JSON
+                </a>
+                <a
+                  href="/staff/api/customers/export/pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-neutral-50 w-full"
+                  onClick={() => setShowActions(false)}
+                >
+                  <FileText size={14} className="text-red-600" />
+                  Print / Save as PDF
+                </a>
+                <div className="border-t border-neutral-200 my-1" />
+                <button
+                  onClick={() => { handleBackup(); setShowActions(false); }}
+                  disabled={backingUp}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-neutral-50 w-full text-left"
+                >
+                  <Shield size={14} className="text-indigo-600" />
+                  {backingUp ? "Backing up…" : "Backup Now"}
+                </button>
+                <button
+                  onClick={() => { loadBackups(); setShowActions(false); }}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-neutral-50 w-full text-left"
+                >
+                  <Shield size={14} className="text-neutral-500" />
+                  View Past Backups
+                </button>
+              </div>
+            )}
+          </div>
+
+          <a
+            href="/staff/orders/new"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
+            title="Create a new order (customer created during order intake)"
+          >
+            New order
+          </a>
+        </div>
       </div>
+
+      {/* Backup status message */}
+      {backupMsg && (
+        <div className={`rounded-xl border px-4 py-2.5 text-sm ${backupMsg.includes("failed") ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+          {backupMsg}
+          <button onClick={() => setBackupMsg(null)} className="ml-2 underline text-xs">dismiss</button>
+        </div>
+      )}
+
+      {/* Past backups panel */}
+      {showBackups && (
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">Past Backups</h3>
+            <button onClick={() => setShowBackups(false)} className="text-xs text-neutral-500 hover:text-neutral-700">Close</button>
+          </div>
+          {loadingBackups ? (
+            <p className="text-sm text-neutral-500">Loading…</p>
+          ) : backups.length === 0 ? (
+            <p className="text-sm text-neutral-500">No backups found. Click &ldquo;Backup Now&rdquo; to create one.</p>
+          ) : (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {backups.map((b) => (
+                <a
+                  key={b.pathname}
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between text-sm hover:bg-white rounded px-2 py-1.5"
+                >
+                  <span className="text-neutral-700 truncate">
+                    {new Date(b.uploadedAt).toLocaleString()}
+                    {b.pathname.includes("-auto") && (
+                      <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">auto</span>
+                    )}
+                  </span>
+                  <span className="text-xs text-neutral-400">{(b.size / 1024).toFixed(1)} KB</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-3 items-center">
         <input
@@ -108,7 +260,7 @@ export default function CustomersPage() {
         <button
           onClick={() => {
             setQ("");
-            load(""); // Clear means: reload the full list
+            load("");
           }}
           className="rounded-xl border border-neutral-300 px-4 py-3 text-sm"
           title="Clear search and reload all customers"
