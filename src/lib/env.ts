@@ -1,22 +1,31 @@
+/**
+ * Environment variables.
+ *
+ * Required vars use `!` — set them in Vercel → Settings → Environment Variables.
+ * Optional vars have fallbacks and won't crash if missing.
+ */
 export const env = {
+  // ── Core ──────────────────────────────────────────
   DATABASE_URL: process.env.DATABASE_URL!,
   AUTH_SECRET: process.env.AUTH_SECRET!,
+
+  // ── Square ────────────────────────────────────────
   SQUARE_ENV: process.env.SQUARE_ENV || "sandbox",
-  SQUARE_ACCESS_TOKEN: process.env.SQUARE_ACCESS_TOKEN!,
-  SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID!,
-  MAILCHIMP_API_KEY: process.env.MAILCHIMP_API_KEY!,
-  MAILCHIMP_AUDIENCE_ID: process.env.MAILCHIMP_AUDIENCE_ID!,
-  MAILCHIMP_SERVER_PREFIX: process.env.MAILCHIMP_SERVER_PREFIX!,
-  STORAGE_REGION: process.env.STORAGE_REGION!,
-  STORAGE_BUCKET: process.env.STORAGE_BUCKET!,
-  STORAGE_ACCESS_KEY: process.env.STORAGE_ACCESS_KEY!,
-  STORAGE_SECRET_KEY: process.env.STORAGE_SECRET_KEY!,
-  STORAGE_PUBLIC_BASE_URL: process.env.STORAGE_PUBLIC_BASE_URL!,
-  STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT || "",
+  SQUARE_ACCESS_TOKEN: process.env.SQUARE_ACCESS_TOKEN || "",
+  SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID || "",
+
+  // ── Email (Postmark) ─────────────────────────────
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || "postmark",
-  EMAIL_PROVIDER_API_KEY: process.env.EMAIL_PROVIDER_API_KEY!,
-  EMAIL_FROM: process.env.EMAIL_FROM!,
-  STAFF_NOTIFICATIONS_EMAIL: process.env.STAFF_NOTIFICATIONS_EMAIL!,
+  EMAIL_PROVIDER_API_KEY: process.env.EMAIL_PROVIDER_API_KEY || "",
+  EMAIL_FROM: process.env.EMAIL_FROM || "West Roxbury Framing <jake@westroxburyframing.com>",
+  STAFF_NOTIFICATIONS_EMAIL: process.env.STAFF_NOTIFICATIONS_EMAIL || "jake@westroxburyframing.com",
+
+  // ── Mailchimp (optional — sync silently skips if not configured) ──
+  MAILCHIMP_API_KEY: process.env.MAILCHIMP_API_KEY || "",
+  MAILCHIMP_AUDIENCE_ID: process.env.MAILCHIMP_AUDIENCE_ID || "",
+  MAILCHIMP_SERVER_PREFIX: process.env.MAILCHIMP_SERVER_PREFIX || "",
+
+  // ── Google Reviews (optional — falls back to static reviews) ──
   GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY || "",
   GOOGLE_PLACES_PLACE_ID: process.env.GOOGLE_PLACES_PLACE_ID || "",
 };

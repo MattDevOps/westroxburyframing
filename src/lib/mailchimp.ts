@@ -3,7 +3,14 @@ import { env } from "./env";
 import type { Customer } from "@prisma/client";
 
 export async function syncMailchimpCustomer(c: Customer) {
+  // Skip if customer didn't opt in or has no email
   if (!c.marketingOptIn || !c.email) return;
+
+  // Skip if Mailchimp is not configured
+  if (!env.MAILCHIMP_API_KEY || !env.MAILCHIMP_AUDIENCE_ID || !env.MAILCHIMP_SERVER_PREFIX) {
+    console.log("MAILCHIMP: Skipping sync — API key not configured.");
+    return;
+  }
 
   const memberId = crypto.createHash("md5").update(c.email.toLowerCase()).digest("hex");
   const base = `https://${env.MAILCHIMP_SERVER_PREFIX}.api.mailchimp.com/3.0`;
