@@ -213,26 +213,30 @@ export async function POST(req: Request, ctx: any) {
       });
 
       if (!existingLocal) {
-        await prisma.invoice.create({
-          data: {
-            invoiceNumber: invNumber,
-            customerId: order.customerId,
-            status: "sent",
-            subtotalAmount: invoiceAmountCents,
-            taxAmount: 0,
-            totalAmount: invoiceAmountCents,
-            discountAmount: 0,
-            depositPercent: depPct,
-            depositAmount: depAmt,
-            amountPaid: 0,
-            balanceDue: invoiceAmountCents,
-            currency: "USD",
-            squareInvoiceId: result.invoiceId,
-            squareInvoiceUrl: result.publicUrl,
-            notes: `Sent via Square from order ${orderIdForInvoice} (${kind})`,
-            ...(staffUserId ? { createdByUserId: staffUserId } : {}),
-            orders: { connect: { id: order.id } },
-          },
+        const invData: any = {
+          invoiceNumber: invNumber,
+          customerId: order.customerId,
+          status: "sent",
+          subtotalAmount: invoiceAmountCents,
+          taxAmount: 0,
+          totalAmount: invoiceAmountCents,
+          discountAmount: 0,
+          depositPercent: depPct,
+          depositAmount: depAmt,
+          amountPaid: 0,
+          balanceDue: invoiceAmountCents,
+          currency: "USD",
+          squareInvoiceId: result.invoiceId,
+          squareInvoiceUrl: result.publicUrl,
+          notes: `Sent via Square from order ${orderIdForInvoice} (${kind})`,
+        };
+        if (staffUserId) invData.createdByUserId = staffUserId;
+
+        const inv = await prisma.invoice.create({ data: invData });
+        // Link the order to this invoice
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { invoiceId: inv.id },
         });
       }
     } catch (e) {
