@@ -1,14 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const TIPS = [
-  { title: "Make Sure The Frame Matches The Photo And The Room", body: "A great frame should feel like it belongs to both the artwork and the space it lives in. We help you balance style, era, and materials so your framed art looks intentional in any room in Boston.", img: "/framed-art/01.jpg", alt: "Person considering frame options in front of artwork" },
-  { title: "Consider The Size", body: "The wrong scale can make even the best artwork feel out of place. We look at wall size, viewing distance, and surrounding pieces to recommend frame and mat sizes that feel perfectly proportioned.", img: "/framed-art/02.jpg", alt: "Gallery professional adjusting framed artwork on wall" },
-  { title: "Consider Colors", body: "Color choices in your frame and mat can either quietly support the art or make a bold statement. We guide you through neutrals, metals, woods, and accent tones so the colors enhance rather than compete.", img: "/framed-art/03.jpg", alt: "Person observing framed artwork in a gallery" },
-  { title: "Choose Whether You Want A Mat Board", body: "Mat boards create breathing room around your art, protect it from the glass, and can completely change the look of a piece. From clean white to layered museum-style mats, we'll help you decide what fits your artwork and your taste.", img: "/framed-art/04.jpg", alt: "Hands positioning an empty picture frame on a tabletop" },
+const SERVICES = [
+  "Custom Frames",
+  "Mat Cutting",
+  "Glass & Glazing",
+  "Backing & Mounting",
+  "Shadow Boxes",
+  "Canvas Stretching",
+  "Jersey & Memorabilia Framing",
+  "Restoration & Repair",
 ];
 
 const FALLBACK_GALLERY = [
@@ -69,45 +74,61 @@ export default function FramedArtPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Hero */}
       <section className="pt-32 pb-16 bg-secondary">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-serif text-5xl md:text-6xl font-bold text-foreground mb-4">
-            Framed <span className="text-gold">Art</span>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-serif text-5xl md:text-6xl font-bold text-foreground mb-4"
+          >
+            Our <span className="text-gold">Work</span>
           </motion.h1>
-          <p className="text-muted-foreground max-w-3xl mx-auto">
-            Choose the right frame in Boston. Taking time to choose the perfect frame might not seem like a high priority, but if you care enough to put a picture on the wall, make an effort to select a frame that makes it even better. Consider the piece itself and where the frame will live.
-          </p>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed"
+          >
+            From jerseys and diplomas to fine art and family heirlooms — we handle
+            every detail of the custom framing process so your piece looks its absolute best.
+          </motion.p>
         </div>
       </section>
 
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-6 space-y-16">
-          {TIPS.map((tip, i) => (
-            <motion.div
-              key={tip.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="grid gap-8 md:grid-cols-2 items-center bg-card p-8 rounded-sm border border-border"
-            >
-              <div className={i % 2 === 1 ? "md:order-2" : ""}>
-                <h2 className="font-serif text-2xl text-foreground mb-3">{tip.title}</h2>
-                <p className="text-foreground/70 leading-relaxed text-sm">{tip.body}</p>
-              </div>
-              <div className={`relative aspect-[16/9] overflow-hidden rounded-sm ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                <Image src={tip.img} alt={tip.alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
-              </div>
-            </motion.div>
-          ))}
+      {/* Services strip */}
+      <section className="py-12 border-b border-border">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
+            {SERVICES.map((s, i) => (
+              <motion.span
+                key={s}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * i }}
+                className="text-sm tracking-wide text-foreground/80 uppercase"
+              >
+                {s}
+              </motion.span>
+            ))}
+          </div>
         </div>
       </section>
 
+      {/* Gallery */}
       <section className="py-24 bg-secondary">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-serif text-3xl font-bold text-foreground mb-4">
-            Framed Art <span className="text-gold">Examples</span>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-serif text-3xl font-bold text-foreground mb-2"
+          >
+            Recent <span className="text-gold">Projects</span>
           </motion.h2>
-          <p className="text-muted-foreground text-sm mb-10">A selection of jerseys, flags, diplomas, artwork, and memorabilia we have custom framed.</p>
+          <p className="text-muted-foreground text-sm mb-10">
+            Jerseys, flags, diplomas, fine art, memorabilia, and more — all custom framed in our West Roxbury shop.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {gallery.map((img) => (
               <div key={img.src} className="overflow-hidden rounded-sm border border-border bg-card group">
@@ -133,6 +154,32 @@ export default function FramedArtPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="font-serif text-3xl font-bold text-foreground mb-4">
+            Ready to Get <span className="text-gold">Started</span>?
+          </h2>
+          <p className="text-muted-foreground mb-8">
+            Bring your piece in or book a consultation — we&apos;ll take care of the rest.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/book"
+              className="px-8 py-3 bg-gold text-background font-semibold text-sm tracking-wider uppercase hover:bg-gold/90 transition-colors rounded-sm"
+            >
+              Book a Consultation
+            </Link>
+            <Link
+              href="/contact"
+              className="px-8 py-3 border border-border text-foreground font-semibold text-sm tracking-wider uppercase hover:border-gold/50 transition-colors rounded-sm"
+            >
+              Contact Us
+            </Link>
           </div>
         </div>
       </section>

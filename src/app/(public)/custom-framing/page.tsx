@@ -24,7 +24,6 @@ export default function CustomFramingPage() {
     const [phone, setPhone] = useState("");
     const [itemType, setItemType] = useState("");
     const [description, setDescription] = useState("");
-    const [notes, setNotes] = useState("");
     const [optIn, setOptIn] = useState(false);
 
     const [photos, setPhotos] = useState<string[]>([]);
@@ -78,7 +77,7 @@ export default function CustomFramingPage() {
                     phone,
                     item_type: itemType,
                     description,
-                    notes,
+                    notes: "",
                     marketing_opt_in: optIn,
                     photos,
                 }),
@@ -227,27 +226,28 @@ export default function CustomFramingPage() {
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Email</label>
+                                    <label className="text-sm font-medium text-foreground/70">Email *</label>
                                     <input
                                         type="email"
                                         className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
+                                        required
                                         placeholder="you@email.com"
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Phone</label>
+                                    <label className="text-sm font-medium text-foreground/70">Phone *</label>
                                     <input
                                         type="tel"
                                         className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
+                                        required
                                         placeholder="617-555-1234"
                                     />
                                 </div>
                             </div>
-                            <p className="text-muted-foreground text-xs mt-2">* Phone or email required so we can reach you.</p>
                         </div>
 
                         {/* Item Details */}
@@ -255,12 +255,11 @@ export default function CustomFramingPage() {
                             <h3 className="font-serif text-xl text-foreground mb-4">What Are You Framing?</h3>
                             <div className="space-y-4">
                                 <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Item Type *</label>
+                                    <label className="text-sm font-medium text-foreground/70">Item Type</label>
                                     <select
                                         className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
                                         value={itemType}
                                         onChange={(e) => setItemType(e.target.value)}
-                                        required
                                     >
                                         <option value="">Select what you&apos;re framing...</option>
                                         {ITEM_TYPES.map((t) => (
@@ -281,15 +280,6 @@ export default function CustomFramingPage() {
                                     />
                                 </div>
 
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Additional Notes</label>
-                                    <textarea
-                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors min-h-[80px] resize-y"
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        placeholder="Timeline, budget considerations, questions, etc."
-                                    />
-                                </div>
                             </div>
                         </div>
 
