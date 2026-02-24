@@ -9,6 +9,7 @@ import {
   Package,
   FileText,
   ExternalLink,
+  CreditCard,
   LogOut,
   Loader2,
 } from "lucide-react";
@@ -282,19 +283,17 @@ export default function AccountPage() {
                             {cents(order.totalAmount)}
                           </span>
 
-                          {/* Invoice link */}
-                          {order.invoice?.squareInvoiceUrl && (
-                            <a
-                              href={order.invoice.squareInvoiceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-gold hover:opacity-80 transition-opacity"
+                          {/* Invoice link — use our branded pay page */}
+                          {order.invoice && order.invoice.balanceDue > 0 && (
+                            <Link
+                              href={`/pay/${order.invoice.id}`}
+                              className="flex items-center gap-1 text-xs px-3 py-1.5 bg-gold text-primary-foreground rounded-sm font-semibold hover:opacity-90 transition-opacity"
                             >
-                              <ExternalLink size={12} />
-                              Pay Invoice
-                            </a>
+                              <CreditCard size={12} />
+                              Pay Now
+                            </Link>
                           )}
-                          {!order.invoice?.squareInvoiceUrl && order.squareInvoiceUrl && (
+                          {!order.invoice && order.squareInvoiceUrl && (
                             <a
                               href={order.squareInvoiceUrl}
                               target="_blank"

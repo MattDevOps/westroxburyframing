@@ -295,6 +295,148 @@ West Roxbury Framing`;
   return result;
 }
 
+/* ─── Email: Invoice to Customer (pay link) ───────────────────────── */
+
+export async function sendInvoiceToCustomer(params: {
+  to: string;
+  customerName: string;
+  invoiceNumber: string;
+  totalAmount: string;
+  balanceDue: string;
+  payUrl: string;
+  orderSummary?: string;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = `Your Invoice from West Roxbury Framing — ${params.invoiceNumber}`;
+
+  const text = `Hi ${params.customerName},
+
+Thank you for choosing West Roxbury Framing!
+
+Here are the details for your invoice:
+
+Invoice: ${params.invoiceNumber}
+Total: ${params.totalAmount}
+Balance Due: ${params.balanceDue}
+${params.orderSummary ? `\nItems: ${params.orderSummary}\n` : ""}
+Pay securely online: ${params.payUrl}
+
+If you have any questions, don't hesitate to reach out.
+
+Best regards,
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `Your invoice ${params.invoiceNumber} (${params.balanceDue} due) is ready for payment.`,
+    heading: "Your Invoice Is Ready",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>Thank you for choosing West Roxbury Framing! Here are the details for your invoice:</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:120px">Invoice</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.invoiceNumber}</td>
+            </tr>
+            ${params.orderSummary ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Items</td>
+              <td style="padding:6px 0;font-size:14px;color:#1a1a1a">${params.orderSummary}</td>
+            </tr>` : ""}
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Total</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.totalAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Balance Due</td>
+              <td style="padding:6px 0;font-size:20px;color:#b8860b;font-weight:700">${params.balanceDue}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">Click the button below to pay securely online:</p>
+    `,
+    cta: { label: "Pay Now", url: params.payUrl },
+    footer: "If you have any questions about this invoice, please don't hesitate to contact us.",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
+/* ─── Email: Payment Confirmation to Customer ─────────────────────── */
+
+export async function sendPaymentConfirmationToCustomer(params: {
+  to: string;
+  customerName: string;
+  invoiceNumber: string;
+  amountPaid: string;
+  balanceRemaining: string;
+  receiptUrl?: string;
+}) {
+  const subject = `Payment Confirmation — ${params.invoiceNumber}`;
+
+  const text = `Hi ${params.customerName},
+
+We've received your payment of ${params.amountPaid} for invoice ${params.invoiceNumber}.
+
+${params.balanceRemaining !== "$0.00" ? `Remaining balance: ${params.balanceRemaining}` : "Your invoice is fully paid!"}
+${params.receiptUrl ? `\nView your receipt: ${params.receiptUrl}` : ""}
+
+Thank you for your business!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `Payment of ${params.amountPaid} received for invoice ${params.invoiceNumber}.`,
+    heading: "Payment Confirmed ✅",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>We've received your payment. Here's your confirmation:</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:120px">Invoice</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.invoiceNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Amount Paid</td>
+              <td style="padding:6px 0;font-size:20px;color:#16a34a;font-weight:700">${params.amountPaid}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Balance</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.balanceRemaining === "$0.00" ? '<span style="color:#16a34a">Paid in Full</span>' : params.balanceRemaining}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">Thank you for your business!</p>
+    `,
+    cta: params.receiptUrl
+      ? { label: "View Receipt", url: params.receiptUrl }
+      : undefined,
+    footer: "Thank you for choosing West Roxbury Framing!",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
 /* ─── Email: New Web Lead (to staff) ─────────────────────────────── */
 
 export async function sendNewWebLeadNotification(params: {

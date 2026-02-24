@@ -12,6 +12,7 @@ export const env = {
   // ── Square ────────────────────────────────────────
   SQUARE_ENV: process.env.SQUARE_ENV || "sandbox",
   SQUARE_ACCESS_TOKEN: process.env.SQUARE_ACCESS_TOKEN || "",
+  SQUARE_APPLICATION_ID: process.env.SQUARE_APPLICATION_ID || "",
   SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID || "",
 
   // ── Email (Postmark) ─────────────────────────────

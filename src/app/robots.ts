@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/staff/", "/api/", "/account", "/login", "/signup"],
+        disallow: ["/staff/", "/api/", "/account", "/login", "/signup", "/pay/"],
       },
     ],
     sitemap: "https://westroxburyframing.com/sitemap.xml",

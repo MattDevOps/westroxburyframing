@@ -52,6 +52,11 @@ export default function InvoiceDetailPage({
   const [sending, setSending] = useState(false);
   const [sendMsg, setSendMsg] = useState<string | null>(null);
 
+  // Email invoice state
+  const [emailing, setEmailing] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   async function loadInvoice() {
     setLoading(true);
     setError(null);
@@ -163,6 +168,34 @@ export default function InvoiceDetailPage({
     } catch (e: any) {
       alert(e?.message || "Error");
     }
+  }
+
+  async function emailInvoiceToCustomer() {
+    setEmailing(true);
+    setEmailMsg(null);
+    try {
+      const res = await fetch(`/staff/api/invoices/${id}/email`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setEmailMsg(data.error || "Failed to send email");
+        return;
+      }
+      setEmailMsg(`✅ Invoice emailed to ${data.sentTo}`);
+    } catch (e: any) {
+      setEmailMsg(e?.message || "Error");
+    } finally {
+      setEmailing(false);
+    }
+  }
+
+  function copyPayLink() {
+    if (!invoice) return;
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/pay/${invoice.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   async function markSent() {
@@ -419,6 +452,42 @@ export default function InvoiceDetailPage({
 
         {sendMsg && (
           <div className="text-sm text-neutral-600">{sendMsg}</div>
+        )}
+      </div>
+
+      {/* Online Payment Portal */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+        <h3 className="font-semibold text-neutral-900">Online Payment</h3>
+        <p className="text-sm text-neutral-500">
+          Send a branded payment link so customers can pay by credit card directly on your website.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {canSend && (
+            <button
+              disabled={emailing}
+              onClick={emailInvoiceToCustomer}
+              className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              {emailing ? "Sending…" : "📧 Email Invoice to Customer"}
+            </button>
+          )}
+          <button
+            onClick={copyPayLink}
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          >
+            {copied ? "✓ Copied!" : "🔗 Copy Pay Link"}
+          </button>
+          <a
+            href={`/pay/${invoice.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          >
+            Preview Pay Page ↗
+          </a>
+        </div>
+        {emailMsg && (
+          <div className="text-sm text-neutral-600">{emailMsg}</div>
         )}
       </div>
 
