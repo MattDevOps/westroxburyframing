@@ -697,7 +697,7 @@ export default function OrderDetailPage() {
       {/* Payment */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
-          <div className="text-neutral-900 font-semibold">Payment (Legacy)</div>
+          <div className="text-neutral-900 font-semibold">Square Payment</div>
           {order.squareInvoiceId && (
             <span
               className={`text-sm px-2 py-1 rounded-lg border ${order.squareInvoiceStatus?.toUpperCase() === "PAID"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,9 @@ export default function InvoiceDetailPage({
     if (!confirm("Void this invoice? This action cannot be undone.")) return;
     try {
       const res = await fetch(`/staff/api/invoices/${id}`, {
-        method: "DELETE",
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "void" }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -139,6 +143,23 @@ export default function InvoiceDetailPage({
         return;
       }
       await loadInvoice();
+    } catch (e: any) {
+      alert(e?.message || "Error");
+    }
+  }
+
+  async function deleteInvoice() {
+    if (!confirm("Permanently delete this invoice? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`/staff/api/invoices/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed");
+        return;
+      }
+      router.push("/staff/invoices");
     } catch (e: any) {
       alert(e?.message || "Error");
     }
@@ -225,12 +246,18 @@ export default function InvoiceDetailPage({
               Void
             </button>
           )}
-          <Link
-            href="/staff/invoices"
+          <button
+            onClick={deleteInvoice}
+            className="rounded-xl bg-red-600 text-white px-4 py-2 text-sm hover:bg-red-700"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => router.back()}
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
           >
             ← Back
-          </Link>
+          </button>
         </div>
       </div>
 
