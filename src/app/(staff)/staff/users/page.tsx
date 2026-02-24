@@ -144,9 +144,11 @@ export default function StaffUsersPage() {
                                         <button onClick={() => openEdit(u)} className="text-blue-600 hover:underline text-xs">
                                             Edit
                                         </button>
-                                        <button onClick={() => deleteUser(u)} className="text-red-600 hover:underline text-xs">
-                                            Delete
-                                        </button>
+                                        {u.role !== "admin" && (
+                                            <button onClick={() => deleteUser(u)} className="text-red-600 hover:underline text-xs">
+                                                Delete
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

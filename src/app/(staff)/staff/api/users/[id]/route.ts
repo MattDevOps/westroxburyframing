@@ -56,6 +56,12 @@ export async function DELETE(req: Request, ctx: Ctx) {
         return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
     }
 
+    // Prevent deleting admin users
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (target?.role === "admin") {
+        return NextResponse.json({ error: "Admin users cannot be deleted" }, { status: 400 });
+    }
+
     await prisma.user.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
