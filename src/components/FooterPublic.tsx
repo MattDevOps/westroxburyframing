@@ -67,7 +67,32 @@ export default function FooterPublic() {
           </div>
         </div>
 
-        <div className="border-t border-border mt-12 pt-8 text-center">
+        {/* Service Areas — internal links for local SEO */}
+        <div className="border-t border-border mt-12 pt-8">
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-3 text-center">Custom Framing Near You</h4>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            {[
+              { name: "West Roxbury", slug: "west-roxbury" },
+              { name: "Roslindale", slug: "roslindale" },
+              { name: "Jamaica Plain", slug: "jamaica-plain" },
+              { name: "Brookline", slug: "brookline" },
+              { name: "Dedham", slug: "dedham" },
+              { name: "Needham", slug: "needham" },
+              { name: "Newton", slug: "newton" },
+              { name: "Hyde Park", slug: "hyde-park" },
+            ].map((area) => (
+              <Link
+                key={area.slug}
+                href={`/areas/${area.slug}`}
+                className="text-muted-foreground text-xs hover:text-gold transition-colors"
+              >
+                {area.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-border mt-6 pt-6 text-center">
           <p className="text-muted-foreground text-sm">
             © {new Date().getFullYear()} West Roxbury Framing. All rights reserved.
           </p>
