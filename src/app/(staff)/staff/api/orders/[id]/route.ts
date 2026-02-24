@@ -201,3 +201,57 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   return NextResponse.json({ ok: true, order: updated });
 }
+
+/**
+ * DELETE /staff/api/orders/[id]
+ * Permanently delete an order and its related records.
+ */
+export async function DELETE(req: Request, ctx: Ctx) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await ctx.params;
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    select: { id: true, invoiceId: true },
+  });
+
+  if (!order) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
+
+  // Delete related records first
+  await prismaWithActivity.orderActivity.deleteMany({ where: { orderId: id } });
+  await prisma.orderSpecs.deleteMany({ where: { orderId: id } });
+  await prisma.orderPhoto.deleteMany({ where: { orderId: id } });
+  await prisma.payment.deleteMany({ where: { orderId: id } });
+  await prisma.activityLog.deleteMany({ where: { orderId: id } });
+
+  // Unlink from invoice if linked
+  if (order.invoiceId) {
+    // Recalculate invoice totals after removing this order
+    const siblingOrders = await prisma.order.findMany({
+      where: { invoiceId: order.invoiceId, id: { not: id } },
+      select: { subtotalAmount: true, taxAmount: true, totalAmount: true },
+    });
+    const newSubtotal = siblingOrders.reduce((s, o) => s + o.subtotalAmount, 0);
+    const newTax = siblingOrders.reduce((s, o) => s + o.taxAmount, 0);
+    const newTotal = siblingOrders.reduce((s, o) => s + o.totalAmount, 0);
+    const inv = await prisma.invoice.findUnique({ where: { id: order.invoiceId }, select: { amountPaid: true } });
+    await prisma.invoice.update({
+      where: { id: order.invoiceId },
+      data: {
+        subtotalAmount: newSubtotal,
+        taxAmount: newTax,
+        totalAmount: newTotal,
+        balanceDue: Math.max(0, newTotal - (inv?.amountPaid || 0)),
+      },
+    });
+  }
+
+  await prisma.order.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true, message: "Order deleted" });
+}

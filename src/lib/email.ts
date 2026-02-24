@@ -54,8 +54,8 @@ ${opts.preheader ? `<span style="display:none;max-height:0;overflow:hidden">${op
       ${footerText ? `<tr><td style="font-size:13px;color:#737373;padding-bottom:12px">${footerText}</td></tr>` : ""}
       <tr><td style="font-size:12px;color:#a3a3a3;line-height:1.5">
         <strong style="color:#737373">West Roxbury Framing</strong><br>
-        394 Centre Street, West Roxbury, MA 02132<br>
-        (617) 469-2400 &bull; <a href="${baseUrl}" style="color:#b8860b;text-decoration:none">westroxburyframing.com</a>
+        1741 Centre Street, West Roxbury, MA 02132<br>
+        (617) 327-3890 &bull; <a href="${baseUrl}" style="color:#b8860b;text-decoration:none">westroxburyframing.com</a>
       </td></tr>
     </table>
   </td></tr>
@@ -131,7 +131,7 @@ Great news! Your framing order ${params.orderNumber} is ready for pickup.
 Stop by our shop at your convenience:
 
 West Roxbury Framing
-394 Centre Street, West Roxbury, MA 02132
+1741 Centre Street, West Roxbury, MA 02132
 
 Hours:
 Mon–Fri: 10am – 6pm
@@ -152,7 +152,7 @@ Thank you for choosing West Roxbury Framing!`;
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;background:#fafaf9;border-radius:6px;padding:16px;width:100%">
         <tr><td style="padding:12px 16px;font-size:14px;color:#404040;line-height:1.6">
           <strong style="color:#1a1a1a">West Roxbury Framing</strong><br>
-          394 Centre Street, West Roxbury, MA 02132<br><br>
+          1741 Centre Street, West Roxbury, MA 02132<br><br>
           <strong>Hours:</strong><br>
           Mon–Fri: 10am – 6pm<br>
           Saturday: 10am – 4pm<br>

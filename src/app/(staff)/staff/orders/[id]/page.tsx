@@ -2,7 +2,7 @@
 
 import SquareInvoiceButtons from "@/components/SquareInvoiceButtons";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -59,6 +59,7 @@ function typeBadge(t: string) {
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = String(params?.id || "");
 
   const [data, setData] = useState<any>(null);
@@ -274,6 +275,20 @@ export default function OrderDetailPage() {
             onClick={startEdit}
           >
             Edit Order
+          </button>
+          <button
+            className="rounded-xl bg-red-600 text-white px-4 py-2 text-sm hover:bg-red-700"
+            onClick={async () => {
+              if (!confirm("Permanently delete this order? This cannot be undone.")) return;
+              try {
+                const res = await fetch(`/staff/api/orders/${id}`, { method: "DELETE" });
+                const d = await res.json();
+                if (!res.ok) { alert(d.error || "Failed to delete"); return; }
+                router.push("/staff/orders");
+              } catch { alert("Error deleting order"); }
+            }}
+          >
+            Delete Order
           </button>
           <button
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"

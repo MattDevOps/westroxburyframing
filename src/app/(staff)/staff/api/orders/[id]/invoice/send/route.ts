@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAndSendInvoice } from "@/lib/square/invoices";
 import { prisma } from "@/lib/db";
+import { nextInvoiceNumber } from "@/lib/ids";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 
 // Uses Order.specs instead of items (your schema does not have items)
 // Relies on staff middleware for auth
@@ -196,6 +198,46 @@ export async function POST(req: Request, ctx: any) {
         } as any,
       });
     } catch {}
+
+    // Create a local Invoice record so it shows up in Staff → Invoices
+    try {
+      const staffUserId = getStaffUserIdFromRequest(req);
+      const lastInv = await prisma.invoice.findFirst({ orderBy: { createdAt: "desc" }, select: { invoiceNumber: true } });
+      const invNumber = nextInvoiceNumber(lastInv?.invoiceNumber ?? undefined);
+      const depPct = kind === "deposit" ? (depositPercent ?? 50) : null;
+      const depAmt = depPct ? Math.max(1, Math.round((invoiceAmountCents * depPct) / 100)) : 0;
+
+      // Only create if we don't already have a local invoice for this order
+      const existingLocal = await prisma.invoice.findFirst({
+        where: { orders: { some: { id: order.id } } },
+      });
+
+      if (!existingLocal) {
+        await prisma.invoice.create({
+          data: {
+            invoiceNumber: invNumber,
+            customerId: order.customerId,
+            status: "sent",
+            subtotalAmount: invoiceAmountCents,
+            taxAmount: 0,
+            totalAmount: invoiceAmountCents,
+            discountAmount: 0,
+            depositPercent: depPct,
+            depositAmount: depAmt,
+            amountPaid: 0,
+            balanceDue: invoiceAmountCents,
+            currency: "USD",
+            squareInvoiceId: result.invoiceId,
+            squareInvoiceUrl: result.publicUrl,
+            notes: `Sent via Square from order ${orderIdForInvoice} (${kind})`,
+            ...(staffUserId ? { createdByUserId: staffUserId } : {}),
+            orders: { connect: { id: order.id } },
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to create local Invoice record:", e);
+    }
 
     // Check environment and add helpful message
     const env = process.env.SQUARE_ENV || "sandbox";
