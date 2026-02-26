@@ -16,30 +16,36 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") || "").trim();
+  const tagId = url.searchParams.get("tagId");
+
+  const where: any = {};
+  if (q) {
+    where.OR = [
+      { firstName: { contains: q, mode: "insensitive" } },
+      { lastName: { contains: q, mode: "insensitive" } },
+      { email: { contains: q, mode: "insensitive" } },
+      { phone: { contains: q } },
+    ];
+  }
+  if (tagId) {
+    where.tagAssignments = {
+      some: {
+        tagId,
+      },
+    };
+  }
 
   const customers = await prisma.customer.findMany({
-    where: q
-      ? {
-          OR: [
-            { firstName: { contains: q, mode: "insensitive" } },
-            { lastName: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
-            { phone: { contains: q } },
-          ],
-        }
-      : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     orderBy: { createdAt: "desc" },
     take: 200,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      email: true,
-      preferredContact: true,
-      marketingOptIn: true,
-      createdAt: true,
+    include: {
       _count: { select: { orders: true } },
+      tagAssignments: {
+        include: {
+          tag: true,
+        },
+      },
     },
   });
 

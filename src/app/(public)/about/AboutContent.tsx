@@ -17,7 +17,7 @@ export default function AboutContent() {
             About <span className="text-gold">Us</span>
           </motion.h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Family owned and operated since 1981
+            Family owned and operated for over 45 years
           </p>
         </div>
       </section>

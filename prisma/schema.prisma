@@ -68,6 +68,31 @@ model Customer {
   orders       Order[]
   invoices     Invoice[]
   appointments Appointment[]
+  tagAssignments CustomerTagAssignment[]
+}
+
+// ─── Phase 5A: Customer Tags ───────────────────────────────────
+
+model CustomerTag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?  // hex color for UI display
+  createdAt DateTime @default(now())
+
+  assignments CustomerTagAssignment[]
+}
+
+model CustomerTagAssignment {
+  id         String      @id @default(uuid())
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        CustomerTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedAt DateTime    @default(now())
+
+  @@unique([customerId, tagId])
+  @@index([customerId])
+  @@index([tagId])
 }
 
 model Order {

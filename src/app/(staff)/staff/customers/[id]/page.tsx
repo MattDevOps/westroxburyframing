@@ -23,6 +23,9 @@ export default function CustomerDetailPage({
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [tags, setTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
+  const [allTags, setAllTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
+  const [showTagPicker, setShowTagPicker] = useState(false);
   const [stats, setStats] = useState<{
     lifetimeValueCents: number;
     totalOrders: number;
@@ -59,6 +62,7 @@ export default function CustomerDetailPage({
       setOrders(data.orders || []);
       setInvoices(data.invoices || []);
       setStats(data.stats || null);
+      setTags((data.customer?.tagAssignments || []).map((a: any) => a.tag));
     } catch (e: any) {
       setErr(e?.message || "Error");
     } finally {
@@ -68,8 +72,56 @@ export default function CustomerDetailPage({
 
   useEffect(() => {
     load();
+    loadTags();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  async function loadTags() {
+    try {
+      const res = await fetch("/staff/api/customer-tags");
+      if (res.ok) {
+        const data = await res.json();
+        setAllTags(data.tags || []);
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  async function assignTag(tagId: string) {
+    try {
+      const res = await fetch(`/staff/api/customers/${id}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        await load();
+        setShowTagPicker(false);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to assign tag");
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to assign tag");
+    }
+  }
+
+  async function removeTag(tagId: string) {
+    try {
+      const res = await fetch(`/staff/api/customers/${id}/tags?tagId=${tagId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await load();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to remove tag");
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to remove tag");
+    }
+  }
 
   async function save(e: any) {
     e.preventDefault();
@@ -159,6 +211,12 @@ export default function CustomerDetailPage({
           >
             Back
           </a>
+          <button
+            onClick={() => setShowTagPicker(true)}
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
+          >
+            {tags.length > 0 ? "Manage Tags" : "+ Add Tag"}
+          </button>
           <a
             href={`/staff/orders/new?customerId=${customer.id}`}
             className="rounded-xl bg-black text-white px-4 py-2 text-sm"
@@ -167,6 +225,58 @@ export default function CustomerDetailPage({
           </a>
         </div>
       </div>
+
+      {/* Tag Picker Modal */}
+      {showTagPicker && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-neutral-900 mb-4">Manage Tags</h2>
+            <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+              {allTags.map((tag) => {
+                const isAssigned = tags.some((t) => t.id === tag.id);
+                return (
+                  <div
+                    key={tag.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: tag.color || "#6b7280" }}
+                      />
+                      <span className="text-sm font-medium text-neutral-900">{tag.name}</span>
+                    </div>
+                    <button
+                      onClick={() => (isAssigned ? removeTag(tag.id) : assignTag(tag.id))}
+                      className={`text-xs px-3 py-1 rounded-lg ${
+                        isAssigned
+                          ? "bg-red-50 text-red-700 hover:bg-red-100"
+                          : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      {isAssigned ? "Remove" : "Add"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-3 justify-end pt-4 border-t border-neutral-200">
+              <a
+                href="/staff/settings/tags"
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Manage All Tags →
+              </a>
+              <button
+                onClick={() => setShowTagPicker(false)}
+                className="rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {msg && (
         <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm text-green-800">

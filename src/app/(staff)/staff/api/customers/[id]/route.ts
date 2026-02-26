@@ -14,15 +14,12 @@ export async function GET(req: Request, ctx: Ctx) {
 
   const customer = await prisma.customer.findUnique({
     where: { id },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      email: true,
-      preferredContact: true,
-      marketingOptIn: true,
-      createdAt: true,
+    include: {
+      tagAssignments: {
+        include: {
+          tag: true,
+        },
+      },
     },
   });
 

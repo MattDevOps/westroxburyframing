@@ -25,6 +25,8 @@ type Backup = {
 
 export default function CustomersPage() {
   const [q, setQ] = useState("");
+  const [selectedTagId, setSelectedTagId] = useState<string>("");
+  const [tags, setTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
   const [rows, setRows] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -42,9 +44,12 @@ export default function CustomersPage() {
     setErr(null);
 
     const query = (search ?? q).trim();
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (selectedTagId) params.set("tagId", selectedTagId);
 
     try {
-      const res = await fetch(`/staff/api/customers?q=${encodeURIComponent(query)}`, {
+      const res = await fetch(`/staff/api/customers?${params.toString()}`, {
         cache: "no-store",
         credentials: "same-origin",
       });
@@ -73,9 +78,27 @@ export default function CustomersPage() {
   }
 
   useEffect(() => {
+    loadTags();
     load("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTagId]);
+
+  async function loadTags() {
+    try {
+      const res = await fetch("/staff/api/customer-tags");
+      if (res.ok) {
+        const data = await res.json();
+        setTags(data.tags || []);
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -249,17 +272,30 @@ export default function CustomersPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, email, phone…"
-          className="w-full max-w-lg rounded-xl border border-neutral-300 bg-white/5 px-4 py-3 text-sm"
+          className="flex-1 max-w-lg rounded-xl border border-neutral-300 bg-white/5 px-4 py-3 text-sm"
           onKeyDown={(e) => {
             if (e.key === "Enter") load(q);
           }}
         />
+        <select
+          value={selectedTagId}
+          onChange={(e) => setSelectedTagId(e.target.value)}
+          className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+        >
+          <option value="">All Tags</option>
+          {tags.map((tag) => (
+            <option key={tag.id} value={tag.id}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
         <button onClick={() => load(q)} className="rounded-xl bg-black text-white px-4 py-3 text-sm">
           Search
         </button>
         <button
           onClick={() => {
             setQ("");
+            setSelectedTagId("");
             load("");
           }}
           className="rounded-xl border border-neutral-300 px-4 py-3 text-sm"
@@ -277,10 +313,11 @@ export default function CustomersPage() {
 
       <div className="rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="grid grid-cols-12 gap-3 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-600">
-          <div className="col-span-3">Customer</div>
-          <div className="col-span-3">Email</div>
+          <div className="col-span-2">Customer</div>
+          <div className="col-span-2">Email</div>
           <div className="col-span-2">Phone</div>
           <div className="col-span-1">Orders</div>
+          <div className="col-span-2">Tags</div>
           <div className="col-span-2">Preferred</div>
           <div className="col-span-1 text-right">Opt-in</div>
         </div>
@@ -299,10 +336,36 @@ export default function CustomersPage() {
                 href={`/staff/customers/${c.id}`}
                 className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50"
               >
-                <div className="col-span-3 font-medium">{name}</div>
-                <div className="col-span-3 text-neutral-600">{c.email || "—"}</div>
+                <div className="col-span-2 font-medium">{name}</div>
+                <div className="col-span-2 text-neutral-600">{c.email || "—"}</div>
                 <div className="col-span-2 text-neutral-600">{c.phone || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{orderCount}</div>
+                <div className="col-span-2">
+                  <div className="flex flex-wrap gap-1">
+                    {(c as any).tagAssignments?.slice(0, 2).map((assignment: any) => (
+                      <span
+                        key={assignment.tag.id}
+                        className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium border"
+                        style={{
+                          backgroundColor: assignment.tag.color ? `${assignment.tag.color}20` : "#f3f4f6",
+                          borderColor: assignment.tag.color || "#d1d5db",
+                          color: assignment.tag.color || "#374151",
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: assignment.tag.color || "#6b7280" }}
+                        />
+                        {assignment.tag.name}
+                      </span>
+                    ))}
+                    {(c as any).tagAssignments?.length > 2 && (
+                      <span className="text-xs text-neutral-500">
+                        +{((c as any).tagAssignments?.length || 0) - 2}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <div className="col-span-2 text-neutral-600">
                   {c.preferredContact === "call" ? "Call" : "Email"}
                 </div>

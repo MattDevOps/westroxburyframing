@@ -11,7 +11,7 @@ export default function FooterPublic() {
               West Roxbury Framing
             </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Family owned and operated since 1981. Specializing in custom-designed frames made to perfectly complement your treasured items.
+              Family owned and operated for over 45 years. Specializing in custom-designed frames made to perfectly complement your treasured items.
             </p>
           </div>
 
