@@ -35,24 +35,24 @@ async function sendViaPostmark(params: {
     body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    let errorMessage = errText || `HTTP ${res.status}`;
-    
-    try {
-      const errJson = JSON.parse(errText);
-      if (errJson.ErrorCode === 412) {
-        errorMessage = "Email account is pending approval. Can only send to same domain addresses during approval period.";
-      } else if (errJson.Message) {
-        errorMessage = errJson.Message;
+    if (!res.ok) {
+      const errText = await res.text();
+      let errorMessage = errText || `HTTP ${res.status}`;
+      
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson.ErrorCode === 412) {
+          errorMessage = "⚠️ Postmark Account Pending Approval: Your Postmark account is in pending approval status and can only send emails to addresses on the same domain (westroxburyframing.com). To send to external addresses, you need to:\n\n1. Log into your Postmark account at https://account.postmarkapp.com\n2. Complete account verification (verify your domain, add billing info if required)\n3. Wait for Postmark to approve your account (usually 24-48 hours)\n\nUntil approved, you can only send to @westroxburyframing.com addresses.";
+        } else if (errJson.Message) {
+          errorMessage = errJson.Message;
+        }
+      } catch {
+        // Not JSON, use raw text
       }
-    } catch {
-      // Not JSON, use raw text
+      
+      console.error("Postmark send failed:", res.status, errorMessage);
+      return { ok: false, error: errorMessage };
     }
-    
-    console.error("Postmark send failed:", res.status, errorMessage);
-    return { ok: false, error: errorMessage };
-  }
   return { ok: true };
 }
 

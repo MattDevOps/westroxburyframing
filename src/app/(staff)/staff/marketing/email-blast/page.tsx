@@ -243,19 +243,31 @@ We look forward to seeing you!`);
       )}
 
       {result && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+        <div className={`rounded-xl border p-4 text-sm ${
+          result.failed > 0 
+            ? "border-amber-200 bg-amber-50 text-amber-900" 
+            : "border-green-200 bg-green-50 text-green-800"
+        }`}>
           <div className="font-semibold mb-2">Email Blast Results:</div>
           <div>Total recipients: {result.total}</div>
-          <div>Sent: {result.sent}</div>
-          <div>Failed: {result.failed}</div>
+          <div className={result.sent > 0 ? "text-green-700" : ""}>Sent: {result.sent}</div>
+          {result.failed > 0 && (
+            <div className="text-amber-800 font-medium">Failed: {result.failed}</div>
+          )}
           {result.errors.length > 0 && (
-            <div className="mt-2">
-              <div className="font-semibold">Errors:</div>
-              <ul className="list-disc list-inside">
+            <div className="mt-3">
+              <div className="font-semibold mb-1">Errors:</div>
+              <div className="space-y-1">
                 {result.errors.map((err, idx) => (
-                  <li key={idx}>{err}</li>
+                  <div key={idx} className="text-xs bg-white/50 p-2 rounded border border-current/20">
+                    {err.includes("⚠️") ? (
+                      <div className="whitespace-pre-line">{err}</div>
+                    ) : (
+                      <div>{err}</div>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>
