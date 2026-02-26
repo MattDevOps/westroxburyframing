@@ -50,7 +50,38 @@ Add these in **Vercel Dashboard → Project → Settings → Environment Variabl
 
 ---
 
-## 2. Automatic Invoice Sync (No Manual “Sync” Button)
+## 2. Database Migrations
+
+**Important:** Migrations are NOT run automatically during the build process. You must run them manually after deployment or before deploying.
+
+### Option 1: Run migrations before deployment (Recommended)
+
+```bash
+# Run migrations locally (they will apply to your production database)
+npx prisma migrate deploy
+```
+
+### Option 2: Run migrations after deployment
+
+After deploying to Vercel, run migrations manually:
+
+```bash
+# Make sure DATABASE_URL is set to your production database
+npx prisma migrate deploy
+```
+
+### Option 3: Use Vercel CLI (if you have it configured)
+
+```bash
+vercel env pull .env.local
+npx prisma migrate deploy
+```
+
+**Note:** The build script only runs `prisma generate` to create the Prisma Client. Migrations must be run separately to avoid database lock timeouts during build.
+
+---
+
+## 3. Automatic Invoice Sync (No Manual "Sync" Button)
 
 When a customer pays an invoice, Square sends a webhook to your app. Your app updates the order and sends the email.
 
@@ -85,7 +116,7 @@ You no longer need to press “Sync payment status” for paid invoices.
 
 ---
 
-## 3. Invoice Paid Email
+## 4. Invoice Paid Email
 
 ### Requirements
 
@@ -102,7 +133,7 @@ You no longer need to press “Sync payment status” for paid invoices.
 
 ---
 
-## 4. Quick Checklist
+## 5. Quick Checklist
 
 - [ ] `DATABASE_URL` – Vercel Postgres, Neon, or Supabase
 - [ ] `AUTH_SECRET` – Random string
