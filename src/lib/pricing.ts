@@ -126,7 +126,7 @@ export function calculateOrderPrice(
 
   for (const component of components) {
     const priceCode = component.priceCodeId
-      ? priceCodes.get(component.priceCodeId)
+      ? priceCodes.get(component.priceCodeId) || null
       : null;
 
     const quantity = component.quantity || 1;
