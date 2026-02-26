@@ -57,6 +57,17 @@ export default function CustomersPage() {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3b82f6");
   const [savingTag, setSavingTag] = useState(false);
+  
+  // Add customer state
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomerFirstName, setNewCustomerFirstName] = useState("");
+  const [newCustomerLastName, setNewCustomerLastName] = useState("");
+  const [newCustomerEmail, setNewCustomerEmail] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerPreferredContact, setNewCustomerPreferredContact] = useState<"email" | "call">("email");
+  const [newCustomerMarketingOptIn, setNewCustomerMarketingOptIn] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
+  const [customerError, setCustomerError] = useState<string | null>(null);
 
   async function load(search?: string) {
     setLoading(true);
@@ -202,6 +213,65 @@ export default function CustomersPage() {
     }
   }
 
+  async function createCustomer() {
+    if (!newCustomerFirstName.trim() || !newCustomerLastName.trim()) {
+      setCustomerError("First and last name are required");
+      return;
+    }
+
+    if (!newCustomerEmail.trim() && !newCustomerPhone.trim()) {
+      setCustomerError("Email or phone is required");
+      return;
+    }
+
+    setSavingCustomer(true);
+    setCustomerError(null);
+
+    try {
+      const res = await fetch("/staff/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: newCustomerFirstName.trim(),
+          last_name: newCustomerLastName.trim(),
+          email: newCustomerEmail.trim() || null,
+          phone: newCustomerPhone.trim() || null,
+          preferred_contact: newCustomerPreferredContact,
+          marketing_opt_in: newCustomerMarketingOptIn,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create customer");
+      }
+
+      // Reset form
+      setNewCustomerFirstName("");
+      setNewCustomerLastName("");
+      setNewCustomerEmail("");
+      setNewCustomerPhone("");
+      setNewCustomerPreferredContact("email");
+      setNewCustomerMarketingOptIn(false);
+      setShowAddCustomer(false);
+
+      // Reload customers list
+      await load("");
+
+      // Show success message
+      if (data.existing) {
+        alert(data.message || "Customer already exists and was updated");
+      } else {
+        alert("Customer created successfully!");
+      }
+    } catch (e: any) {
+      setCustomerError(e.message || "Failed to create customer");
+    } finally {
+      setSavingCustomer(false);
+    }
+  }
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return rows;
@@ -316,6 +386,13 @@ export default function CustomersPage() {
             )}
           </div>
 
+          <button
+            onClick={() => setShowAddCustomer(true)}
+            className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50"
+            title="Add a new customer to the database"
+          >
+            + Add Customer
+          </button>
           <a
             href="/staff/orders/new"
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
@@ -325,6 +402,146 @@ export default function CustomersPage() {
           </a>
         </div>
       </div>
+
+      {/* Add Customer Modal */}
+      {showAddCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-neutral-900">Add Customer</h2>
+                <button
+                  onClick={() => {
+                    setShowAddCustomer(false);
+                    setCustomerError(null);
+                    setNewCustomerFirstName("");
+                    setNewCustomerLastName("");
+                    setNewCustomerEmail("");
+                    setNewCustomerPhone("");
+                    setNewCustomerPreferredContact("email");
+                    setNewCustomerMarketingOptIn(false);
+                  }}
+                  className="text-neutral-500 hover:text-neutral-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {customerError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {customerError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newCustomerFirstName}
+                  onChange={(e) => setNewCustomerFirstName(e.target.value)}
+                  placeholder="First name"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newCustomerLastName}
+                  onChange={(e) => setNewCustomerLastName(e.target.value)}
+                  placeholder="Last name"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Email <span className="text-neutral-400">(or phone required)</span>
+                </label>
+                <input
+                  type="email"
+                  value={newCustomerEmail}
+                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                  placeholder="name@email.com"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Phone <span className="text-neutral-400">(or email required)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={newCustomerPhone}
+                  onChange={(e) => setNewCustomerPhone(e.target.value)}
+                  placeholder="e.g. 6175551234"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Preferred Contact
+                </label>
+                <select
+                  value={newCustomerPreferredContact}
+                  onChange={(e) => setNewCustomerPreferredContact(e.target.value as "email" | "call")}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                >
+                  <option value="email">Email</option>
+                  <option value="call">Phone Call</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm text-neutral-700">
+                  <input
+                    type="checkbox"
+                    checked={newCustomerMarketingOptIn}
+                    onChange={(e) => setNewCustomerMarketingOptIn(e.target.checked)}
+                    className="rounded text-black focus:ring-black"
+                  />
+                  Add to email list (marketing opt-in)
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={createCustomer}
+                  disabled={savingCustomer || !newCustomerFirstName.trim() || !newCustomerLastName.trim() || (!newCustomerEmail.trim() && !newCustomerPhone.trim())}
+                  className="flex-1 rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingCustomer ? "Creating..." : "Create Customer"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddCustomer(false);
+                    setCustomerError(null);
+                    setNewCustomerFirstName("");
+                    setNewCustomerLastName("");
+                    setNewCustomerEmail("");
+                    setNewCustomerPhone("");
+                    setNewCustomerPreferredContact("email");
+                    setNewCustomerMarketingOptIn(false);
+                  }}
+                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Backup status message */}
       {backupMsg && (
