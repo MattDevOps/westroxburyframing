@@ -97,6 +97,35 @@ export async function GET(req: Request) {
   // Total customers
   const totalCustomers = await prisma.customer.count();
 
+  // Phase 4A: Low stock items
+  // Note: Prisma doesn't support comparing fields directly, so we fetch all and filter
+  const allInventoryItems = await prisma.inventoryItem.findMany({
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      quantityOnHand: true,
+      reorderPoint: true,
+      unitType: true,
+    },
+  });
+
+  const lowStockItems = allInventoryItems
+    .filter((item) => Number(item.quantityOnHand) <= Number(item.reorderPoint))
+    .slice(0, 10)
+    .map((item) => ({
+      id: item.id,
+      sku: item.sku,
+      name: item.name,
+      quantityOnHand: Number(item.quantityOnHand),
+      reorderPoint: Number(item.reorderPoint),
+      unitType: item.unitType,
+    }));
+
+  const lowStockCount = allInventoryItems.filter(
+    (item) => Number(item.quantityOnHand) <= Number(item.reorderPoint)
+  ).length;
+
   // --- NEW: Overdue orders (due date past, not completed/cancelled/picked_up) ---
   const overdueOrders = await prisma.order.findMany({
     where: {
@@ -219,36 +248,7 @@ export async function GET(req: Request) {
       userName: a.createdBy?.name || "System",
       createdAt: a.createdAt.toISOString(),
     })),
-    // Phase 4A: Low stock items
-    lowStockItems: await prisma.inventoryItem
-      .findMany({
-        where: {
-          quantityOnHand: { lte: prisma.raw("reorderPoint") },
-        },
-        select: {
-          id: true,
-          sku: true,
-          name: true,
-          quantityOnHand: true,
-          reorderPoint: true,
-          unitType: true,
-        },
-        take: 10,
-      })
-      .then((items) =>
-        items.map((item) => ({
-          id: item.id,
-          sku: item.sku,
-          name: item.name,
-          quantityOnHand: Number(item.quantityOnHand),
-          reorderPoint: Number(item.reorderPoint),
-          unitType: item.unitType,
-        }))
-      ),
-    lowStockCount: await prisma.inventoryItem.count({
-      where: {
-        quantityOnHand: { lte: prisma.raw("reorderPoint") },
-      },
-    }),
+    lowStockItems,
+    lowStockCount,
   });
 }
