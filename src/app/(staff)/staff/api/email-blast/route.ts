@@ -130,7 +130,7 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
   }
-  const { subject, message, tagId, customerIds, includeUnsubscribed } = body;
+  const { subject, message, tagId, customerIds, includeUnsubscribed, discountPercent } = body;
 
   if (!subject || !message) {
     return NextResponse.json({ error: "Subject and message are required" }, { status: 400 });
@@ -193,7 +193,11 @@ export async function POST(req: Request) {
     if (!customer.email) continue;
 
     const customerName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Customer";
-    const personalizedMessage = message.replace(/\{\{name\}\}/g, customerName);
+    let personalizedMessage = message.replace(/\{\{name\}\}/g, customerName);
+    
+    // Replace {{discount}} placeholder if present (for templates)
+    const discount = discountPercent ? discountPercent.toString() : "20";
+    personalizedMessage = personalizedMessage.replace(/\{\{discount\}\}/g, discount);
 
     const html = emailLayout({
       heading: subject,

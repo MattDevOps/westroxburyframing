@@ -26,6 +26,7 @@ export default function CustomerDetailPage({
   const [tags, setTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
   const [allTags, setAllTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [syncingMailchimp, setSyncingMailchimp] = useState(false);
   const [stats, setStats] = useState<{
     lifetimeValueCents: number;
     totalOrders: number;
@@ -383,6 +384,67 @@ export default function CustomerDetailPage({
                 Marketing opt-in
               </label>
             </div>
+
+            {/* Mailchimp Controls */}
+            {customer.email && (
+              <div className="pt-3 border-t border-neutral-200">
+                <div className="text-xs text-neutral-600 mb-2">Mailchimp</div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSyncingMailchimp(true);
+                      try {
+                        const res = await fetch(`/staff/api/customers/${id}/mailchimp/subscribe`, {
+                          method: "POST",
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setMsg("Subscribed to Mailchimp");
+                          await load();
+                        } else {
+                          alert(data.error || "Failed to subscribe");
+                        }
+                      } catch (e: any) {
+                        alert(e.message || "Failed to subscribe");
+                      } finally {
+                        setSyncingMailchimp(false);
+                      }
+                    }}
+                    disabled={syncingMailchimp || customer.marketingOptIn}
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {syncingMailchimp ? "Syncing..." : customer.marketingOptIn ? "Subscribed" : "Subscribe"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSyncingMailchimp(true);
+                      try {
+                        const res = await fetch(`/staff/api/customers/${id}/mailchimp/unsubscribe`, {
+                          method: "POST",
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setMsg("Unsubscribed from Mailchimp");
+                          await load();
+                        } else {
+                          alert(data.error || "Failed to unsubscribe");
+                        }
+                      } catch (e: any) {
+                        alert(e.message || "Failed to unsubscribe");
+                      } finally {
+                        setSyncingMailchimp(false);
+                      }
+                    }}
+                    disabled={syncingMailchimp || !customer.marketingOptIn}
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {syncingMailchimp ? "Syncing..." : "Unsubscribe"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button
               disabled={saving}

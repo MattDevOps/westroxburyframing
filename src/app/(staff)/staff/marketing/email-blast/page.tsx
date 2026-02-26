@@ -26,6 +26,8 @@ export default function EmailBlastPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [discountPercent, setDiscountPercent] = useState<number>(20);
   const [result, setResult] = useState<{
     total: number;
     sent: number;
@@ -63,6 +65,47 @@ export default function EmailBlastPage() {
     }
   }
 
+  function applyTemplate(template: string, discount: number) {
+    if (template === "holiday") {
+      setSubject(`Holiday Special — ${discount}% Off Custom Framing!`);
+      setMessage(`Hi {{name}},
+
+We hope this holiday season brings you joy and beautiful moments to frame!
+
+As a thank you for being a valued customer, we're offering you ${discount}% off all custom framing services this holiday season.
+
+Whether you're looking to frame a special gift, preserve a cherished memory, or create the perfect present, our expert team is here to help.
+
+This special offer is valid through the end of the year. Stop by our shop or give us a call to get started!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+
+Happy Holidays!`);
+    } else if (template === "blackfriday") {
+      setSubject(`Black Friday Special — ${discount}% Off All Framing!`);
+      setMessage(`Hi {{name}},
+
+Black Friday is here, and we have an exclusive offer just for you!
+
+Get ${discount}% off all custom framing services this Black Friday weekend. This is the perfect time to frame those special pieces you've been meaning to get done.
+
+From artwork to photos, certificates to memorabilia—we'll help you preserve what matters most.
+
+This offer is valid Friday through Sunday. Don't miss out!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+
+We look forward to seeing you!`);
+    } else {
+      setSubject("");
+      setMessage("");
+    }
+  }
+
   async function handleSend() {
     if (!subject.trim() || !message.trim()) {
       setError("Subject and message are required");
@@ -88,6 +131,7 @@ export default function EmailBlastPage() {
           tagId: selectedTagId || null,
           customerIds: selectedCustomerIds.length > 0 ? selectedCustomerIds : null,
           includeUnsubscribed,
+          discountPercent: selectedTemplate ? discountPercent : null,
         }),
       });
 
@@ -107,6 +151,8 @@ export default function EmailBlastPage() {
         setMessage("");
         setSelectedTagId("");
         setSelectedCustomerIds([]);
+        setSelectedTemplate("");
+        setDiscountPercent(20);
       } else {
         setError(data.error || `Failed to send email blast (${res.status})`);
       }
@@ -156,14 +202,72 @@ export default function EmailBlastPage() {
       )}
 
       <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-6">
+        {/* Email Templates */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
+            Email Templates
+          </label>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-neutral-600 mb-1">Select Template:</label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => {
+                  const template = e.target.value;
+                  setSelectedTemplate(template);
+                  applyTemplate(template, discountPercent);
+                }}
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm"
+              >
+                <option value="">No template (custom message)</option>
+                <option value="holiday">Holiday Special</option>
+                <option value="blackfriday">Black Friday Sale</option>
+              </select>
+            </div>
+            {selectedTemplate && (
+              <div>
+                <label className="block text-xs text-neutral-600 mb-1">
+                  Discount Percentage (15-30%):
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="15"
+                    max="30"
+                    value={discountPercent}
+                    onChange={(e) => {
+                      const percent = parseInt(e.target.value);
+                      setDiscountPercent(percent);
+                      applyTemplate(selectedTemplate, percent);
+                    }}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium text-neutral-900 w-12 text-right">
+                    {discountPercent}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Recipients */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-2">
             Recipients
           </label>
+          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-3">
+            <div className="text-xs font-medium text-blue-900 mb-1">📧 Email Opt-In Policy</div>
+            <div className="text-xs text-blue-800">
+              By default, emails are only sent to customers who have opted in for marketing emails. 
+              You can override this below if needed.
+            </div>
+          </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-neutral-600 mb-1">Send to Tag:</label>
+              <label className="block text-xs text-neutral-600 mb-1">
+                Send to Customer Segment (Tag):
+              </label>
               <select
                 value={selectedTagId}
                 onChange={(e) => {
@@ -172,15 +276,21 @@ export default function EmailBlastPage() {
                 }}
                 className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm"
               >
-                <option value="">Select a tag...</option>
+                <option value="">All customers (no tag filter)</option>
                 {tags.map((tag) => (
                   <option key={tag.id} value={tag.id}>
-                    {tag.name}
+                    {tag.name} (customer segment)
                   </option>
                 ))}
               </select>
+              <div className="text-xs text-neutral-500 mt-1">
+                Customer tags are used to segment customers (e.g., "VIP", "Regular Customer", "First-time"). 
+                <Link href="/staff/settings/tags" className="text-blue-600 hover:text-blue-800 ml-1">
+                  Manage tags →
+                </Link>
+              </div>
             </div>
-            <div className="text-xs text-neutral-500">OR</div>
+            <div className="text-xs text-neutral-500 text-center">OR</div>
             <div>
               <label className="block text-xs text-neutral-600 mb-1">Select Specific Customers:</label>
               <select
@@ -204,15 +314,20 @@ export default function EmailBlastPage() {
                 Hold Ctrl/Cmd to select multiple customers
               </div>
             </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <label className="flex items-start gap-2 text-sm text-neutral-700">
                 <input
                   type="checkbox"
                   checked={includeUnsubscribed}
                   onChange={(e) => setIncludeUnsubscribed(e.target.checked)}
-                  className="rounded text-black focus:ring-black"
+                  className="rounded text-black focus:ring-black mt-0.5"
                 />
-                Include customers who opted out of marketing emails
+                <div>
+                  <div className="font-medium">Include customers who opted out</div>
+                  <div className="text-xs text-neutral-600 mt-0.5">
+                    ⚠️ Only check this if you have explicit permission. Sending to opted-out customers may violate email regulations.
+                  </div>
+                </div>
               </label>
             </div>
           </div>

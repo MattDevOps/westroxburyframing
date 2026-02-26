@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -64,6 +65,21 @@ export async function POST(req: Request, ctx: Ctx) {
       },
     });
 
+    // Sync to Mailchimp if customer is opted in
+    if (customer.marketingOptIn && customer.email) {
+      const customerWithTags = await prisma.customer.findUnique({
+        where: { id },
+        include: {
+          tagAssignments: {
+            include: { tag: true },
+          },
+        },
+      });
+      if (customerWithTags) {
+        syncMailchimpCustomer(customerWithTags).catch(() => null);
+      }
+    }
+
     return NextResponse.json({ assignment });
   } catch (e: any) {
     if (e.code === "P2002") {
@@ -90,12 +106,32 @@ export async function DELETE(req: Request, ctx: Ctx) {
   }
 
   try {
+    // Get customer before deletion for Mailchimp sync
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+    });
+
     await prisma.customerTagAssignment.deleteMany({
-    where: {
-      customerId: id,
-      tagId,
-    },
-  });
+      where: {
+        customerId: id,
+        tagId,
+      },
+    });
+
+    // Sync to Mailchimp if customer is opted in
+    if (customer && customer.marketingOptIn && customer.email) {
+      const customerWithTags = await prisma.customer.findUnique({
+        where: { id },
+        include: {
+          tagAssignments: {
+            include: { tag: true },
+          },
+        },
+      });
+      if (customerWithTags) {
+        syncMailchimpCustomer(customerWithTags).catch(() => null);
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
