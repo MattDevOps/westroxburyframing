@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { sendReadyForPickupEmail } from "@/lib/email";
-import { sendPickupReminderSMS } from "@/lib/sms";
+import { sendPickupReminderSMS, hasSMSOptIn } from "@/lib/sms";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
 const prismaWithActivity: any = prisma;
@@ -54,8 +54,8 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   }
 
-  // Send SMS if phone available
-  if (order.customer.phone) {
+  // Send SMS if phone available and customer has opted in
+  if (order.customer.phone && hasSMSOptIn(order.customer)) {
     const smsResult = await sendPickupReminderSMS({
       to: order.customer.phone,
       orderNumber: order.orderNumber,
@@ -68,6 +68,10 @@ export async function POST(req: Request, ctx: Ctx) {
       results.errors = results.errors || [];
       results.errors.push(`SMS: ${smsResult.error || "Failed"}`);
     }
+  } else if (order.customer.phone && !hasSMSOptIn(order.customer)) {
+    // Customer has phone but hasn't opted in
+    results.errors = results.errors || [];
+    results.errors.push("SMS: Customer has not opted in to SMS notifications");
   }
 
   // Log activity

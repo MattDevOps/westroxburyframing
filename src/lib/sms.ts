@@ -98,3 +98,63 @@ export async function sendPickupReminderSMS(params: {
     message,
   });
 }
+
+/**
+ * Send order status update SMS
+ */
+export async function sendOrderStatusUpdateSMS(params: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  status: string;
+  statusLabel: string;
+}): Promise<SendSMSResult> {
+  let message = `Hi ${params.customerName}, your framing order ${params.orderNumber} status has been updated to: ${params.statusLabel}.`;
+  
+  // Add context based on status
+  if (params.status === "in_production") {
+    message += " We're working on your order now!";
+  } else if (params.status === "quality_check") {
+    message += " Your order is being quality checked before final assembly.";
+  } else if (params.status === "completed") {
+    message += " Your order is complete and ready for pickup!";
+  }
+
+  return sendSMS({
+    to: params.to,
+    message,
+  });
+}
+
+/**
+ * Send appointment reminder SMS
+ */
+export async function sendAppointmentReminderSMS(params: {
+  to: string;
+  customerName: string;
+  appointmentDate: Date;
+  appointmentTime?: string;
+}): Promise<SendSMSResult> {
+  const dateStr = params.appointmentDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  
+  const timeStr = params.appointmentTime || "your scheduled time";
+  const message = `Hi ${params.customerName}, this is a reminder about your appointment at West Roxbury Framing on ${dateStr} at ${timeStr}. We're located at 1741 Centre Street, West Roxbury, MA. See you soon!`;
+
+  return sendSMS({
+    to: params.to,
+    message,
+  });
+}
+
+/**
+ * Check if customer has opted in to SMS
+ * This should be called before sending any SMS
+ */
+export function hasSMSOptIn(customer: { smsOptIn?: boolean | null }): boolean {
+  return Boolean(customer.smsOptIn);
+}

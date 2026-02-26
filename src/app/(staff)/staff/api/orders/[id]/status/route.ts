@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import { sendReadyForPickupEmail } from "@/lib/email";
-import { sendPickupReminderSMS } from "@/lib/sms";
+import { sendPickupReminderSMS, sendOrderStatusUpdateSMS, hasSMSOptIn } from "@/lib/sms";
 import { deductInventoryForOrder } from "@/lib/inventory";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
@@ -83,9 +83,10 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   }
 
+  const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
+  
+  // Send notifications for status changes
   if (status === "ready_for_pickup") {
-    const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
-    
     // Send email if available
     if (order.customer.email) {
       const emailResult = await sendReadyForPickupEmail({
@@ -107,8 +108,8 @@ export async function POST(req: Request, ctx: Ctx) {
       }
     }
     
-    // Send SMS if phone available and Twilio configured
-    if (order.customer.phone) {
+    // Send SMS if phone available, opted in, and Twilio configured
+    if (order.customer.phone && hasSMSOptIn(order.customer)) {
       const smsResult = await sendPickupReminderSMS({
         to: order.customer.phone,
         orderNumber: order.orderNumber,
@@ -135,6 +136,39 @@ export async function POST(req: Request, ctx: Ctx) {
           },
         });
       }
+    }
+  } else if (
+    // Send SMS status updates for key status changes (if opted in)
+    (status === "in_production" || status === "quality_check" || status === "completed") &&
+    order.customer.phone &&
+    hasSMSOptIn(order.customer)
+  ) {
+    const smsResult = await sendOrderStatusUpdateSMS({
+      to: order.customer.phone,
+      orderNumber: order.orderNumber,
+      customerName,
+      status,
+      statusLabel: toLabel,
+    });
+    
+    if (smsResult.ok) {
+      await prismaWithActivity.orderActivity.create({
+        data: {
+          orderId: order.id,
+          type: "note",
+          message: `Status update SMS sent to ${order.customer.phone}`,
+          createdByUserId: userId,
+        },
+      });
+    } else if (smsResult.error && !smsResult.error.includes("not configured")) {
+      await prismaWithActivity.orderActivity.create({
+        data: {
+          orderId: order.id,
+          type: "note",
+          message: `Status update SMS failed: ${smsResult.error}`,
+          createdByUserId: userId,
+        },
+      });
     }
   }
 
