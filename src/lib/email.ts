@@ -451,6 +451,147 @@ West Roxbury Framing
   return result;
 }
 
+/* ─── Email: Order Received (to customer) ─────────────────────────── */
+
+export async function sendOrderReceivedEmail(params: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  itemType?: string;
+  itemDescription?: string;
+  estimatedTotal?: string;
+  dueDate?: Date;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = `Order Confirmation — ${params.orderNumber}`;
+
+  const text = `Hi ${params.customerName},
+
+Thank you for your order! We've received your framing request and will begin working on it soon.
+
+Order Number: ${params.orderNumber}
+${params.itemType ? `Item Type: ${params.itemType}` : ""}
+${params.itemDescription ? `Description: ${params.itemDescription}` : ""}
+${params.estimatedTotal ? `Estimated Total: ${params.estimatedTotal}` : ""}
+${params.dueDate ? `Due Date: ${params.dueDate.toLocaleDateString()}` : ""}
+
+We'll keep you updated on the progress of your order. If you have any questions, feel free to reach out.
+
+Best regards,
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `Your order ${params.orderNumber} has been received and is being processed.`,
+    heading: "Order Received ✅",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>Thank you for your order! We've received your framing request and will begin working on it soon.</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:120px">Order Number</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.orderNumber}</td>
+            </tr>
+            ${params.itemType ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Item Type</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.itemType}</td>
+            </tr>` : ""}
+            ${params.itemDescription ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;vertical-align:top">Description</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.itemDescription}</td>
+            </tr>` : ""}
+            ${params.estimatedTotal ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Estimated Total</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.estimatedTotal}</td>
+            </tr>` : ""}
+            ${params.dueDate ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Due Date</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.dueDate.toLocaleDateString()}</td>
+            </tr>` : ""}
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">We'll keep you updated on the progress of your order. If you have any questions, feel free to reach out.</p>
+    `,
+    cta: { label: "Track Your Order", url: `${baseUrl}/order-status` },
+    footer: "Thank you for choosing West Roxbury Framing!",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
+/* ─── Email: Estimate Follow-Up (to customer) ─────────────────────── */
+
+export async function sendEstimateFollowUpEmail(params: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  estimatedTotal: string;
+  estimateUrl?: string;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = `Estimate Reminder — ${params.orderNumber}`;
+
+  const text = `Hi ${params.customerName},
+
+We wanted to follow up on the estimate we prepared for your framing project.
+
+Order Number: ${params.orderNumber}
+Estimated Total: ${params.estimatedTotal}
+
+We're here to answer any questions you might have and help you move forward with your project. If you're ready to proceed, just let us know!
+
+Best regards,
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `Following up on your estimate ${params.orderNumber} (${params.estimatedTotal}).`,
+    heading: "Estimate Follow-Up",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>We wanted to follow up on the estimate we prepared for your framing project.</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:120px">Order Number</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Estimated Total</td>
+              <td style="padding:6px 0;font-size:20px;color:#b8860b;font-weight:700">${params.estimatedTotal}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">We're here to answer any questions you might have and help you move forward with your project. If you're ready to proceed, just let us know!</p>
+    `,
+    cta: params.estimateUrl
+      ? { label: "View Estimate", url: params.estimateUrl }
+      : { label: "Contact Us", url: `${baseUrl}/contact` },
+    footer: "Thank you for considering West Roxbury Framing!",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
 /* ─── Email: New Web Lead (to staff) ─────────────────────────────── */
 
 export async function sendNewWebLeadNotification(params: {

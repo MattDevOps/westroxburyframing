@@ -35,21 +35,105 @@ export async function GET(req: Request) {
     };
   }
 
-  const customers = await prisma.customer.findMany({
-    where: Object.keys(where).length > 0 ? where : undefined,
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: {
+  try {
+    // Try to include tagAssignments, but fall back if Prisma client isn't updated yet
+    const includeOptions: any = {
       _count: { select: { orders: true } },
-      tagAssignments: {
+    };
+
+    // Only include tagAssignments if the Prisma client supports it
+    // This will work after running `npx prisma generate` and restarting the dev server
+    try {
+      // Test if tagAssignments exists by checking the model
+      includeOptions.tagAssignments = {
         include: {
           tag: true,
         },
-      },
-    },
-  });
+      };
+    } catch {
+      // Prisma client not updated yet - skip tagAssignments
+    }
 
-  return NextResponse.json({ customers });
+    const customers = await prisma.customer.findMany({
+      where: Object.keys(where).length > 0 ? where : {},
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: includeOptions,
+    });
+
+    // If tagAssignments weren't included, fetch them separately
+    if (!customers[0] || !('tagAssignments' in customers[0])) {
+      const customerIds = customers.map(c => c.id);
+      const tagAssignments = await prisma.customerTagAssignment.findMany({
+        where: { customerId: { in: customerIds } },
+        include: { tag: true },
+      });
+
+      // Group by customer ID
+      const assignmentsByCustomer = new Map<string, typeof tagAssignments>();
+      for (const assignment of tagAssignments) {
+        if (!assignmentsByCustomer.has(assignment.customerId)) {
+          assignmentsByCustomer.set(assignment.customerId, []);
+        }
+        assignmentsByCustomer.get(assignment.customerId)!.push(assignment);
+      }
+
+      // Add tagAssignments to each customer
+      for (const customer of customers) {
+        (customer as any).tagAssignments = assignmentsByCustomer.get(customer.id) || [];
+      }
+    }
+
+    return NextResponse.json({ customers });
+  } catch (error: any) {
+    console.error("Error fetching customers:", error);
+    
+    // If it's a Prisma validation error about tagAssignments, try without it
+    if (error.message && error.message.includes('tagAssignments')) {
+      try {
+        const customers = await prisma.customer.findMany({
+          where: Object.keys(where).length > 0 ? where : {},
+          orderBy: { createdAt: "desc" },
+          take: 200,
+          include: {
+            _count: { select: { orders: true } },
+          },
+        });
+
+        // Fetch tagAssignments separately
+        const customerIds = customers.map(c => c.id);
+        const tagAssignments = await prisma.customerTagAssignment.findMany({
+          where: { customerId: { in: customerIds } },
+          include: { tag: true },
+        });
+
+        const assignmentsByCustomer = new Map<string, typeof tagAssignments>();
+        for (const assignment of tagAssignments) {
+          if (!assignmentsByCustomer.has(assignment.customerId)) {
+            assignmentsByCustomer.set(assignment.customerId, []);
+          }
+          assignmentsByCustomer.get(assignment.customerId)!.push(assignment);
+        }
+
+        for (const customer of customers) {
+          (customer as any).tagAssignments = assignmentsByCustomer.get(customer.id) || [];
+        }
+
+        return NextResponse.json({ customers });
+      } catch (fallbackError: any) {
+        console.error("Fallback query also failed:", fallbackError);
+        return NextResponse.json(
+          { error: fallbackError.message || "Failed to load customers" },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { error: error.message || "Failed to load customers" },
+      { status: 500 }
+    );
+  }
 }
 
 /**

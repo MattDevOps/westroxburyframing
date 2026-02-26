@@ -118,11 +118,27 @@ export default function MaterialsNeededPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-neutral-900">Materials Needed</h1>
-        <p className="text-neutral-600 text-sm mt-1">
-          Materials required for incomplete orders, grouped by vendor
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900">Materials Needed</h1>
+          <p className="text-neutral-600 text-sm mt-1">
+            Materials required for incomplete orders, grouped by vendor
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href="/staff/pricing/vendors"
+            className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Manage Vendors
+          </Link>
+          <Link
+            href="/staff/pricing/vendors"
+            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+          >
+            + Add Vendor
+          </Link>
+        </div>
       </div>
 
       {/* Summary */}
@@ -149,9 +165,31 @@ export default function MaterialsNeededPage() {
         </div>
       </div>
 
-      {vendorsWithNeeds.length === 0 ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center">
-          <p className="text-neutral-600">All materials are in stock! No purchase orders needed.</p>
+      {data.vendors.length === 0 ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-12 text-center">
+          <p className="text-neutral-700 font-medium mb-2">No materials needed yet</p>
+          <p className="text-sm text-neutral-600 mb-4">
+            This page shows materials needed for incomplete orders. Once you create orders with components that use vendor items, they will appear here.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Link
+              href="/staff/orders/new"
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+            >
+              Create an Order
+            </Link>
+            <Link
+              href="/staff/pricing/vendors"
+              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              Manage Vendors
+            </Link>
+          </div>
+        </div>
+      ) : vendorsWithNeeds.length === 0 ? (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-12 text-center">
+          <p className="text-green-800 font-medium mb-2">All materials are in stock!</p>
+          <p className="text-sm text-green-700">No purchase orders needed at this time.</p>
         </div>
       ) : (
         <div className="space-y-6">

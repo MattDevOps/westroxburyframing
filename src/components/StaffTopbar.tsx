@@ -13,6 +13,7 @@ const STAFF_NAV = [
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
+  { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/pricing", label: "Pricing" },
   { href: "/staff/materials-needed", label: "Materials" },
   { href: "/staff/purchase-orders", label: "POs" },
@@ -67,40 +68,35 @@ export default function StaffTopbar() {
 
   return (
     <header className="border-b border-neutral-200 bg-white no-print">
-      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4 md:gap-6">
-          <Link href="/" className="flex items-center shrink-0">
-            <Image
-              src="/logo.png"
-              alt="West Roxbury Framing"
-              width={140}
-              height={48}
-              className="h-10 md:h-12 w-auto"
-              priority
-            />
-          </Link>
+      <div className="mx-auto max-w-7xl px-4">
+        {/* First row: Logo and Navigation */}
+        <div className="flex items-center justify-between py-3">
+          <div className="flex items-center gap-4 md:gap-6">
+            <Link href="/" className="flex items-center shrink-0">
+              <Image
+                src="/logo.png"
+                alt="West Roxbury Framing"
+                width={140}
+                height={48}
+                className="h-10 md:h-12 w-auto"
+                priority
+              />
+            </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex gap-1">
-            {STAFF_NAV.map((link) => (
-              <NavLink key={link.href} href={link.href}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <form action="/staff/api/auth/logout" method="post">
-            <button className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-3 py-2 hover:bg-neutral-100">
-              Log out
-            </button>
-          </form>
+            {/* Desktop nav */}
+            <nav className="hidden lg:flex gap-1 flex-wrap">
+              {STAFF_NAV.map((link) => (
+                <NavLink key={link.href} href={link.href}>
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 rounded-md hover:bg-neutral-100"
+            className="lg:hidden p-2 rounded-md hover:bg-neutral-100 shrink-0"
             aria-label="Toggle navigation"
           >
             <svg
@@ -126,6 +122,18 @@ export default function StaffTopbar() {
               )}
             </svg>
           </button>
+        </div>
+
+        {/* Second row: Logout button */}
+        <div className="flex items-center justify-end pb-3 border-t border-neutral-100 pt-2">
+          <form action="/staff/api/auth/logout" method="post" className="shrink-0">
+            <button 
+              type="submit"
+              className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-4 py-2 hover:bg-neutral-100 whitespace-nowrap font-medium"
+            >
+              Log out
+            </button>
+          </form>
         </div>
       </div>
 

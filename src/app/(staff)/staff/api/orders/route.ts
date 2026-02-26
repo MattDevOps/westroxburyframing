@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { nextOrderNumber } from "@/lib/ids";
 import { calculateOrderPrice, type PricingComponent } from "@/lib/pricing";
+import { sendOrderReceivedEmail } from "@/lib/email";
 
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -246,6 +247,22 @@ export async function POST(req: Request) {
       metadata: { orderNumber },
     },
   });
+
+  // Send order received email to customer (if email available and not an estimate)
+  if (order.customer.email && requestedStatus !== "estimate") {
+    const estimatedTotal = finalTotal > 0 ? `$${(finalTotal / 100).toFixed(2)}` : undefined;
+    sendOrderReceivedEmail({
+      to: order.customer.email,
+      orderNumber: order.orderNumber,
+      customerName: `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer",
+      itemType: order.itemType || undefined,
+      itemDescription: order.itemDescription || undefined,
+      estimatedTotal,
+      dueDate: order.dueDate || undefined,
+    }).catch((err) => {
+      console.error("Failed to send order received email:", err);
+    });
+  }
 
   return NextResponse.json({
     order: { id: order.id, order_number: order.orderNumber, status: order.status },
