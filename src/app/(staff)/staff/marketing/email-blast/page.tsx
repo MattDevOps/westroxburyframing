@@ -403,7 +403,23 @@ We look forward to seeing you!`);
             </div>
             <div className="text-xs text-neutral-500 text-center">OR</div>
             <div>
-              <label className="block text-xs text-neutral-600 mb-1">Select from Customer List:</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs text-neutral-600">Select from Customer List:</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedCustomerIds.length === customers.length) {
+                      setSelectedCustomerIds([]);
+                    } else {
+                      setSelectedCustomerIds(customers.map(c => c.id));
+                      setSelectedTagId("");
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {selectedCustomerIds.length === customers.length ? "Deselect All" : "Select All"}
+                </button>
+              </div>
               <select
                 multiple
                 value={selectedCustomerIds}
@@ -422,7 +438,12 @@ We look forward to seeing you!`);
                 ))}
               </select>
               <div className="text-xs text-neutral-500 mt-1">
-                Hold Ctrl/Cmd to select multiple customers
+                {selectedCustomerIds.length > 0 && (
+                  <span className="font-medium text-neutral-700">
+                    {selectedCustomerIds.length} customer{selectedCustomerIds.length !== 1 ? "s" : ""} selected.{" "}
+                  </span>
+                )}
+                Hold Ctrl/Cmd to select multiple customers, or use "Select All"
               </div>
             </div>
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">

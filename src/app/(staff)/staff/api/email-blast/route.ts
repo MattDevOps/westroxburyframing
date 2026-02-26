@@ -303,6 +303,7 @@ export async function POST(req: Request) {
     data: {
       entityType: "system",
       action: "email_blast_sent",
+      entityId: "email_blast", // System-level action, use a placeholder ID
       actorUserId: userId,
       metadata: {
         subject,
