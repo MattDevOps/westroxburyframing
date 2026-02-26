@@ -62,12 +62,14 @@ model Customer {
   preferredContact String    @default("email") // "email" | "call"
   marketingOptIn   Boolean   @default(false)
   marketingOptInAt DateTime?
+  smsOptIn         Boolean   @default(false)
+  smsOptInAt       DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  orders       Order[]
-  invoices     Invoice[]
-  appointments Appointment[]
+  orders         Order[]
+  invoices       Invoice[]
+  appointments   Appointment[]
   tagAssignments CustomerTagAssignment[]
 }
 
@@ -76,7 +78,7 @@ model Customer {
 model CustomerTag {
   id        String   @id @default(uuid())
   name      String   @unique
-  color     String?  // hex color for UI display
+  color     String? // hex color for UI display
   createdAt DateTime @default(now())
 
   assignments CustomerTagAssignment[]
