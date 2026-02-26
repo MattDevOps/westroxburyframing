@@ -117,8 +117,8 @@ export default function NewPurchaseOrderPage() {
         description = item.name;
       }
       // Try to get cost from vendor item
-      if (item.vendorItem && "retailPriceCents" in item.vendorItem) {
-        const cost = (item.vendorItem as any).retailPriceCents / 100;
+      if (item.vendorItem && "retailPerUnit" in item.vendorItem) {
+        const cost = Number((item.vendorItem as any).retailPerUnit || (item.vendorItem as any).costPerUnit || 0);
         if (cost > 0) {
           updateLine(index, {
             inventoryItemId: itemId,

@@ -49,14 +49,14 @@ export async function POST(req: Request) {
     if (item.vendorItemId) {
       const vendorItem = await prisma.vendorCatalogItem.findUnique({
         where: { id: item.vendorItemId },
-        select: { retailPriceCents: true, costCents: true },
+        select: { costPerUnit: true, retailPerUnit: true },
       });
       if (vendorItem) {
         // Use cost if available, otherwise retail
-        unitCost = vendorItem.costCents
-          ? Number(vendorItem.costCents) / 100
-          : vendorItem.retailPriceCents
-            ? Number(vendorItem.retailPriceCents) / 100
+        unitCost = vendorItem.costPerUnit
+          ? Number(vendorItem.costPerUnit)
+          : vendorItem.retailPerUnit
+            ? Number(vendorItem.retailPerUnit)
             : 0;
       }
     }
@@ -67,15 +67,15 @@ export async function POST(req: Request) {
         where: { id: item.inventoryItemId },
         include: {
           vendorItem: {
-            select: { costCents: true, retailPriceCents: true },
+            select: { costPerUnit: true, retailPerUnit: true },
           },
         },
       });
       if (inventoryItem?.vendorItem) {
-        unitCost = inventoryItem.vendorItem.costCents
-          ? Number(inventoryItem.vendorItem.costCents) / 100
-          : inventoryItem.vendorItem.retailPriceCents
-            ? Number(inventoryItem.vendorItem.retailPriceCents) / 100
+        unitCost = inventoryItem.vendorItem.costPerUnit
+          ? Number(inventoryItem.vendorItem.costPerUnit)
+          : inventoryItem.vendorItem.retailPerUnit
+            ? Number(inventoryItem.vendorItem.retailPerUnit)
             : 0;
       }
     }
