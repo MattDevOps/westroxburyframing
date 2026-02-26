@@ -134,6 +134,9 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
+  // TypeScript now knows reportType is "orders" | "customers" after the early return
+  const currentReportType: "orders" | "customers" = reportType;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
       <h1 className="text-2xl font-bold text-neutral-900">Reports & Export</h1>
@@ -145,7 +148,7 @@ export default function ReportsPage() {
           <button
             onClick={() => setReportType("orders")}
             className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
-              reportType === "orders"
+              currentReportType === "orders"
                 ? "bg-neutral-900 text-white border-neutral-900"
                 : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
             }`}
@@ -155,7 +158,7 @@ export default function ReportsPage() {
           <button
             onClick={() => setReportType("customers")}
             className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
-              reportType === "customers"
+              currentReportType === "customers"
                 ? "bg-neutral-900 text-white border-neutral-900"
                 : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
             }`}
@@ -164,11 +167,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => setReportType("moulding")}
-            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
-              reportType === "moulding"
-                ? "bg-neutral-900 text-white border-neutral-900"
-                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
-            }`}
+            className="px-4 py-2 text-sm rounded-xl border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 transition-colors"
           >
             Moulding Usage
           </button>
@@ -201,7 +200,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Status filters (orders only) */}
-        {reportType === "orders" && (
+        {currentReportType === "orders" && (
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">
               Filter by Status (leave empty for all)
@@ -238,12 +237,12 @@ export default function ReportsPage() {
           disabled={exporting}
           className="rounded-xl bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50"
         >
-          {exporting ? "Exporting…" : `Export ${reportType === "orders" ? "Orders" : "Customers"} CSV`}
+          {exporting ? "Exporting…" : `Export ${currentReportType === "orders" ? "Orders" : "Customers"} CSV`}
         </button>
       </div>
 
       {/* Summary panel (orders) */}
-      {reportType === "orders" && (
+      {currentReportType === "orders" && (
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-neutral-900 mb-4">
             Quick Summary
