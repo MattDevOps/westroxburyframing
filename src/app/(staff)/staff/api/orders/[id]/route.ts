@@ -419,8 +419,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
     await prisma.orderComponent.createMany({ data: componentsData });
 
     // Recalculate order totals
-    const componentSubtotal = pricingResult.lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
-    const componentDiscounts = componentsData.reduce((sum, c) => sum + c.discount, 0);
+    const componentSubtotal = pricingResult.lineItems.reduce((sum: number, li) => sum + li.lineTotal, 0);
+    const componentDiscounts = componentsData.reduce((sum: number, c: any) => sum + (c.discount || 0), 0);
     const afterComponentDiscount = componentSubtotal - componentDiscounts;
 
     // Apply order-level discount
