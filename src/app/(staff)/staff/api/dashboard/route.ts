@@ -219,5 +219,36 @@ export async function GET(req: Request) {
       userName: a.createdBy?.name || "System",
       createdAt: a.createdAt.toISOString(),
     })),
+    // Phase 4A: Low stock items
+    lowStockItems: await prisma.inventoryItem
+      .findMany({
+        where: {
+          quantityOnHand: { lte: prisma.raw("reorderPoint") },
+        },
+        select: {
+          id: true,
+          sku: true,
+          name: true,
+          quantityOnHand: true,
+          reorderPoint: true,
+          unitType: true,
+        },
+        take: 10,
+      })
+      .then((items) =>
+        items.map((item) => ({
+          id: item.id,
+          sku: item.sku,
+          name: item.name,
+          quantityOnHand: Number(item.quantityOnHand),
+          reorderPoint: Number(item.reorderPoint),
+          unitType: item.unitType,
+        }))
+      ),
+    lowStockCount: await prisma.inventoryItem.count({
+      where: {
+        quantityOnHand: { lte: prisma.raw("reorderPoint") },
+      },
+    }),
   });
 }

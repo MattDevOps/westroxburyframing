@@ -66,28 +66,106 @@ export default function OrderDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [blindPrint, setBlindPrint] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [note, setNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [refunding, setRefunding] = useState<string | null>(null);
+  const [scenarios, setScenarios] = useState<any[]>([]);
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [comparingScenarios, setComparingScenarios] = useState<string[]>([]);
 
   async function refresh() {
     if (!id) return;
-    const res = await fetch(`/staff/api/orders/${id}`, { cache: "no-store" });
-    const raw = await res.text();
-    let out: any = null;
     try {
-      out = raw ? JSON.parse(raw) : null;
-    } catch {
-      out = null;
+      const res = await fetch(`/staff/api/orders/${id}`, { cache: "no-store" });
+      if (!res.ok) {
+        console.error("Failed to load order:", res.status, res.statusText);
+        setError("Failed to load order");
+        return;
+      }
+      const raw = await res.text();
+      let out: any = null;
+      try {
+        out = raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        console.error("Failed to parse order data:", e);
+        setError("Failed to parse order data");
+        return;
+      }
+      setData(out);
+      setError(null);
+    } catch (e: any) {
+      console.error("Error loading order:", e);
+      setError(e.message || "Failed to load order");
     }
-    setData(out);
   }
 
   useEffect(() => {
     refresh();
+    loadScenarios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  async function loadScenarios() {
+    if (!id) return;
+    try {
+      const res = await fetch(`/staff/api/orders/${id}/scenarios`);
+      if (res.ok) {
+        const data = await res.json();
+        setScenarios(data.scenarios || []);
+      }
+    } catch (e) {
+      console.error("Failed to load scenarios:", e);
+    }
+  }
+
+  async function createScenario() {
+    if (!id) return;
+    try {
+      const res = await fetch(`/staff/api/orders/${id}/scenarios`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        await loadScenarios();
+        setShowScenarios(true);
+      }
+    } catch (e) {
+      console.error("Failed to create scenario:", e);
+    }
+  }
+
+  async function activateScenario(scenarioId: string) {
+    if (!id) return;
+    try {
+      const res = await fetch(`/staff/api/orders/${id}/scenarios/${scenarioId}/activate`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        await refresh();
+        await loadScenarios();
+        alert("Scenario activated! Components copied to active design.");
+      }
+    } catch (e) {
+      console.error("Failed to activate scenario:", e);
+    }
+  }
+
+  async function deleteScenario(scenarioId: string) {
+    if (!id || !confirm("Delete this scenario?")) return;
+    try {
+      const res = await fetch(`/staff/api/orders/${id}/scenarios/${scenarioId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await loadScenarios();
+      }
+    } catch (e) {
+      console.error("Failed to delete scenario:", e);
+    }
+  }
 
   const order = data?.order;
   const activity = useMemo(() => (order?.activity || []) as any[], [order]);
@@ -538,6 +616,72 @@ export default function OrderDetailPage() {
               <div className="col-span-full text-neutral-500">No specs entered yet.</div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Scenarios (Phase 3) */}
+      {order.scenarios && order.scenarios.length > 0 && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
+          <div className="flex items-center justify-between">
+            <div className="text-neutral-900 font-semibold">Design Scenarios</div>
+            <button
+              onClick={() => setShowScenarios(!showScenarios)}
+              className="text-sm text-neutral-600 hover:text-neutral-900"
+            >
+              {showScenarios ? "Hide" : "Show"} ({order.scenarios.length})
+            </button>
+          </div>
+          {showScenarios && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {order.scenarios.map((scenario: any) => (
+                  <div
+                    key={scenario.id}
+                    className={`rounded-xl border p-4 ${
+                      scenario.isActive ? "border-emerald-500 bg-emerald-50" : "border-neutral-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">{scenario.label}</div>
+                      {scenario.isActive && (
+                        <span className="text-xs px-2 py-1 rounded bg-emerald-600 text-white">Active</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-neutral-600 mb-2">
+                      ${(scenario.subtotal / 100).toFixed(2)} • {scenario.components?.length || 0} components
+                    </div>
+                    {scenario.notes && (
+                      <div className="text-xs text-neutral-500 mb-2">{scenario.notes}</div>
+                    )}
+                    <div className="flex gap-2 mt-3">
+                      {!scenario.isActive && (
+                        <button
+                          onClick={() => activateScenario(scenario.id)}
+                          className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                        >
+                          Set Active
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteScenario(scenario.id)}
+                        className="text-xs px-3 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {order.scenarios.length < 5 && (
+                <button
+                  onClick={createScenario}
+                  className="w-full rounded-xl border border-dashed border-neutral-300 px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50"
+                >
+                  + Add Scenario
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

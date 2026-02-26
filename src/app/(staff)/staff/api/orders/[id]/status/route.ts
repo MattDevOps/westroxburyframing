@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import { sendReadyForPickupEmail } from "@/lib/email";
+import { deductInventoryForOrder } from "@/lib/inventory";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
 const prismaWithActivity: any = prisma;
@@ -55,6 +56,31 @@ export async function POST(req: Request, ctx: Ctx) {
       createdByUserId: userId,
     },
   });
+
+  // Phase 4A: Auto-deduct inventory when order moves to in_production
+  if (status === "in_production" && prev.status !== "in_production") {
+    const inventoryResult = await deductInventoryForOrder(id);
+    if (inventoryResult.errors.length > 0) {
+      // Log errors but don't fail the status change
+      await prismaWithActivity.orderActivity.create({
+        data: {
+          orderId: order.id,
+          type: "note",
+          message: `Inventory deduction warnings: ${inventoryResult.errors.join("; ")}`,
+          createdByUserId: userId,
+        },
+      });
+    } else if (inventoryResult.deducted > 0) {
+      await prismaWithActivity.orderActivity.create({
+        data: {
+          orderId: order.id,
+          type: "note",
+          message: `Inventory deducted: ${inventoryResult.deducted} item(s)`,
+          createdByUserId: userId,
+        },
+      });
+    }
+  }
 
   if (status === "ready_for_pickup" && order.customer.email) {
     await sendReadyForPickupEmail({

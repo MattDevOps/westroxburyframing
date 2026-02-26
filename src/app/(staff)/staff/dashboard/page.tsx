@@ -49,6 +49,15 @@ interface DashboardData {
   arBalance: number;
   invoicesPending: number;
   recentActivity: ActivityItem[];
+  lowStockItems: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    quantityOnHand: number;
+    reorderPoint: number;
+    unitType: string;
+  }>;
+  lowStockCount: number;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -413,6 +422,45 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Phase 4A: Low Stock Alerts */}
+      {data.lowStockCount > 0 && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-lg font-semibold text-amber-900">
+                ⚠️ Low Stock Alert
+              </div>
+              <div className="text-sm text-amber-700">
+                {data.lowStockCount} item{data.lowStockCount !== 1 ? "s" : ""} below reorder point
+              </div>
+            </div>
+            <Link
+              href="/staff/inventory?lowStock=true"
+              className="text-sm px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700"
+            >
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.lowStockItems.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-amber-200 bg-white p-3"
+              >
+                <div className="font-medium text-neutral-900">{item.name}</div>
+                <div className="text-sm text-neutral-600 mt-1">
+                  <span className="font-mono">{item.sku}</span>
+                </div>
+                <div className="text-sm text-red-700 mt-2">
+                  {item.quantityOnHand.toFixed(2)} {item.unitType} on hand
+                  <span className="text-neutral-500"> (reorder at {item.reorderPoint.toFixed(2)})</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

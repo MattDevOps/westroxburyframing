@@ -109,6 +109,7 @@ model Order {
 
   specs      OrderSpecs?
   components OrderComponent[] // Phase 2C: Multi-component support
+  scenarios  OrderScenario[] // Phase 3: Design scenarios
   photos     OrderPhoto[]
   payments   Payment[]
 
@@ -283,7 +284,8 @@ model Vendor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  catalogItems VendorCatalogItem[]
+  catalogItems   VendorCatalogItem[]
+  inventoryItems InventoryItem[]
 }
 
 model VendorCatalogItem {
@@ -301,6 +303,7 @@ model VendorCatalogItem {
   updatedAt     DateTime @updatedAt
 
   orderComponents OrderComponent[]
+  inventoryItems  InventoryItem[]
 
   @@unique([vendorId, itemNumber])
 }
@@ -346,6 +349,64 @@ model OrderComponent {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
+  scenario OrderScenario? @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
   @@index([orderId])
   @@index([scenarioId])
+}
+
+// ─── Phase 3: OrderScenario (Design Options) ───────────────────────────────────
+
+model OrderScenario {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label     String // "Option A", "Option B", etc.
+  isActive  Boolean  @default(false)
+  subtotal  Int      @default(0) // cents
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  components OrderComponent[]
+
+  @@index([orderId])
+}
+
+// ─── Phase 4A: Inventory Tracking ───────────────────────────────────
+
+model InventoryItem {
+  id                String             @id @default(uuid())
+  vendorItemId      String?
+  vendorItem        VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
+  sku               String             @unique
+  name              String
+  category          String // moulding, matboard, glass, hardware, etc.
+  unitType          String // foot, sheet, each, sqft
+  quantityOnHand    Decimal            @default(0)
+  reorderPoint      Decimal            @default(0)
+  reorderQty        Decimal            @default(0)
+  preferredVendorId String?
+  locationNote      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  lots     InventoryLot[]
+  vendor   Vendor?        @relation(fields: [vendorId], references: [id])
+  vendorId String?
+}
+
+model InventoryLot {
+  id              String        @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity        Decimal
+  costPerUnit     Decimal?
+  receivedAt      DateTime      @default(now())
+  purchaseOrderId String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([inventoryItemId])
 }

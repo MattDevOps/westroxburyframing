@@ -16,49 +16,71 @@ export async function GET(req: Request, ctx: Ctx) {
 
   const { id } = await ctx.params;
 
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: {
-      customer: true,
-      specs: true,
-      components: {
-        include: {
-          priceCode: true,
-          vendorItem: {
-            include: { vendor: { select: { name: true, code: true } } },
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        specs: true,
+        components: {
+          include: {
+            priceCode: true,
+            vendorItem: {
+              include: { vendor: { select: { name: true, code: true } } },
+            },
+          },
+          orderBy: { position: "asc" },
+        },
+        scenarios: {
+          include: {
+            components: {
+              include: {
+                priceCode: true,
+                vendorItem: {
+                  include: { vendor: { select: { name: true, code: true } } },
+                },
+              },
+              orderBy: { position: "asc" },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        photos: true,
+        payments: true,
+        createdBy: true,
+        invoice: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            status: true,
+            totalAmount: true,
+            amountPaid: true,
+            balanceDue: true,
+            depositPercent: true,
+            depositAmount: true,
           },
         },
-        orderBy: { position: "asc" },
       },
-      photos: true,
-      payments: true,
-      createdBy: true,
-      invoice: {
-        select: {
-          id: true,
-          invoiceNumber: true,
-          status: true,
-          totalAmount: true,
-          amountPaid: true,
-          balanceDue: true,
-          depositPercent: true,
-          depositAmount: true,
-        },
+    });
+
+    if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    const activity = await prismaWithActivity.orderActivity.findMany({
+      where: { orderId: id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        createdBy: { select: { id: true, name: true, email: true } },
       },
-    },
-  });
+    });
 
-  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-
-  const activity = await prismaWithActivity.orderActivity.findMany({
-    where: { orderId: id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      createdBy: { select: { id: true, name: true, email: true } },
-    },
-  });
-
-  return NextResponse.json({ order: { ...order, activity } });
+    return NextResponse.json({ order: { ...order, activity } });
+  } catch (error: any) {
+    console.error("Error loading order:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to load order" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
