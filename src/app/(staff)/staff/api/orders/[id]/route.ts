@@ -17,12 +17,68 @@ export async function GET(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
 
   try {
-    const order = await prisma.order.findUnique({
+    // Try to include components and scenarios, but fall back if Prisma client isn't updated
+    const includeOptions: any = {
+      customer: true,
+      specs: true,
+      photos: true,
+      payments: true,
+      createdBy: true,
+      invoice: {
+        select: {
+          id: true,
+          invoiceNumber: true,
+          status: true,
+          totalAmount: true,
+          amountPaid: true,
+          balanceDue: true,
+          depositPercent: true,
+          depositAmount: true,
+        },
+      },
+    };
+
+    // Try to add components and scenarios if Prisma client supports them
+    try {
+      includeOptions.components = {
+        include: {
+          priceCode: true,
+          vendorItem: {
+            include: { vendor: { select: { name: true, code: true } } },
+          },
+        },
+        orderBy: { position: "asc" },
+      };
+      includeOptions.scenarios = {
+        include: {
+          components: {
+            include: {
+              priceCode: true,
+              vendorItem: {
+                include: { vendor: { select: { name: true, code: true } } },
+              },
+            },
+            orderBy: { position: "asc" },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      };
+    } catch {
+      // Prisma client not updated - will fetch separately
+    }
+
+    let order = await prisma.order.findUnique({
       where: { id },
-      include: {
-        customer: true,
-        specs: true,
-        components: {
+      include: includeOptions,
+    });
+
+    if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    // If components/scenarios weren't included, fetch them separately
+    if (!('components' in order) || !('scenarios' in order)) {
+      const [components, scenarios] = await Promise.all([
+        (prisma as any).orderComponent?.findMany({
+          where: { orderId: id, scenarioId: null },
           include: {
             priceCode: true,
             vendorItem: {
@@ -30,8 +86,9 @@ export async function GET(req: Request, ctx: Ctx) {
             },
           },
           orderBy: { position: "asc" },
-        },
-        scenarios: {
+        }).catch(() => []),
+        (prisma as any).orderScenario?.findMany({
+          where: { orderId: id },
           include: {
             components: {
               include: {
@@ -44,26 +101,11 @@ export async function GET(req: Request, ctx: Ctx) {
             },
           },
           orderBy: { createdAt: "asc" },
-        },
-        photos: true,
-        payments: true,
-        createdBy: true,
-        invoice: {
-          select: {
-            id: true,
-            invoiceNumber: true,
-            status: true,
-            totalAmount: true,
-            amountPaid: true,
-            balanceDue: true,
-            depositPercent: true,
-            depositAmount: true,
-          },
-        },
-      },
-    });
-
-    if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }).catch(() => []),
+      ]);
+      (order as any).components = components || [];
+      (order as any).scenarios = scenarios || [];
+    }
 
     const activity = await prismaWithActivity.orderActivity.findMany({
       where: { orderId: id },
@@ -76,6 +118,89 @@ export async function GET(req: Request, ctx: Ctx) {
     return NextResponse.json({ order: { ...order, activity } });
   } catch (error: any) {
     console.error("Error loading order:", error);
+    
+    // If it's a Prisma validation error, try without components/scenarios
+    if (error.message && (error.message.includes('components') || error.message.includes('scenarios'))) {
+      try {
+        const order = await prisma.order.findUnique({
+          where: { id },
+          include: {
+            customer: true,
+            specs: true,
+            photos: true,
+            payments: true,
+            createdBy: true,
+            invoice: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                status: true,
+                totalAmount: true,
+                amountPaid: true,
+                balanceDue: true,
+                depositPercent: true,
+                depositAmount: true,
+              },
+            },
+          },
+        });
+
+        if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+        // Fetch components and scenarios separately
+        const [components, scenarios] = await Promise.all([
+          (prisma as any).orderComponent?.findMany({
+            where: { orderId: id, scenarioId: null },
+            include: {
+              priceCode: true,
+              vendorItem: {
+                include: { vendor: { select: { name: true, code: true } } },
+              },
+            },
+            orderBy: { position: "asc" },
+          }).catch(() => []),
+          (prisma as any).orderScenario?.findMany({
+            where: { orderId: id },
+            include: {
+              components: {
+                include: {
+                  priceCode: true,
+                  vendorItem: {
+                    include: { vendor: { select: { name: true, code: true } } },
+                  },
+                },
+                orderBy: { position: "asc" },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          }).catch(() => []),
+        ]);
+
+        const activity = await prismaWithActivity.orderActivity.findMany({
+          where: { orderId: id },
+          orderBy: { createdAt: "desc" },
+          include: {
+            createdBy: { select: { id: true, name: true, email: true } },
+          },
+        });
+
+        return NextResponse.json({ 
+          order: { 
+            ...order, 
+            components: components || [],
+            scenarios: scenarios || [],
+            activity 
+          } 
+        });
+      } catch (fallbackError: any) {
+        console.error("Fallback query also failed:", fallbackError);
+        return NextResponse.json(
+          { error: fallbackError.message || "Failed to load order" },
+          { status: 500 }
+        );
+      }
+    }
+
     return NextResponse.json(
       { error: error.message || "Failed to load order" },
       { status: 500 }

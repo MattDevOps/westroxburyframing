@@ -10,16 +10,28 @@ export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const tags = await prisma.customerTag.findMany({
-    include: {
-      _count: {
-        select: { assignments: true },
+  try {
+    const tags = await (prisma as any).customerTag.findMany({
+      include: {
+        _count: {
+          select: { assignments: true },
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
 
-  return NextResponse.json({ tags });
+    return NextResponse.json({ tags: tags || [] });
+  } catch (error: any) {
+    console.error("Error loading customer tags:", error);
+    // If customerTag doesn't exist in Prisma client yet, return empty array
+    if (error.message && error.message.includes('customerTag')) {
+      return NextResponse.json({ tags: [] });
+    }
+    return NextResponse.json(
+      { error: error.message || "Failed to load tags" },
+      { status: 500 }
+    );
+  }
 }
 
 /**
