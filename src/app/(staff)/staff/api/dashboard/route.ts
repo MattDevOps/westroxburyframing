@@ -14,33 +14,46 @@ export async function GET(req: Request) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // Total orders
-  const totalOrders = await prisma.order.count();
+  // Run independent queries in parallel for better performance
+  const [
+    totalOrders,
+    ordersThisMonth,
+    revenueAgg,
+    monthRevenueAgg,
+    statusCounts,
+    totalCustomers,
+  ] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.count({
+      where: { createdAt: { gte: startOfMonth } },
+    }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { paidInFull: true },
+    }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { paidInFull: true, createdAt: { gte: startOfMonth } },
+    }),
+    prisma.order.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    }),
+    prisma.customer.count(),
+  ]);
 
-  // Orders this month
-  const ordersThisMonth = await prisma.order.count({
-    where: { createdAt: { gte: startOfMonth } },
-  });
-
-  // Total revenue (sum of totalAmount for paid orders)
-  const revenueAgg = await prisma.order.aggregate({
-    _sum: { totalAmount: true },
-    where: { paidInFull: true },
-  });
   const totalRevenue = revenueAgg._sum.totalAmount || 0;
-
-  // Revenue this month
-  const monthRevenueAgg = await prisma.order.aggregate({
-    _sum: { totalAmount: true },
-    where: { paidInFull: true, createdAt: { gte: startOfMonth } },
-  });
   const revenueThisMonth = monthRevenueAgg._sum.totalAmount || 0;
+  const byStatus = statusCounts.map((s) => ({
+    status: s.status,
+    count: s._count.id,
+  }));
 
-  // Average turnaround (days from creation to completion)
+  // Average turnaround (days from creation to completion) - limit to recent 100 for performance
   const completedOrders = await prisma.order.findMany({
     where: { status: { in: ["completed", "picked_up"] } },
     select: { createdAt: true, updatedAt: true },
-    take: 200,
+    take: 100, // Reduced from 200 for better performance
     orderBy: { updatedAt: "desc" },
   });
   let avgTurnaround = 0;
@@ -55,18 +68,8 @@ export async function GET(req: Request) {
       Math.round((totalDays / completedOrders.length) * 10) / 10;
   }
 
-  // Orders by status
-  const statusCounts = await prisma.order.groupBy({
-    by: ["status"],
-    _count: { id: true },
-  });
-  const byStatus = statusCounts.map((s) => ({
-    status: s.status,
-    count: s._count.id,
-  }));
-
-  // Revenue by month (last 6 months)
-  const revenueByMonth: { month: string; revenue: number }[] = [];
+  // Revenue by month (last 6 months) - run in parallel instead of sequential loop
+  const revenueByMonthPromises = [];
   for (let i = 5; i >= 0; i--) {
     const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mEnd = new Date(
@@ -78,27 +81,27 @@ export async function GET(req: Request) {
       59,
       999
     );
-    const agg = await prisma.order.aggregate({
-      _sum: { totalAmount: true },
-      where: {
-        paidInFull: true,
-        createdAt: { gte: mStart, lte: mEnd },
-      },
-    });
-    revenueByMonth.push({
-      month: mStart.toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
-      }),
-      revenue: agg._sum.totalAmount || 0,
-    });
+    revenueByMonthPromises.push(
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          paidInFull: true,
+          createdAt: { gte: mStart, lte: mEnd },
+        },
+      }).then((agg) => ({
+        month: mStart.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        }),
+        revenue: agg._sum.totalAmount || 0,
+      }))
+    );
   }
-
-  // Total customers
-  const totalCustomers = await prisma.customer.count();
+  const revenueByMonth = await Promise.all(revenueByMonthPromises);
 
   // Phase 4A: Low stock items
   // Note: Prisma doesn't support comparing fields directly, so we fetch all and filter
+  // We only select the fields we need to minimize data transfer
   const allInventoryItems = await prisma.inventoryItem.findMany({
     select: {
       id: true,
@@ -126,87 +129,93 @@ export async function GET(req: Request) {
     (item) => Number(item.quantityOnHand) <= Number(item.reorderPoint)
   ).length;
 
-  // --- NEW: Overdue orders (due date past, not completed/cancelled/picked_up) ---
-  const overdueOrders = await prisma.order.findMany({
-    where: {
-      dueDate: { lt: now },
-      status: {
-        notIn: ["completed", "picked_up", "cancelled"],
+  // Run remaining queries in parallel for better performance
+  const [
+    overdueOrders,
+    overdueCount,
+    readyForPickup,
+    estimatesCount,
+    onHoldCount,
+    outstandingInvoicesResult,
+    recentActivityResult,
+  ] = await Promise.all([
+    // Overdue orders
+    prisma.order.findMany({
+      where: {
+        dueDate: { lt: now },
+        status: {
+          notIn: ["completed", "picked_up", "cancelled"],
+        },
       },
-    },
-    select: {
-      id: true,
-      orderNumber: true,
-      status: true,
-      dueDate: true,
-      itemType: true,
-      totalAmount: true,
-      customer: { select: { firstName: true, lastName: true } },
-    },
-    orderBy: { dueDate: "asc" },
-    take: 25,
-  });
-
-  const overdueCount = await prisma.order.count({
-    where: {
-      dueDate: { lt: now },
-      status: { notIn: ["completed", "picked_up", "cancelled"] },
-    },
-  });
-
-  // --- NEW: Ready for pickup list ---
-  const readyForPickup = await prisma.order.findMany({
-    where: { status: "ready_for_pickup" },
-    select: {
-      id: true,
-      orderNumber: true,
-      dueDate: true,
-      totalAmount: true,
-      createdAt: true,
-      customer: { select: { firstName: true, lastName: true, phone: true } },
-    },
-    orderBy: { createdAt: "asc" },
-    take: 20,
-  });
-
-  // --- NEW: Estimates pending ---
-  const estimatesCount = await prisma.order.count({
-    where: { status: "estimate" },
-  });
-  const onHoldCount = await prisma.order.count({
-    where: { status: "on_hold" },
-  });
-
-  // --- A/R totals from Invoice model ---
-  let arBalance = 0;
-  let invoicesPending = 0;
-  try {
-    const outstandingInvoices = await prisma.invoice.findMany({
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        dueDate: true,
+        itemType: true,
+        totalAmount: true,
+        customer: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { dueDate: "asc" },
+      take: 25,
+    }),
+    // Overdue count
+    prisma.order.count({
+      where: {
+        dueDate: { lt: now },
+        status: { notIn: ["completed", "picked_up", "cancelled"] },
+      },
+    }),
+    // Ready for pickup
+    prisma.order.findMany({
+      where: { status: "ready_for_pickup" },
+      select: {
+        id: true,
+        orderNumber: true,
+        dueDate: true,
+        totalAmount: true,
+        createdAt: true,
+        customer: { select: { firstName: true, lastName: true, phone: true } },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 20,
+    }),
+    // Estimates count
+    prisma.order.count({
+      where: { status: "estimate" },
+    }),
+    // On hold count
+    prisma.order.count({
+      where: { status: "on_hold" },
+    }),
+    // A/R totals
+    prisma.invoice.findMany({
       where: {
         status: { in: ["draft", "sent", "partial"] },
       },
       select: { balanceDue: true },
-    });
-    arBalance = outstandingInvoices.reduce((sum, i) => sum + i.balanceDue, 0);
-    invoicesPending = outstandingInvoices.length;
-  } catch (e) {
-    console.error("Failed to load A/R totals:", e);
-  }
-
-  // --- NEW: Recent activity (last 15 events) ---
-  let recentActivity: any[] = [];
-  try {
-    recentActivity = await prisma.orderActivity.findMany({
+    }).catch(() => []),
+    // Recent activity
+    prisma.orderActivity.findMany({
       orderBy: { createdAt: "desc" },
       take: 15,
       include: {
         order: { select: { orderNumber: true } },
         createdBy: { select: { name: true } },
       },
-    });
-  } catch (e) {
-    console.error("Failed to load recent activity:", e);
+    }).catch(() => []),
+  ]);
+
+  // Process A/R totals
+  let arBalance = 0;
+  let invoicesPending = 0;
+  if (Array.isArray(outstandingInvoicesResult)) {
+    arBalance = outstandingInvoicesResult.reduce((sum, i) => sum + i.balanceDue, 0);
+    invoicesPending = outstandingInvoicesResult.length;
   }
+
+  // Process recent activity
+  const recentActivity = Array.isArray(recentActivityResult) ? recentActivityResult : [];
 
   return NextResponse.json({
     totalOrders,
