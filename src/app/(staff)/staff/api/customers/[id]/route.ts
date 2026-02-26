@@ -105,6 +105,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
     data.phone = phone;
   }
   if (email !== undefined) data.email = email;
+  if ("address_line1" in body) data.addressLine1 = String(body.address_line1 || "").trim() || null;
+  if ("address_line2" in body) data.addressLine2 = String(body.address_line2 || "").trim() || null;
+  if ("city" in body) data.city = String(body.city || "").trim() || null;
+  if ("state" in body) data.state = String(body.state || "").trim() || null;
+  if ("zip" in body) data.zip = String(body.zip || "").trim() || null;
 
   if ("preferred_contact" in body) {
     data.preferredContact = body.preferred_contact === "call" ? "call" : "email";

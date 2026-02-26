@@ -170,6 +170,11 @@ export async function POST(req: Request) {
   const firstName = String(body.first_name || "").trim();
   const lastName = String(body.last_name || "").trim();
   const marketing = Boolean(body.marketing_opt_in);
+  const addressLine1 = "address_line1" in body ? String(body.address_line1 || "").trim() || null : undefined;
+  const addressLine2 = "address_line2" in body ? String(body.address_line2 || "").trim() || null : undefined;
+  const city = "city" in body ? String(body.city || "").trim() || null : undefined;
+  const state = "state" in body ? String(body.state || "").trim() || null : undefined;
+  const zip = "zip" in body ? String(body.zip || "").trim() || null : undefined;
 
   if (!firstName || !lastName) {
     return NextResponse.json({ error: "First and last name are required." }, { status: 400 });
@@ -213,6 +218,12 @@ export async function POST(req: Request) {
     // Fill in phone or email if not already set
     if (phone && !existing.phone) updateData.phone = phone;
     if (email && !existing.email) updateData.email = email;
+    // Update address fields if provided
+    if (addressLine1 !== undefined) updateData.addressLine1 = addressLine1;
+    if (addressLine2 !== undefined) updateData.addressLine2 = addressLine2;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (zip !== undefined) updateData.zip = zip;
 
     const updated = await prisma.customer.update({
       where: { id: existing.id },
@@ -237,6 +248,11 @@ export async function POST(req: Request) {
       lastName,
       phone: phone ? phone : null,
       email: email ? email : null,
+      addressLine1: addressLine1 || null,
+      addressLine2: addressLine2 || null,
+      city: city || null,
+      state: state || null,
+      zip: zip || null,
       preferredContact: body.preferred_contact === "call" ? "call" : "email",
       marketingOptIn: marketing,
       marketingOptInAt: marketing ? new Date() : null,

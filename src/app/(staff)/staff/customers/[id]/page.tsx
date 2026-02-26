@@ -8,6 +8,11 @@ type Customer = {
   lastName: string | null;
   email: string | null;
   phone: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
   createdAt?: string;
@@ -139,6 +144,11 @@ export default function CustomerDetailPage({
       last_name: String(form.get("last_name") || ""),
       phone: String(form.get("phone") || ""),
       email: String(form.get("email") || ""),
+      address_line1: String(form.get("address_line1") || ""),
+      address_line2: String(form.get("address_line2") || ""),
+      city: String(form.get("city") || ""),
+      state: String(form.get("state") || ""),
+      zip: String(form.get("zip") || ""),
       preferred_contact: String(form.get("preferred_contact") || "email"),
       marketing_opt_in: Boolean(form.get("marketing_opt_in")),
     };
@@ -182,6 +192,15 @@ export default function CustomerDetailPage({
           <h1 className="text-2xl font-semibold">{name}</h1>
           <p className="text-neutral-600 text-sm mt-1">
             {customer.email || "—"} · {customer.phone || "—"}
+            {customer.addressLine1 && (
+              <span className="block mt-1">
+                {customer.addressLine1}
+                {customer.addressLine2 && `, ${customer.addressLine2}`}
+                {customer.city && `, ${customer.city}`}
+                {customer.state && `, ${customer.state}`}
+                {customer.zip && ` ${customer.zip}`}
+              </span>
+            )}
           </p>
           {stats && (
             <div className="flex flex-wrap gap-4 mt-2">
@@ -358,6 +377,60 @@ export default function CustomerDetailPage({
                 defaultValue={customer.email || ""}
                 className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
               />
+            </div>
+
+            {/* Address Section */}
+            <div className="pt-2 border-t border-neutral-200">
+              <div className="text-xs font-medium text-neutral-700 mb-3">Address (Optional)</div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">Address Line 1</label>
+                  <input
+                    name="address_line1"
+                    defaultValue={customer.addressLine1 || ""}
+                    placeholder="Street address"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">Address Line 2</label>
+                  <input
+                    name="address_line2"
+                    defaultValue={customer.addressLine2 || ""}
+                    placeholder="Apt, suite, unit, etc."
+                    className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-neutral-600 mb-1">City</label>
+                    <input
+                      name="city"
+                      defaultValue={customer.city || ""}
+                      placeholder="City"
+                      className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-600 mb-1">State</label>
+                    <input
+                      name="state"
+                      defaultValue={customer.state || ""}
+                      placeholder="State"
+                      className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">ZIP Code</label>
+                  <input
+                    name="zip"
+                    defaultValue={customer.zip || ""}
+                    placeholder="ZIP code"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 items-end">

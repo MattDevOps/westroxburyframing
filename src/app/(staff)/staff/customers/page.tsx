@@ -64,6 +64,11 @@ export default function CustomersPage() {
   const [newCustomerLastName, setNewCustomerLastName] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerAddressLine1, setNewCustomerAddressLine1] = useState("");
+  const [newCustomerAddressLine2, setNewCustomerAddressLine2] = useState("");
+  const [newCustomerCity, setNewCustomerCity] = useState("");
+  const [newCustomerState, setNewCustomerState] = useState("");
+  const [newCustomerZip, setNewCustomerZip] = useState("");
   const [newCustomerPreferredContact, setNewCustomerPreferredContact] = useState<"email" | "call">("email");
   const [newCustomerMarketingOptIn, setNewCustomerMarketingOptIn] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -236,6 +241,11 @@ export default function CustomersPage() {
           last_name: newCustomerLastName.trim(),
           email: newCustomerEmail.trim() || null,
           phone: newCustomerPhone.trim() || null,
+          address_line1: newCustomerAddressLine1.trim() || null,
+          address_line2: newCustomerAddressLine2.trim() || null,
+          city: newCustomerCity.trim() || null,
+          state: newCustomerState.trim() || null,
+          zip: newCustomerZip.trim() || null,
           preferred_contact: newCustomerPreferredContact,
           marketing_opt_in: newCustomerMarketingOptIn,
         }),
@@ -252,6 +262,11 @@ export default function CustomersPage() {
       setNewCustomerLastName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
+      setNewCustomerAddressLine1("");
+      setNewCustomerAddressLine2("");
+      setNewCustomerCity("");
+      setNewCustomerState("");
+      setNewCustomerZip("");
       setNewCustomerPreferredContact("email");
       setNewCustomerMarketingOptIn(false);
       setShowAddCustomer(false);
@@ -418,6 +433,11 @@ export default function CustomersPage() {
                     setNewCustomerLastName("");
                     setNewCustomerEmail("");
                     setNewCustomerPhone("");
+                    setNewCustomerAddressLine1("");
+                    setNewCustomerAddressLine2("");
+                    setNewCustomerCity("");
+                    setNewCustomerState("");
+                    setNewCustomerZip("");
                     setNewCustomerPreferredContact("email");
                     setNewCustomerMarketingOptIn(false);
                   }}
@@ -488,6 +508,74 @@ export default function CustomersPage() {
                 />
               </div>
 
+              <div className="pt-2 border-t border-neutral-200">
+                <div className="text-xs font-medium text-neutral-700 mb-3">Address (Optional)</div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Address Line 1
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustomerAddressLine1}
+                      onChange={(e) => setNewCustomerAddressLine1(e.target.value)}
+                      placeholder="Street address"
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Address Line 2
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustomerAddressLine2}
+                      onChange={(e) => setNewCustomerAddressLine2(e.target.value)}
+                      placeholder="Apt, suite, unit, etc."
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={newCustomerCity}
+                        onChange={(e) => setNewCustomerCity(e.target.value)}
+                        placeholder="City"
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={newCustomerState}
+                        onChange={(e) => setNewCustomerState(e.target.value)}
+                        placeholder="State"
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      ZIP Code
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustomerZip}
+                      onChange={(e) => setNewCustomerZip(e.target.value)}
+                      placeholder="ZIP code"
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-neutral-700 mb-1">
                   Preferred Contact
@@ -530,6 +618,11 @@ export default function CustomersPage() {
                     setNewCustomerLastName("");
                     setNewCustomerEmail("");
                     setNewCustomerPhone("");
+                    setNewCustomerAddressLine1("");
+                    setNewCustomerAddressLine2("");
+                    setNewCustomerCity("");
+                    setNewCustomerState("");
+                    setNewCustomerZip("");
                     setNewCustomerPreferredContact("email");
                     setNewCustomerMarketingOptIn(false);
                   }}
