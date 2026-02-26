@@ -5,7 +5,7 @@ This repo is a production-oriented starter for:
 - Staff app (orders, customers, workflow)
 - PostgreSQL (Prisma)
 - Square payment linkage (skeleton)
-- Mailchimp opt-in sync (skeleton)
+- Postmark email integration (transactional and marketing)
 - S3-compatible uploads (signed URL skeleton)
 - Email notifications (stub)
 

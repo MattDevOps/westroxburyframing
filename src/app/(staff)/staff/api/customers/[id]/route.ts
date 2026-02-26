@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
-import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -122,9 +121,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   const updated = await prisma.customer.update({ where: { id }, data });
 
-  if (marketing === true) {
-    syncMailchimpCustomer(updated).catch(() => null);
-  }
 
   return NextResponse.json({ customer: { id: updated.id } });
 }

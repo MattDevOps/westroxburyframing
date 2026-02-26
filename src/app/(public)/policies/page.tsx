@@ -50,7 +50,7 @@ export default function PoliciesPage() {
           <div>
             <h2 className="font-serif text-2xl text-foreground mb-4">Email Marketing</h2>
             <p className="mb-3">
-              We use Mailchimp to manage our email list. You will only receive marketing emails if you have explicitly opted in by checking the marketing consent box during order intake or on our website forms. You can unsubscribe at any time by clicking the &ldquo;unsubscribe&rdquo; link in any marketing email.
+              We use Postmark to send marketing emails. You will only receive marketing emails if you have explicitly opted in by checking the marketing consent box during order intake or on our website forms. You can unsubscribe at any time by clicking the &ldquo;unsubscribe&rdquo; link in any marketing email.
             </p>
           </div>
 
@@ -109,7 +109,7 @@ export default function PoliciesPage() {
             <p className="mb-3">We use the following third-party services:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li><strong>Square</strong> — Payment processing and invoicing</li>
-              <li><strong>Mailchimp</strong> — Email marketing (opt-in only)</li>
+              <li><strong>Postmark</strong> — Email marketing (opt-in only)</li>
               <li><strong>Calendly</strong> — Online appointment scheduling</li>
               <li><strong>Google Maps</strong> — Maps and directions on our website</li>
               <li><strong>Vercel</strong> — Website hosting</li>

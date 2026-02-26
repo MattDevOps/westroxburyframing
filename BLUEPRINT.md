@@ -14,7 +14,7 @@
 - **Database:** PostgreSQL + Prisma ORM
 - **Payments:** Square APIs (sandbox tested)
 - **Email:** Postmark (stub in `lib/email.ts`)
-- **Marketing:** Mailchimp sync skeleton (`lib/mailchimp.ts`)
+- **Marketing:** Postmark for transactional and marketing emails (email blast feature built-in)
 - **Hosting:** Vercel
 
 ### What Already Exists
@@ -88,8 +88,7 @@
 | **Square** | Credit card transactions, refunds, voids via Square Terminal. | ✅ Have | Square invoice + payment + refund flows built |
 | **QuickBooks Online** | Push invoice data to QBO. | ❌ Missing | Phase 3+ |
 | **Shopify** | Import orders, products, customers. | ❌ Missing | Phase 3+ |
-| **Mailchimp** | Import audiences, subscribe/unsubscribe contacts. | ⚠️ Partial | Have sync skeleton. Need: full audience management UI |
-| **Constant Contact** | Alternative to Mailchimp. | ❌ N/A | Using Mailchimp instead |
+| **Email Marketing** | Email blasts to customer lists/tags. | ✅ Complete | Using Postmark with built-in email blast feature |
 | **SMS (ClickSend/BulkSMS)** | Text notifications to customers. | ❌ Missing | Plan: Twilio (Phase F) |
 | **Excel Export** | Export data as spreadsheet. | ❌ Missing | Need: CSV/XLSX export for orders, customers, reports |
 | **iPad** | FileMaker Server on iPad. | ❌ N/A | Our web app is already mobile-responsive |
@@ -540,10 +539,11 @@ model CustomerTagAssignment {
 - [ ] SMS queue with delivery status tracking
 - [ ] Customer opt-in/opt-out for SMS
 
-#### Step 5D: Mailchimp Full Integration
-- [ ] Sync customer tags → Mailchimp segments
-- [ ] Subscribe/unsubscribe from staff UI
-- [ ] Import Mailchimp audiences
+#### Step 5D: Email Marketing (Postmark)
+- [x] Email blast to customer lists/tags
+- [x] Email templates (holiday, Black Friday, custom)
+- [x] Customer opt-in/opt-out management
+- [x] Postmark integration for sending
 
 ---
 
@@ -604,7 +604,7 @@ Phase 4D: Usage reports                     ← (1 day)
 Phase 5A: Customer tags                     ← (1 day)
 Phase 5B: Email templates                   ← (2-3 days)
 Phase 5C: SMS (Twilio)                      ← (1-2 days)
-Phase 5D: Mailchimp full                    ← (1 day)
+Phase 5D: Email Marketing (Postmark)        ← (Complete - using Postmark instead)
   ─── Milestone: Marketing + comms ───
 Phase 6A: Reports                           ← (2-3 days)
 Phase 6B: Export                            ← (1-2 days)
@@ -631,7 +631,7 @@ Phase 7: Advanced (as needed)               ← ongoing
 | Service | Purpose | Status |
 |---------|---------|--------|
 | **Twilio** | SMS notifications | ❌ Not yet |
-| **Mailchimp** | Marketing email lists | ⚠️ Skeleton exists |
+| **Postmark** | Transactional and marketing emails | ✅ Configured |
 
 ### Optional / Phase 7
 | Service | Purpose |

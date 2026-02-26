@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
-import { syncMailchimpCustomer } from "@/lib/mailchimp";
 import { sendNewWebLeadNotification } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -69,10 +68,6 @@ export async function POST(request: Request) {
             },
         });
 
-        // Sync to Mailchimp if opted in
-        if (marketing && email) {
-            syncMailchimpCustomer(customer).catch(() => null);
-        }
 
         // Generate order number
         const last = await prisma.order.findFirst({

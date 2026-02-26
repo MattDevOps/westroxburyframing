@@ -25,10 +25,6 @@ export const env = {
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
 
-  // ── Mailchimp (optional — sync silently skips if not configured) ──
-  MAILCHIMP_API_KEY: process.env.MAILCHIMP_API_KEY || "",
-  MAILCHIMP_AUDIENCE_ID: process.env.MAILCHIMP_AUDIENCE_ID || "",
-  MAILCHIMP_SERVER_PREFIX: process.env.MAILCHIMP_SERVER_PREFIX || "",
 
   // ── Google Reviews (optional — falls back to static reviews) ──
   GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY || "",

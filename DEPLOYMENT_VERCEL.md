@@ -41,9 +41,6 @@ Add these in **Vercel Dashboard → Project → Settings → Environment Variabl
 
 | Variable | Description |
 |----------|-------------|
-| `MAILCHIMP_API_KEY` | If using newsletter signup |
-| `MAILCHIMP_AUDIENCE_ID` | Mailchimp list ID |
-| `MAILCHIMP_SERVER_PREFIX` | From API key (e.g. `us7`) |
 | `STORAGE_*` | S3-compatible storage if you use file uploads |
 | `GOOGLE_PLACES_API_KEY` | For testimonials |
 | `GOOGLE_PLACES_PLACE_ID` | Google Place ID |

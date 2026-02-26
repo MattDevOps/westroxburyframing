@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
-import { syncMailchimpCustomer } from "@/lib/mailchimp";
 
 /**
  * GET /staff/api/customers?q=
@@ -230,9 +229,6 @@ export async function POST(req: Request) {
       data: updateData,
     });
 
-    if (marketing) {
-      syncMailchimpCustomer(updated).catch(() => null);
-    }
 
     return NextResponse.json({
       customer: { id: updated.id },
@@ -259,9 +255,6 @@ export async function POST(req: Request) {
     },
   });
 
-  if (marketing) {
-    syncMailchimpCustomer(customer).catch(() => null);
-  }
 
   return NextResponse.json({ customer: { id: customer.id } });
 }

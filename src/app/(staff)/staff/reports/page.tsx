@@ -13,7 +13,10 @@ interface SummaryData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reportType, setReportType] = useState<"orders" | "customers" | "moulding">("orders");
+  const [reportType, setReportType] = useState<"sales" | "orders" | "customers" | "moulding">("sales");
+  const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [salesData, setSalesData] = useState<any>(null);
+  const [loadingSales, setLoadingSales] = useState(false);
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -84,6 +87,36 @@ export default function ReportsPage() {
     loadSummary();
   }, [loadSummary]);
 
+  const loadSalesReport = useCallback(async () => {
+    if (reportType !== "sales") {
+      setSalesData(null);
+      return;
+    }
+    setLoadingSales(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("period", salesPeriod);
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+
+      const res = await fetch(`/staff/api/reports/sales?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setSalesData(null);
+        return;
+      }
+      setSalesData(data);
+    } catch {
+      setSalesData(null);
+    } finally {
+      setLoadingSales(false);
+    }
+  }, [reportType, salesPeriod, from, to]);
+
+  useEffect(() => {
+    loadSalesReport();
+  }, [loadSalesReport]);
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -134,8 +167,8 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
-  // TypeScript now knows reportType is "orders" | "customers" after the early return
-  const currentReportType: "orders" | "customers" = reportType;
+  // TypeScript now knows reportType is "sales" | "orders" | "customers" after the early return
+  const currentReportType: "sales" | "orders" | "customers" = reportType;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -145,6 +178,16 @@ export default function ReportsPage() {
       <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-5">
         {/* Report type */}
         <div className="flex gap-3">
+          <button
+            onClick={() => setReportType("sales")}
+            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
+              currentReportType === "sales"
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+            }`}
+          >
+            Sales Report
+          </button>
           <button
             onClick={() => setReportType("orders")}
             className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
@@ -172,6 +215,47 @@ export default function ReportsPage() {
             Moulding Usage
           </button>
         </div>
+
+        {/* Period selector for Sales Report */}
+        {currentReportType === "sales" && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Period
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSalesPeriod("daily")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  salesPeriod === "daily"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setSalesPeriod("weekly")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  salesPeriod === "weekly"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Weekly
+              </button>
+              <button
+                onClick={() => setSalesPeriod("monthly")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  salesPeriod === "monthly"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Date range */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -232,14 +316,145 @@ export default function ReportsPage() {
         )}
 
         {/* Export button */}
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="rounded-xl bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50"
-        >
-          {exporting ? "Exporting…" : `Export ${currentReportType === "orders" ? "Orders" : "Customers"} CSV`}
-        </button>
+        {currentReportType !== "sales" && (
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="rounded-xl bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50"
+          >
+            {exporting ? "Exporting…" : `Export ${currentReportType === "orders" ? "Orders" : "Customers"} CSV`}
+          </button>
+        )}
       </div>
+
+      {/* Sales Report */}
+      {currentReportType === "sales" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+            Sales Report ({salesPeriod})
+            {loadingSales && (
+              <span className="text-sm font-normal text-neutral-400 ml-2">
+                Loading…
+              </span>
+            )}
+          </h2>
+
+          {salesData ? (
+            <>
+              {/* Totals */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Orders
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {salesData.totals.totalOrders.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Revenue
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(salesData.totals.totalRevenue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Paid Revenue
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(salesData.totals.totalPaidRevenue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Order Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(salesData.totals.avgOrderValue / 100).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Period breakdown table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-200">
+                      <th className="text-left py-2 text-neutral-500 font-medium">
+                        Period
+                      </th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">
+                        Orders
+                      </th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">
+                        Revenue
+                      </th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">
+                        Paid
+                      </th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">
+                        Avg Order
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesData.periods.map((p: any, idx: number) => (
+                      <tr
+                        key={idx}
+                        className="border-b border-neutral-100"
+                      >
+                        <td className="py-2 text-neutral-700">
+                          {salesPeriod === "daily"
+                            ? new Date(p.period).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : salesPeriod === "weekly"
+                            ? `Week of ${new Date(p.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}`
+                            : new Date(p.date).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                              })}
+                        </td>
+                        <td className="py-2 text-right text-neutral-900 font-medium">
+                          {p.orderCount}
+                        </td>
+                        <td className="py-2 text-right text-neutral-900 font-medium">
+                          ${(p.revenue / 100).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="py-2 text-right text-neutral-600">
+                          ${(p.paidRevenue / 100).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="py-2 text-right text-neutral-600">
+                          ${(p.avgOrderValue / 100).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingSales ? "Calculating…" : "No data for the selected range."}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Summary panel (orders) */}
       {currentReportType === "orders" && (
