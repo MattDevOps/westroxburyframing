@@ -115,7 +115,21 @@ export async function POST(req: Request, ctx: Ctx) {
         where: { id: { in: priceCodeIds }, active: true },
       });
 
-      const priceCodeMap = new Map(priceCodes.map((pc) => [pc.id, pc]));
+      const priceCodeMap = new Map(
+        priceCodes.map((pc) => [
+          pc.id,
+          {
+            id: pc.id,
+            code: pc.code,
+            category: pc.category,
+            formula: pc.formula,
+            baseRate: Number(pc.baseRate),
+            minCharge: Number(pc.minCharge),
+            wastePercent: Number(pc.wastePercent),
+            multiplier: Number(pc.multiplier),
+          },
+        ])
+      );
 
       // Calculate pricing
       const pricingResult = calculateOrderPrice(

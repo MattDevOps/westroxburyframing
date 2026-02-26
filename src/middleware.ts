@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
   // Allow staff API routes to run without redirect loops
   if (pathname.startsWith("/staff/api")) {
@@ -11,9 +11,9 @@ export function middleware(req: NextRequest) {
 
   // Protect staff pages (but allow the login page)
   if (pathname.startsWith("/staff") && pathname !== "/staff/login") {
-    const cookie = req.cookies.get("wrx_staff")?.value;
+    const cookie = request.cookies.get("wrx_staff")?.value;
     if (!cookie) {
-      const url = req.nextUrl.clone();
+      const url = request.nextUrl.clone();
       url.pathname = "/staff/login";
       return NextResponse.redirect(url);
     }
