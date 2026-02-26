@@ -169,9 +169,24 @@ export default function IncompleteOrdersPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMsg(`Pickup reminder sent to ${data.sentTo}`);
+        const sent: string[] = [];
+        if (data.email) sent.push(`Email to ${data.email}`);
+        if (data.sms) sent.push(`SMS to ${data.sms}`);
+        if (data.errors && data.errors.length > 0) {
+          setMsg(`${sent.length > 0 ? sent.join(" and ") + ". " : ""}Errors: ${data.errors.join(", ")}`);
+        } else if (sent.length > 0) {
+          setMsg(`Pickup reminder sent: ${sent.join(" and ")}`);
+        } else {
+          setMsg("Pickup reminder sent!");
+        }
       } else {
-        alert(data.error || "Failed to send reminder");
+        const errorMsg = data.error || "Unknown error";
+        // Show user-friendly error message
+        if (errorMsg.includes("pending approval")) {
+          alert("Email account is pending approval. Can only send to same domain addresses. SMS may still work if configured.");
+        } else {
+          alert(`Failed to send reminder: ${errorMsg}`);
+        }
       }
     } catch {
       alert("Failed to send reminder");

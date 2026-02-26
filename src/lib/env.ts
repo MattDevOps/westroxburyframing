@@ -20,6 +20,10 @@ export const env = {
   EMAIL_PROVIDER_API_KEY: process.env.EMAIL_PROVIDER_API_KEY || "",
   EMAIL_FROM: process.env.EMAIL_FROM || "West Roxbury Framing <jake@westroxburyframing.com>",
   STAFF_NOTIFICATIONS_EMAIL: process.env.STAFF_NOTIFICATIONS_EMAIL || "jake@westroxburyframing.com",
+  // Twilio SMS
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
 
   // ── Mailchimp (optional — sync silently skips if not configured) ──
   MAILCHIMP_API_KEY: process.env.MAILCHIMP_API_KEY || "",

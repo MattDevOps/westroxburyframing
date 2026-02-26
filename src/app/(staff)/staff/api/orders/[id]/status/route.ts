@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import { sendReadyForPickupEmail } from "@/lib/email";
+import { sendPickupReminderSMS } from "@/lib/sms";
 import { deductInventoryForOrder } from "@/lib/inventory";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
@@ -82,12 +83,59 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   }
 
-  if (status === "ready_for_pickup" && order.customer.email) {
-    await sendReadyForPickupEmail({
-      to: order.customer.email,
-      orderNumber: order.orderNumber,
-      customerName: `${order.customer.firstName} ${order.customer.lastName}`,
-    });
+  if (status === "ready_for_pickup") {
+    const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
+    
+    // Send email if available
+    if (order.customer.email) {
+      const emailResult = await sendReadyForPickupEmail({
+        to: order.customer.email,
+        orderNumber: order.orderNumber,
+        customerName,
+      });
+      
+      if (!emailResult.ok) {
+        // Log the error but don't fail the status change
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `Pickup email failed: ${emailResult.error || "Unknown error"}`,
+            createdByUserId: userId,
+          },
+        });
+      }
+    }
+    
+    // Send SMS if phone available and Twilio configured
+    if (order.customer.phone) {
+      const smsResult = await sendPickupReminderSMS({
+        to: order.customer.phone,
+        orderNumber: order.orderNumber,
+        customerName,
+      });
+      
+      if (smsResult.ok) {
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `Pickup SMS sent to ${order.customer.phone}`,
+            createdByUserId: userId,
+          },
+        });
+      } else if (smsResult.error && !smsResult.error.includes("not configured")) {
+        // Only log if it's a real error, not just missing config
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `Pickup SMS failed: ${smsResult.error}`,
+            createdByUserId: userId,
+          },
+        });
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

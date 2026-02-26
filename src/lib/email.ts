@@ -103,9 +103,23 @@ async function sendViaPostmark(params: {
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("Postmark send failed:", res.status, err);
-    return { ok: false, error: err || `HTTP ${res.status}` };
+    const errText = await res.text();
+    let errorMessage = errText || `HTTP ${res.status}`;
+    
+    // Parse Postmark error response for user-friendly messages
+    try {
+      const errJson = JSON.parse(errText);
+      if (errJson.ErrorCode === 412) {
+        errorMessage = "Email account is pending approval. Can only send to same domain addresses during approval period.";
+      } else if (errJson.Message) {
+        errorMessage = errJson.Message;
+      }
+    } catch {
+      // Not JSON, use raw text
+    }
+    
+    console.error("Postmark send failed:", res.status, errorMessage);
+    return { ok: false, error: errorMessage };
   }
   return { ok: true };
 }
