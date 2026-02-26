@@ -179,7 +179,7 @@ export default function CustomFramingContent() {
                             {[
                                 { step: "1", title: "Describe", desc: "Tell us what you'd like framed" },
                                 { step: "2", title: "We Review", desc: "Drop off or visit for final details" },
-                                { step: "3", title: "We Quote", desc: "We review and send you an estimate on based materials and availability" },
+                                { step: "3", title: "We Quote", desc: "We review and provide an estimate on based materials and availability" },
                             ].map((s) => (
                                 <div key={s.step} className="flex items-start gap-3">
                                     <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-sm font-bold">
