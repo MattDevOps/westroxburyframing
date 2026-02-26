@@ -13,10 +13,13 @@ interface SummaryData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reportType, setReportType] = useState<"sales" | "orders" | "customers" | "moulding">("sales");
+  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "moulding">("sales");
   const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [salesData, setSalesData] = useState<any>(null);
   const [loadingSales, setLoadingSales] = useState(false);
+  const [openOrdersGroupBy, setOpenOrdersGroupBy] = useState<"status" | "staff" | "aging">("status");
+  const [openOrdersData, setOpenOrdersData] = useState<any>(null);
+  const [loadingOpenOrders, setLoadingOpenOrders] = useState(false);
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -117,6 +120,34 @@ export default function ReportsPage() {
     loadSalesReport();
   }, [loadSalesReport]);
 
+  const loadOpenOrdersReport = useCallback(async () => {
+    if (reportType !== "open-orders") {
+      setOpenOrdersData(null);
+      return;
+    }
+    setLoadingOpenOrders(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("groupBy", openOrdersGroupBy);
+
+      const res = await fetch(`/staff/api/reports/open-orders?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setOpenOrdersData(null);
+        return;
+      }
+      setOpenOrdersData(data);
+    } catch {
+      setOpenOrdersData(null);
+    } finally {
+      setLoadingOpenOrders(false);
+    }
+  }, [reportType, openOrdersGroupBy]);
+
+  useEffect(() => {
+    loadOpenOrdersReport();
+  }, [loadOpenOrdersReport]);
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -167,8 +198,8 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
-  // TypeScript now knows reportType is "sales" | "orders" | "customers" after the early return
-  const currentReportType: "sales" | "orders" | "customers" = reportType;
+  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" after the early return
+  const currentReportType: "sales" | "orders" | "open-orders" | "customers" = reportType;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -197,6 +228,16 @@ export default function ReportsPage() {
             }`}
           >
             Orders
+          </button>
+          <button
+            onClick={() => setReportType("open-orders")}
+            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
+              currentReportType === "open-orders"
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+            }`}
+          >
+            Open Orders
           </button>
           <button
             onClick={() => setReportType("customers")}
@@ -252,6 +293,47 @@ export default function ReportsPage() {
                 }`}
               >
                 Monthly
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Group by selector for Open Orders Report */}
+        {currentReportType === "open-orders" && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Group By
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setOpenOrdersGroupBy("status")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  openOrdersGroupBy === "status"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Status
+              </button>
+              <button
+                onClick={() => setOpenOrdersGroupBy("staff")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  openOrdersGroupBy === "staff"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Staff
+              </button>
+              <button
+                onClick={() => setOpenOrdersGroupBy("aging")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  openOrdersGroupBy === "aging"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                Aging
               </button>
             </div>
           </div>
@@ -451,6 +533,128 @@ export default function ReportsPage() {
           ) : (
             <p className="text-sm text-neutral-400">
               {loadingSales ? "Calculating…" : "No data for the selected range."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Open Orders Report */}
+      {currentReportType === "open-orders" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+            Open Orders Report ({openOrdersGroupBy})
+            {loadingOpenOrders && (
+              <span className="text-sm font-normal text-neutral-400 ml-2">
+                Loading…
+              </span>
+            )}
+          </h2>
+
+          {openOrdersData ? (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Open Orders
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {openOrdersData.summary.totalOrders}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(openOrdersData.summary.totalValue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Days Open
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {Math.round(openOrdersData.summary.avgDaysOpen)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Oldest Order
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {openOrdersData.summary.oldestOrderDays} days
+                  </div>
+                </div>
+              </div>
+
+              {/* Groups */}
+              <div className="space-y-6">
+                {openOrdersData.groups.map((group: any) => (
+                  <div key={group.key} className="border border-neutral-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-neutral-900">
+                        {group.key} ({group.count} orders)
+                      </h3>
+                      <div className="text-sm text-neutral-600">
+                        ${(group.totalValue / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })} • Avg {Math.round(group.avgDaysOpen)} days
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-neutral-200">
+                            <th className="text-left py-2 text-neutral-500 font-medium">Order #</th>
+                            <th className="text-left py-2 text-neutral-500 font-medium">Customer</th>
+                            {openOrdersGroupBy !== "status" && (
+                              <th className="text-left py-2 text-neutral-500 font-medium">Status</th>
+                            )}
+                            {openOrdersGroupBy !== "staff" && (
+                              <th className="text-left py-2 text-neutral-500 font-medium">Staff</th>
+                            )}
+                            {openOrdersGroupBy !== "aging" && (
+                              <th className="text-right py-2 text-neutral-500 font-medium">Days Open</th>
+                            )}
+                            <th className="text-right py-2 text-neutral-500 font-medium">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.orders.map((order: any) => (
+                            <tr key={order.id} className="border-b border-neutral-100">
+                              <td className="py-2 text-neutral-700 font-mono">{order.orderNumber}</td>
+                              <td className="py-2 text-neutral-700">{order.customerName}</td>
+                              {openOrdersGroupBy !== "status" && (
+                                <td className="py-2 text-neutral-600">
+                                  {ORDER_STATUS_LABEL[order.status as keyof typeof ORDER_STATUS_LABEL] || order.status}
+                                </td>
+                              )}
+                              {openOrdersGroupBy !== "staff" && (
+                                <td className="py-2 text-neutral-600">{order.createdBy}</td>
+                              )}
+                              {openOrdersGroupBy !== "aging" && (
+                                <td className="py-2 text-right text-neutral-600">{order.daysOpen}</td>
+                              )}
+                              <td className="py-2 text-right text-neutral-900 font-medium">
+                                ${(order.totalAmount / 100).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingOpenOrders ? "Calculating…" : "No open orders found."}
             </p>
           )}
         </div>
