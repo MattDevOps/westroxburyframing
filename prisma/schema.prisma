@@ -44,6 +44,7 @@ model User {
   invoicesCreated Invoice[]       @relation("InvoiceCreatedBy")
   activity        ActivityLog[]   @relation("ActorActivity")
   orderActivity   OrderActivity[]
+  purchaseOrders  PurchaseOrder[]
 }
 
 model Customer {
@@ -286,6 +287,7 @@ model Vendor {
 
   catalogItems   VendorCatalogItem[]
   inventoryItems InventoryItem[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model VendorCatalogItem {
@@ -391,9 +393,10 @@ model InventoryItem {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
-  lots     InventoryLot[]
-  vendor   Vendor?        @relation(fields: [vendorId], references: [id])
-  vendorId String?
+  lots               InventoryLot[]
+  vendor             Vendor?             @relation(fields: [vendorId], references: [id])
+  vendorId           String?
+  purchaseOrderLines PurchaseOrderLine[]
 }
 
 model InventoryLot {
@@ -408,5 +411,48 @@ model InventoryLot {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([inventoryItemId])
+}
+
+// ─── Phase 4B: Purchase Orders ───────────────────────────────────
+
+model PurchaseOrder {
+  id              String    @id @default(uuid())
+  poNumber        String    @unique
+  vendorId        String
+  vendor          Vendor    @relation(fields: [vendorId], references: [id])
+  status          String    @default("draft") // draft, sent, partial, received, cancelled
+  totalAmount     Int       @default(0) // cents
+  notes           String?
+  orderedAt       DateTime?
+  receivedAt      DateTime?
+  createdByUserId String
+  createdBy       User      @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lines PurchaseOrderLine[]
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+model PurchaseOrderLine {
+  id               String         @id @default(uuid())
+  purchaseOrderId  String
+  purchaseOrder    PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  inventoryItemId  String?
+  inventoryItem    InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  vendorItemNumber String
+  description      String?
+  quantityOrdered  Decimal
+  quantityReceived Decimal        @default(0)
+  unitCost         Decimal
+  lineTotal        Int            @default(0) // cents
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([purchaseOrderId])
   @@index([inventoryItemId])
 }

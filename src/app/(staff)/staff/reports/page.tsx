@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ORDER_STATUS_LABEL, ORDER_STATUSES } from "@/lib/orderStatus";
 
 interface SummaryData {
@@ -11,7 +12,8 @@ interface SummaryData {
 }
 
 export default function ReportsPage() {
-  const [reportType, setReportType] = useState<"orders" | "customers">("orders");
+  const router = useRouter();
+  const [reportType, setReportType] = useState<"orders" | "customers" | "moulding">("orders");
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -122,6 +124,16 @@ export default function ReportsPage() {
     );
   };
 
+  useEffect(() => {
+    if (reportType === "moulding") {
+      router.push("/staff/reports/moulding-usage");
+    }
+  }, [reportType, router]);
+
+  if (reportType === "moulding") {
+    return null; // Will redirect
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
       <h1 className="text-2xl font-bold text-neutral-900">Reports & Export</h1>
@@ -149,6 +161,16 @@ export default function ReportsPage() {
             }`}
           >
             Customers
+          </button>
+          <button
+            onClick={() => setReportType("moulding")}
+            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
+              reportType === "moulding"
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+            }`}
+          >
+            Moulding Usage
           </button>
         </div>
 
