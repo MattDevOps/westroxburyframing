@@ -139,18 +139,18 @@ export async function POST(req: Request) {
   // Build customer query
   const where: any = {};
   
-  if (tagId) {
+  if (tagId && tagId.trim() !== "") {
+    // Filter by specific tag
     where.tagAssignments = {
       some: {
         tagId: tagId,
       },
     };
   } else if (customerIds && Array.isArray(customerIds) && customerIds.length > 0) {
+    // Filter by specific customer IDs
     where.id = { in: customerIds };
-  } else {
-    // If no tag or customer IDs specified, return error
-    return NextResponse.json({ error: "Please select a tag or specific customers" }, { status: 400 });
   }
+  // If neither tagId nor customerIds specified, send to all customers (no additional filter)
 
   // Filter by email and opt-in status
   where.email = { not: null };
@@ -171,14 +171,89 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Error fetching customers for email blast:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch customers" },
-      { status: 500 }
-    );
+    
+    // Fallback if Prisma client doesn't recognize tagAssignments
+    if (error.message && error.message.includes('tagAssignments')) {
+      try {
+        // Fetch customers with tag separately
+        if (tagId && tagId.trim() !== "") {
+          const assignments = await (prisma as any).customerTagAssignment?.findMany({
+            where: { tagId },
+            select: { customerId: true },
+          }).catch(() => []);
+          
+          const customerIdsWithTag = assignments.map((a: any) => a.customerId);
+          if (customerIdsWithTag.length === 0) {
+            return NextResponse.json({ 
+              error: "No customers found with the selected tag. Make sure customers have the tag assigned and have opted in for marketing emails." 
+            }, { status: 400 });
+          }
+          
+          const fallbackWhere: any = {
+            id: { in: customerIdsWithTag },
+            email: { not: null },
+          };
+          if (!includeUnsubscribed) {
+            fallbackWhere.marketingOptIn = true;
+          }
+          
+          customers = await prisma.customer.findMany({
+            where: fallbackWhere,
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          });
+        } else {
+          // No tag filter, just use basic where
+          const fallbackWhere: any = {
+            email: { not: null },
+          };
+          if (!includeUnsubscribed) {
+            fallbackWhere.marketingOptIn = true;
+          }
+          
+          customers = await prisma.customer.findMany({
+            where: fallbackWhere,
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          });
+        }
+      } catch (fallbackError: any) {
+        console.error("Fallback query also failed:", fallbackError);
+        return NextResponse.json(
+          { error: fallbackError.message || "Failed to fetch customers" },
+          { status: 500 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { error: error.message || "Failed to fetch customers" },
+        { status: 500 }
+      );
+    }
   }
 
   if (customers.length === 0) {
-    return NextResponse.json({ error: "No customers found matching criteria" }, { status: 400 });
+    // Provide more helpful error message
+    let errorMsg = "No customers found matching criteria.";
+    if (!includeUnsubscribed) {
+      errorMsg += " Make sure customers have opted in for marketing emails (marketingOptIn = true)";
+    }
+    if (tagId) {
+      errorMsg += ` and have the selected tag assigned.`;
+    } else if (customerIds && customerIds.length > 0) {
+      errorMsg += ` Check that the selected customers have email addresses.`;
+    } else {
+      errorMsg += " Check that customers have email addresses and have opted in for marketing.";
+    }
+    return NextResponse.json({ error: errorMsg }, { status: 400 });
   }
 
   const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";

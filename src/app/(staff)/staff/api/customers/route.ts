@@ -17,6 +17,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") || "").trim();
   const tagId = url.searchParams.get("tagId");
+  const emailsParam = url.searchParams.get("emails");
 
   const where: any = {};
   if (q) {
@@ -26,6 +27,15 @@ export async function GET(req: Request) {
       { email: { contains: q, mode: "insensitive" } },
       { phone: { contains: q } },
     ];
+  }
+  if (emailsParam) {
+    // Search by specific email addresses (comma-separated)
+    const emails = emailsParam.split(",").map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+    if (emails.length > 0) {
+      where.email = {
+        in: emails,
+      };
+    }
   }
   if (tagId) {
     where.tagAssignments = {

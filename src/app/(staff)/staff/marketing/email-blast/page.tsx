@@ -24,6 +24,8 @@ export default function EmailBlastPage() {
   const [selectedTagId, setSelectedTagId] = useState<string>("");
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [includeUnsubscribed, setIncludeUnsubscribed] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailSearchResults, setEmailSearchResults] = useState<Array<{ email: string; found: boolean; customerId?: string; name?: string }>>([]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -63,6 +65,65 @@ export default function EmailBlastPage() {
       }
     } catch (e) {
       console.error("Failed to load customers:", e);
+    }
+  }
+
+  async function searchCustomersByEmail() {
+    if (!emailInput.trim()) {
+      setEmailSearchResults([]);
+      return;
+    }
+
+    // Parse emails (comma or newline separated)
+    const emails = emailInput
+      .split(/[,\n]/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e.length > 0);
+
+    if (emails.length === 0) {
+      setEmailSearchResults([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/staff/api/customers?emails=${encodeURIComponent(emails.join(","))}`, { cache: "no-store" });
+      const data = await res.json();
+      
+      if (res.ok) {
+        const foundCustomers = data.customers || [];
+        
+        const results = emails.map(email => {
+          const customer = foundCustomers.find((c: Customer) => 
+            c.email?.toLowerCase() === email
+          );
+          if (customer) {
+            return {
+              email,
+              found: true,
+              customerId: customer.id,
+              name: `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Customer",
+            };
+          }
+          return {
+            email,
+            found: false,
+          };
+        });
+        
+        setEmailSearchResults(results);
+        
+        // Auto-add found customers to selected list
+        const newCustomerIds = foundCustomers
+          .map((c: Customer) => c.id)
+          .filter((id: string) => !selectedCustomerIds.includes(id));
+        
+        if (newCustomerIds.length > 0) {
+          setSelectedCustomerIds([...selectedCustomerIds, ...newCustomerIds]);
+          setSelectedTagId(""); // Clear tag selection
+        }
+      }
+    } catch (e) {
+      console.error("Failed to search customers by email:", e);
     }
   }
 
@@ -113,10 +174,8 @@ We look forward to seeing you!`);
       return;
     }
 
-    if (!selectedTagId && selectedCustomerIds.length === 0) {
-      setError("Please select a tag or specific customers");
-      return;
-    }
+    // Note: We allow sending to all customers if no tag or specific customers are selected
+    // The API will handle filtering by opt-in status
 
     setSending(true);
     setError(null);
@@ -293,7 +352,58 @@ We look forward to seeing you!`);
             </div>
             <div className="text-xs text-neutral-500 text-center">OR</div>
             <div>
-              <label className="block text-xs text-neutral-600 mb-1">Select Specific Customers:</label>
+              <label className="block text-xs text-neutral-600 mb-1">Add Customers by Email:</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      searchCustomersByEmail();
+                    }
+                  }}
+                  placeholder="Enter email addresses (comma or newline separated)"
+                  className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={searchCustomersByEmail}
+                  className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 whitespace-nowrap"
+                >
+                  Search
+                </button>
+              </div>
+              {emailSearchResults.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {emailSearchResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      className={`text-xs p-2 rounded ${
+                        result.found
+                          ? "bg-green-50 text-green-800 border border-green-200"
+                          : "bg-red-50 text-red-800 border border-red-200"
+                      }`}
+                    >
+                      {result.found ? (
+                        <span>
+                          ✓ {result.email} - {result.name} (added)
+                        </span>
+                      ) : (
+                        <span>✗ {result.email} - Not found in database</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-xs text-neutral-500 mt-1">
+                Enter one or more email addresses separated by commas or new lines
+              </div>
+            </div>
+            <div className="text-xs text-neutral-500 text-center">OR</div>
+            <div>
+              <label className="block text-xs text-neutral-600 mb-1">Select from Customer List:</label>
               <select
                 multiple
                 value={selectedCustomerIds}

@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, Shield, ChevronDown } from "lucide-react";
+import { Download, FileText, Shield, ChevronDown, Tag } from "lucide-react";
+
+const DEFAULT_COLORS = [
+  "#3b82f6", // blue
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#8b5cf6", // purple
+  "#ec4899", // pink
+  "#06b6d4", // cyan
+  "#84cc16", // lime
+];
 
 type Customer = {
   id: string;
@@ -38,6 +49,14 @@ export default function CustomersPage() {
   const [showBackups, setShowBackups] = useState(false);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loadingBackups, setLoadingBackups] = useState(false);
+  
+  // Tag management state
+  const [showTagManager, setShowTagManager] = useState(false);
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [showCreateTag, setShowCreateTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#3b82f6");
+  const [savingTag, setSavingTag] = useState(false);
 
   async function load(search?: string) {
     setLoading(true);
@@ -97,6 +116,89 @@ export default function CustomersPage() {
       }
     } catch (e) {
       // Ignore
+    }
+  }
+
+  async function createTag() {
+    if (!newTagName.trim()) {
+      alert("Tag name is required");
+      return;
+    }
+
+    setSavingTag(true);
+    try {
+      const res = await fetch("/staff/api/customer-tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newTagName.trim(),
+          color: newTagColor,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create tag");
+      }
+
+      setNewTagName("");
+      setNewTagColor("#3b82f6");
+      setShowCreateTag(false);
+      await loadTags();
+    } catch (e: any) {
+      alert(e.message || "Failed to create tag");
+    } finally {
+      setSavingTag(false);
+    }
+  }
+
+  async function updateTag(id: string, name: string, color: string | null) {
+    setSavingTag(true);
+    try {
+      const res = await fetch(`/staff/api/customer-tags/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update tag");
+      }
+
+      setEditingTag(null);
+      await loadTags();
+    } catch (e: any) {
+      alert(e.message || "Failed to update tag");
+    } finally {
+      setSavingTag(false);
+    }
+  }
+
+  async function deleteTag(id: string) {
+    if (!confirm("Are you sure you want to delete this tag? It will be removed from all customers.")) {
+      return;
+    }
+
+    setSavingTag(true);
+    try {
+      const res = await fetch(`/staff/api/customer-tags/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete tag");
+      }
+
+      await loadTags();
+      if (selectedTagId === id) {
+        setSelectedTagId("");
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to delete tag");
+    } finally {
+      setSavingTag(false);
     }
   }
 
@@ -289,6 +391,13 @@ export default function CustomersPage() {
             </option>
           ))}
         </select>
+        <button
+          onClick={() => setShowTagManager(true)}
+          className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm hover:bg-neutral-50"
+          title="Manage tags"
+        >
+          Manage Tags
+        </button>
         <button onClick={() => load(q)} className="rounded-xl bg-black text-white px-4 py-3 text-sm">
           Search
         </button>
@@ -376,6 +485,207 @@ export default function CustomersPage() {
             );
           })
         )}
+      </div>
+
+      {/* Tag Management Modal */}
+      {showTagManager && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-neutral-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-neutral-900">Manage Customer Tags</h2>
+                <button
+                  onClick={() => {
+                    setShowTagManager(false);
+                    setShowCreateTag(false);
+                    setEditingTag(null);
+                    setNewTagName("");
+                  }}
+                  className="text-neutral-500 hover:text-neutral-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Create new tag */}
+              {showCreateTag ? (
+                <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-neutral-900 mb-4">Create New Tag</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">Tag Name</label>
+                      <input
+                        type="text"
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        placeholder="e.g., VIP, Artist, Wholesale"
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-2">Color</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {DEFAULT_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setNewTagColor(color)}
+                            className={`w-8 h-8 rounded-lg border-2 ${
+                              newTagColor === color ? "border-neutral-900" : "border-neutral-300"
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={createTag}
+                        disabled={savingTag || !newTagName.trim()}
+                        className="rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+                      >
+                        {savingTag ? "Creating..." : "Create Tag"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowCreateTag(false);
+                          setNewTagName("");
+                        }}
+                        className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCreateTag(true)}
+                  className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 flex items-center gap-2"
+                >
+                  <Tag size={16} />
+                  Create New Tag
+                </button>
+              )}
+
+              {/* Tags list */}
+              {tags.length === 0 ? (
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center">
+                  <p className="text-neutral-600 text-sm mb-4">No tags yet</p>
+                  <button
+                    onClick={() => setShowCreateTag(true)}
+                    className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+                  >
+                    Create your first tag
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+                  <div className="divide-y divide-neutral-200">
+                    {tags.map((tag) => (
+                      <div key={tag.id} className="p-4 hover:bg-neutral-50">
+                        {editingTag === tag.id ? (
+                          <TagEditorInline
+                            tag={tag}
+                            onSave={(name, color) => updateTag(tag.id, name, color)}
+                            onCancel={() => setEditingTag(null)}
+                            saving={savingTag}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block w-4 h-4 rounded-full"
+                                style={{ backgroundColor: tag.color || "#6b7280" }}
+                              />
+                              <span className="font-medium text-neutral-900 text-sm">{tag.name}</span>
+                            </div>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setEditingTag(tag.id)}
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteTag(tag.id)}
+                                disabled={savingTag}
+                                className="text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TagEditorInline({
+  tag,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  tag: { id: string; name: string; color: string | null };
+  onSave: (name: string, color: string | null) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const [name, setName] = useState(tag.name);
+  const [color, setColor] = useState(tag.color || DEFAULT_COLORS[0]);
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+          autoFocus
+        />
+      </div>
+      <div>
+        <div className="text-xs text-neutral-600 mb-2">Color</div>
+        <div className="flex gap-2 flex-wrap">
+          {DEFAULT_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setColor(c)}
+              className={`w-6 h-6 rounded border-2 ${color === c ? "border-neutral-900" : "border-neutral-300"}`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSave(name, color)}
+          disabled={saving || !name.trim()}
+          className="rounded-lg bg-black text-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-800 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
