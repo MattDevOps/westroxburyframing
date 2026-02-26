@@ -484,10 +484,10 @@ export default function CustomerDetailPage({
                         setSyncingMailchimp(false);
                       }
                     }}
-                    disabled={syncingMailchimp || customer.marketingOptIn}
+                    disabled={syncingMailchimp || Boolean(customer.marketingOptIn)}
                     className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {syncingMailchimp ? "Syncing..." : customer.marketingOptIn ? "Subscribed" : "Subscribe"}
+                    {syncingMailchimp ? "Syncing..." : Boolean(customer.marketingOptIn) ? "Subscribed" : "Subscribe"}
                   </button>
                   <button
                     type="button"
@@ -510,7 +510,7 @@ export default function CustomerDetailPage({
                         setSyncingMailchimp(false);
                       }
                     }}
-                    disabled={syncingMailchimp || !customer.marketingOptIn}
+                    disabled={syncingMailchimp || !Boolean(customer.marketingOptIn)}
                     className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {syncingMailchimp ? "Syncing..." : "Unsubscribe"}

@@ -789,7 +789,7 @@ export default function CustomersPage() {
                   {c.preferredContact === "call" ? "Call" : "Email"}
                 </div>
                 <div className="col-span-1 text-right text-neutral-600">
-                  {c.marketingOptIn ? "Yes" : "No"}
+                  {Boolean(c.marketingOptIn) ? "Yes" : "No"}
                 </div>
               </Link>
             );
