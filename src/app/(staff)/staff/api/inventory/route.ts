@@ -16,11 +16,10 @@ export async function GET(req: Request) {
 
   const where: any = {};
   if (category) where.category = category;
-  if (lowStock) {
-    where.quantityOnHand = { lte: prisma.raw("reorderPoint") };
-  }
 
-  const items = await prisma.inventoryItem.findMany({
+  // Note: Prisma doesn't support comparing fields directly (quantityOnHand <= reorderPoint)
+  // So we fetch all items and filter in memory if lowStock is requested
+  const allItems = await prisma.inventoryItem.findMany({
     where,
     include: {
       vendorItem: {
@@ -33,6 +32,11 @@ export async function GET(req: Request) {
     },
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
+
+  // Filter for low stock items if requested
+  const items = lowStock
+    ? allItems.filter((item) => Number(item.quantityOnHand) <= Number(item.reorderPoint))
+    : allItems;
 
   return NextResponse.json({ items });
 }
