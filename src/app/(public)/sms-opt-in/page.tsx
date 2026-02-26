@@ -143,6 +143,17 @@ export default function SMSOptInPage() {
                 <p className="text-sm text-blue-900">
                   <strong>By opting in, you agree to receive automated text messages</strong> from West Roxbury Framing at the phone number provided. You can opt out at any time by replying STOP to any message. Message frequency varies. Message and data rates may apply.
                 </p>
+                <p className="text-xs text-blue-800 mt-2">
+                  By submitting this form, you also agree to our{" "}
+                  <Link href="/terms" className="underline hover:text-blue-900">
+                    Terms & Conditions
+                  </Link>
+                  {" "}and{" "}
+                  <Link href="/policies" className="underline hover:text-blue-900">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </div>
 
               <button

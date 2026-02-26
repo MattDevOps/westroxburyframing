@@ -55,6 +55,33 @@ export default function PoliciesPage() {
           </div>
 
           <div>
+            <h2 className="font-serif text-2xl text-foreground mb-4">SMS/Text Message Marketing</h2>
+            <p className="mb-3">
+              We may send text messages to customers who have opted in to receive SMS notifications. You can opt in to receive text messages by:
+            </p>
+            <ul className="list-disc list-inside space-y-1 ml-2 mb-3">
+              <li>Visiting our SMS opt-in page at <a href="/sms-opt-in" className="text-gold hover:text-gold-light underline underline-offset-2">westroxburyframing.com/sms-opt-in</a></li>
+              <li>Providing verbal consent during in-store interactions</li>
+              <li>Checking the SMS opt-in box during order intake</li>
+            </ul>
+            <p className="mb-3">
+              Message and data rates may apply. Message frequency varies. You can opt out at any time by replying <strong>STOP</strong> to any message, or by contacting us directly. For help, reply <strong>HELP</strong>.
+            </p>
+            <p>
+              We use Twilio to send text messages. Twilio&rsquo;s privacy policy governs their handling of your phone number. For more information, visit{" "}
+              <a
+                href="https://www.twilio.com/legal/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold hover:text-gold-light underline underline-offset-2"
+              >
+                Twilio&rsquo;s Privacy Policy
+              </a>
+              .
+            </p>
+          </div>
+
+          <div>
             <h2 className="font-serif text-2xl text-foreground mb-4">Payment Processing</h2>
             <p>
               All payments are processed securely through Square. We do not store credit card numbers or sensitive payment data on our servers. Square&rsquo;s privacy policy and security practices govern the handling of your payment information. For more information, visit{" "}
