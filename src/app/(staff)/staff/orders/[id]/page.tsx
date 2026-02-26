@@ -438,8 +438,60 @@ export default function OrderDetailPage() {
         )}
       </div>
 
-      {/* Specs */}
-      {order.specs && (
+      {/* Components (Phase 2C) */}
+      {order.components && order.components.length > 0 && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:border-0 print:p-0 print:mt-2">
+          <div className="text-neutral-900 font-semibold">Components & Pricing</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium text-neutral-700">Category</th>
+                  <th className="text-left px-3 py-2 font-medium text-neutral-700">Description</th>
+                  <th className="text-right px-3 py-2 font-medium text-neutral-700">Qty</th>
+                  <th className="text-right px-3 py-2 font-medium text-neutral-700">Unit Price</th>
+                  <th className="text-right px-3 py-2 font-medium text-neutral-700">Discount</th>
+                  <th className="text-right px-3 py-2 font-medium text-neutral-700">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {order.components.map((comp: any) => (
+                  <tr key={comp.id} className={blindPrint && comp.vendorItem ? "blind-hide" : ""}>
+                    <td className="px-3 py-2 capitalize">{comp.category}</td>
+                    <td className="px-3 py-2">
+                      {comp.description || comp.vendorItem?.itemNumber || "—"}
+                      {comp.vendorItem && (
+                        <span className="text-xs text-neutral-500 ml-2">
+                          ({comp.vendorItem.vendor?.code} {comp.vendorItem.itemNumber})
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">{Number(comp.quantity)}</td>
+                    <td className="px-3 py-2 text-right">${(comp.unitPrice / 100).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right">
+                      {comp.discount > 0 ? `-$${(comp.discount / 100).toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      ${(comp.lineTotal / 100).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-neutral-50 border-t-2 border-neutral-300">
+                <tr>
+                  <td colSpan={5} className="px-3 py-2 text-right font-semibold">Subtotal:</td>
+                  <td className="px-3 py-2 text-right font-semibold">
+                    ${(order.components.reduce((sum: number, c: any) => sum + c.lineTotal, 0) / 100).toFixed(2)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Specs (Legacy - shown if no components) */}
+      {order.specs && (!order.components || order.components.length === 0) && (
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:border-0 print:p-0 print:mt-2">
           <div className="text-neutral-900 font-semibold">Frame Specs</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">

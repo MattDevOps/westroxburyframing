@@ -52,7 +52,7 @@ model Customer {
   lastName         String
   phone            String?   @unique
   email            String?   @unique
-  passwordHash     String?   // null = staff-created (no login), set = customer account
+  passwordHash     String? // null = staff-created (no login), set = customer account
   addressLine1     String?
   addressLine2     String?
   city             String?
@@ -107,9 +107,10 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  specs    OrderSpecs?
-  photos   OrderPhoto[]
-  payments Payment[]
+  specs      OrderSpecs?
+  components OrderComponent[] // Phase 2C: Multi-component support
+  photos     OrderPhoto[]
+  payments   Payment[]
 
   /// Existing generic activity log entries
   activityLogs ActivityLog[] @relation("OrderActivityLog")
@@ -221,44 +222,44 @@ model OrderActivity {
 // ─── Phase 2A: Invoice Model ───────────────────────────────────
 
 model Invoice {
-  id              String   @id @default(uuid())
-  invoiceNumber   String   @unique
-  customerId      String
-  customer        Customer @relation(fields: [customerId], references: [id])
+  id            String   @id @default(uuid())
+  invoiceNumber String   @unique
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
 
-  subtotalAmount  Int      @default(0) // cents
-  discountAmount  Int      @default(0) // cents
-  taxAmount       Int      @default(0) // cents
-  totalAmount     Int      @default(0) // cents
+  subtotalAmount Int @default(0) // cents
+  discountAmount Int @default(0) // cents
+  taxAmount      Int @default(0) // cents
+  totalAmount    Int @default(0) // cents
 
-  depositPercent  Int?     // e.g. 50 for 50%
-  depositAmount   Int      @default(0) // cents (auto-calculated or manual)
-  amountPaid      Int      @default(0) // cents (sum of payments)
-  balanceDue      Int      @default(0) // cents (totalAmount - amountPaid)
+  depositPercent Int? // e.g. 50 for 50%
+  depositAmount  Int  @default(0) // cents (auto-calculated or manual)
+  amountPaid     Int  @default(0) // cents (sum of payments)
+  balanceDue     Int  @default(0) // cents (totalAmount - amountPaid)
 
-  currency        String   @default("USD")
-  status          String   @default("draft") // draft, sent, partial, paid, void, cancelled
+  currency String @default("USD")
+  status   String @default("draft") // draft, sent, partial, paid, void, cancelled
 
   squareInvoiceId  String?
   squareInvoiceUrl String?
 
-  notes           String?
+  notes String?
 
   createdByUserId String
   createdBy       User     @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  orders          Order[]
-  payments        InvoicePayment[]
+  orders   Order[]
+  payments InvoicePayment[]
 }
 
 model InvoicePayment {
-  id               String        @id @default(uuid())
-  invoiceId        String
-  invoice          Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  amount           Int           // cents
+  amount           Int // cents
   method           String        @default("square") // square, cash, check, other
   squarePaymentId  String?       @unique
   squareReceiptUrl String?
@@ -266,5 +267,85 @@ model InvoicePayment {
   paidAt           DateTime
   note             String?
 
-  createdAt        DateTime      @default(now())
+  createdAt DateTime @default(now())
+}
+
+// ─── Phase 2B: Pricing Engine ───────────────────────────────────
+
+model Vendor {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  phone     String?
+  email     String?
+  website   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  catalogItems VendorCatalogItem[]
+}
+
+model VendorCatalogItem {
+  id            String   @id @default(uuid())
+  vendorId      String
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  itemNumber    String
+  description   String?
+  category      String // moulding, matboard, glass, mounting, hardware, etc.
+  unitType      String // foot, sheet, sqft, each
+  costPerUnit   Decimal
+  retailPerUnit Decimal?
+  discontinued  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderComponents OrderComponent[]
+
+  @@unique([vendorId, itemNumber])
+}
+
+model PriceCode {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  category     String // moulding, mat, glass, mounting, labor, extra, hardware, fitting
+  formula      String // "per_foot", "per_sqft", "per_sheet", "fixed", "per_inch"
+  baseRate     Decimal
+  minCharge    Decimal  @default(0)
+  wastePercent Decimal  @default(0)
+  multiplier   Decimal  @default(1)
+  notes        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  components OrderComponent[]
+}
+
+// ─── Phase 2C: OrderComponent (Multi-Component Support) ───────────────────────────────────
+
+model OrderComponent {
+  id         String  @id @default(uuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  scenarioId String? // null = active design, or linked to a scenario (Phase 3)
+
+  category     String // frame, mat, fillet, glass, mounting, fabric, extra, hardware, fitting
+  position     Int                @default(0) // for ordering (frame 1, frame 2, mat 1, mat 2, etc.)
+  priceCodeId  String?
+  priceCode    PriceCode?         @relation(fields: [priceCodeId], references: [id])
+  vendorItemId String?
+  vendorItem   VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
+  description  String?
+  quantity     Decimal            @default(1)
+  unitPrice    Int                @default(0) // cents
+  discount     Int                @default(0) // cents
+  lineTotal    Int                @default(0) // cents
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([orderId])
+  @@index([scenarioId])
 }

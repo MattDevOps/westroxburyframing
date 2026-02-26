@@ -13,6 +13,7 @@ const STAFF_NAV = [
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
+  { href: "/staff/pricing", label: "Pricing" },
   { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/reports", label: "Reports" },
   { href: "/staff/users", label: "Users" },

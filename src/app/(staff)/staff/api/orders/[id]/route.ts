@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { isValidOrderStatus } from "@/lib/orderStatus";
 import { updateInvoiceForOrderEdit } from "@/lib/square/invoices";
+import { calculateOrderPrice } from "@/lib/pricing";
 
 // Type assertion to work around TypeScript cache issue with Prisma client
 const prismaWithActivity: any = prisma;
@@ -20,6 +21,15 @@ export async function GET(req: Request, ctx: Ctx) {
     include: {
       customer: true,
       specs: true,
+      components: {
+        include: {
+          priceCode: true,
+          vendorItem: {
+            include: { vendor: { select: { name: true, code: true } } },
+          },
+        },
+        orderBy: { position: "asc" },
+      },
       photos: true,
       payments: true,
       createdBy: true,
@@ -177,7 +187,115 @@ export async function PATCH(req: Request, ctx: Ctx) {
     }
   }
 
-  // Update specs if provided
+  // Phase 2C: Update components if provided
+  if (body.components && Array.isArray(body.components)) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { width: true, height: true },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const width = Number(order.width) || 0;
+    const height = Number(order.height) || 0;
+
+    if (width <= 0 || height <= 0) {
+      return NextResponse.json(
+        { error: "Order width and height must be set before adding components" },
+        { status: 400 }
+      );
+    }
+
+    // Fetch price codes
+    const priceCodeIds = body.components
+      .map((c: any) => c.priceCodeId)
+      .filter(Boolean) as string[];
+
+    const priceCodes = await prisma.priceCode.findMany({
+      where: { id: { in: priceCodeIds }, active: true },
+    });
+
+    const priceCodeMap = new Map(priceCodes.map((pc) => [pc.id, pc]));
+
+    // Calculate pricing
+    const pricingResult = calculateOrderPrice(
+      width,
+      height,
+      body.components.map((c: any) => ({
+        category: String(c.category),
+        priceCodeId: c.priceCodeId || undefined,
+        vendorItemId: c.vendorItemId || undefined,
+        description: c.description || undefined,
+        quantity: c.quantity ? Number(c.quantity) : 1,
+        unitType: c.unitType || undefined,
+      })),
+      priceCodeMap
+    );
+
+    // Delete existing components
+    await prisma.orderComponent.deleteMany({ where: { orderId: id, scenarioId: null } });
+
+    // Create new components
+    const componentsData = body.components.map((c: any, idx: number) => {
+      const lineItem = pricingResult.lineItems[idx];
+      return {
+        orderId: id,
+        category: String(c.category),
+        position: c.position !== undefined ? Number(c.position) : idx,
+        priceCodeId: c.priceCodeId || null,
+        vendorItemId: c.vendorItemId || null,
+        description: c.description || lineItem?.description || null,
+        quantity: c.quantity ? Number(c.quantity) : 1,
+        unitPrice: lineItem?.unitPrice || 0,
+        discount: c.discount ? Math.round(Number(c.discount) * 100) : 0,
+        lineTotal: (lineItem?.lineTotal || 0) - (c.discount ? Math.round(Number(c.discount) * 100) : 0),
+        notes: c.notes || null,
+      };
+    });
+
+    await prisma.orderComponent.createMany({ data: componentsData });
+
+    // Recalculate order totals
+    const componentSubtotal = pricingResult.lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
+    const componentDiscounts = componentsData.reduce((sum, c) => sum + c.discount, 0);
+    const afterComponentDiscount = componentSubtotal - componentDiscounts;
+
+    // Apply order-level discount
+    const discountType = data.discountType || updated.discountType || "none";
+    const discountValue = data.discountValue !== undefined ? data.discountValue : Number(updated.discountValue || 0);
+    let orderDiscount = 0;
+    if (discountType === "percent") {
+      orderDiscount = Math.round(afterComponentDiscount * discountValue / 100);
+    } else if (discountType === "fixed") {
+      orderDiscount = Math.round(discountValue * 100);
+    }
+
+    const finalSubtotal = Math.max(0, afterComponentDiscount - orderDiscount);
+    const taxRate = updated.taxAmount && updated.subtotalAmount > 0
+      ? updated.taxAmount / updated.subtotalAmount
+      : 0.0625; // Default 6.25% MA tax
+    const finalTax = Math.round(finalSubtotal * taxRate);
+    const finalTotal = finalSubtotal + finalTax;
+
+    // Update order totals
+    await prisma.order.update({
+      where: { id },
+      data: {
+        subtotalAmount: finalSubtotal,
+        taxAmount: finalTax,
+        totalAmount: finalTotal,
+      },
+    });
+
+    // Update the returned order
+    updated.subtotalAmount = finalSubtotal;
+    updated.taxAmount = finalTax;
+    updated.totalAmount = finalTotal;
+  }
+
+  // Update specs if provided (legacy support)
   if (body.specs && typeof body.specs === "object") {
     const specsData: Record<string, unknown> = {};
     if ("frame_code" in body.specs) specsData.frameCode = body.specs.frame_code || null;

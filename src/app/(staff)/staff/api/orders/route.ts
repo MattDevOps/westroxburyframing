@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { nextOrderNumber } from "@/lib/ids";
+import { calculateOrderPrice, type PricingComponent } from "@/lib/pricing";
 
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -94,17 +95,98 @@ export async function POST(req: Request) {
   });
   const orderNumber = nextOrderNumber(last?.orderNumber);
 
-  const pricing = body.pricing || {};
-  const subtotal = Number(pricing.subtotal_cents ?? -1);
-  const tax = Number(pricing.tax_cents ?? -1);
-  const total = Number(pricing.total_cents ?? -1);
-
-  if (!body.customer_id || !body.item_type || subtotal < 0 || tax < 0 || total < 0) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
-
   // Determine initial status (default: new_design, or "estimate" if requested)
   const requestedStatus = body.status === "estimate" ? "estimate" : "new_design";
+
+  // Phase 2C: Support OrderComponent (new) or OrderSpecs (legacy)
+  let subtotal = 0;
+  let tax = 0;
+  let total = 0;
+  let componentsData: any[] = [];
+
+  if (body.components && Array.isArray(body.components) && body.components.length > 0) {
+    // New: Use OrderComponent with pricing calculation
+    const width = Number(body.width) || 0;
+    const height = Number(body.height) || 0;
+
+    if (width <= 0 || height <= 0) {
+      return NextResponse.json({ error: "Width and height are required when using components" }, { status: 400 });
+    }
+
+    // Fetch price codes
+    const priceCodeIds = body.components
+      .map((c: any) => c.priceCodeId)
+      .filter(Boolean) as string[];
+
+    const priceCodes = await prisma.priceCode.findMany({
+      where: { id: { in: priceCodeIds }, active: true },
+    });
+
+    const priceCodeMap = new Map(priceCodes.map((pc) => [pc.id, pc]));
+
+    // Calculate pricing
+    const pricingResult = calculateOrderPrice(
+      width,
+      height,
+      body.components.map((c: any) => ({
+        category: String(c.category),
+        priceCodeId: c.priceCodeId || undefined,
+        vendorItemId: c.vendorItemId || undefined,
+        description: c.description || undefined,
+        quantity: c.quantity ? Number(c.quantity) : 1,
+        unitType: c.unitType || undefined,
+      })),
+      priceCodeMap
+    );
+
+    subtotal = pricingResult.subtotal;
+    tax = body.tax_rate ? Math.round(subtotal * Number(body.tax_rate)) : 0;
+    total = subtotal + tax;
+
+    // Prepare components data
+    componentsData = body.components.map((c: any, idx: number) => {
+      const lineItem = pricingResult.lineItems[idx];
+      return {
+        category: String(c.category),
+        position: c.position !== undefined ? Number(c.position) : idx,
+        priceCodeId: c.priceCodeId || null,
+        vendorItemId: c.vendorItemId || null,
+        description: c.description || lineItem?.description || null,
+        quantity: c.quantity ? Number(c.quantity) : 1,
+        unitPrice: lineItem?.unitPrice || 0,
+        discount: c.discount ? Math.round(Number(c.discount) * 100) : 0,
+        lineTotal: (lineItem?.lineTotal || 0) - (c.discount ? Math.round(Number(c.discount) * 100) : 0),
+        notes: c.notes || null,
+      };
+    });
+  } else {
+    // Legacy: Use OrderSpecs with manual pricing
+    const pricing = body.pricing || {};
+    subtotal = Number(pricing.subtotal_cents ?? -1);
+    tax = Number(pricing.tax_cents ?? -1);
+    total = Number(pricing.total_cents ?? -1);
+
+    if (subtotal < 0 || tax < 0 || total < 0) {
+      return NextResponse.json({ error: "Invalid payload: pricing required" }, { status: 400 });
+    }
+  }
+
+  if (!body.customer_id || !body.item_type) {
+    return NextResponse.json({ error: "Invalid payload: customer_id and item_type required" }, { status: 400 });
+  }
+
+  // Apply order-level discount
+  const discountType = body.discount_type || "none";
+  const discountValue = body.discount_value != null ? Number(body.discount_value) : 0;
+  let discountAmount = 0;
+  if (discountType === "percent") {
+    discountAmount = Math.round(subtotal * discountValue / 100);
+  } else if (discountType === "fixed") {
+    discountAmount = Math.round(discountValue * 100);
+  }
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  const finalTax = body.tax_rate ? Math.round(afterDiscount * Number(body.tax_rate)) : tax;
+  const finalTotal = afterDiscount + finalTax;
 
   const order = await prisma.order.create({
     data: {
@@ -120,27 +202,36 @@ export async function POST(req: Request) {
       units: body.units === "cm" ? "cm" : "in",
       notesInternal: body.notes_internal || null,
       notesCustomer: body.notes_customer || null,
-      subtotalAmount: subtotal,
-      discountType: body.discount_type || "none",
-      discountValue: body.discount_value != null ? Number(body.discount_value) : 0,
-      taxAmount: tax,
-      totalAmount: total,
+      subtotalAmount: afterDiscount,
+      discountType,
+      discountValue,
+      taxAmount: finalTax,
+      totalAmount: finalTotal,
       currency: "USD",
       paidInFull: true,
       createdByUserId: userId,
-      specs: {
-        create: {
-          frameCode: body.specs?.frame_code || null,
-          frameVendor: body.specs?.frame_vendor || null,
-          mat1Code: body.specs?.mat_1_code || null,
-          mat2Code: body.specs?.mat_2_code || null,
-          glassType: body.specs?.glass_type || null,
-          mountType: body.specs?.mount_type || null,
-          backingType: body.specs?.backing_type || null,
-          spacers: Boolean(body.specs?.spacers),
-          specialtyType: body.specs?.specialty_type || null,
-        },
-      },
+      // Phase 2C: Create components if provided, otherwise create legacy specs
+      ...(componentsData.length > 0
+        ? {
+            components: {
+              create: componentsData,
+            },
+          }
+        : {
+            specs: {
+              create: {
+                frameCode: body.specs?.frame_code || null,
+                frameVendor: body.specs?.frame_vendor || null,
+                mat1Code: body.specs?.mat_1_code || null,
+                mat2Code: body.specs?.mat_2_code || null,
+                glassType: body.specs?.glass_type || null,
+                mountType: body.specs?.mount_type || null,
+                backingType: body.specs?.backing_type || null,
+                spacers: Boolean(body.specs?.spacers),
+                specialtyType: body.specs?.specialty_type || null,
+              },
+            },
+          }),
     },
     include: { customer: true },
   });
