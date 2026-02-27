@@ -63,6 +63,15 @@ export async function GET(req: Request, ctx: Ctx) {
 
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
+  // Calculate discount amount from discountType and discountValue
+  let discountAmount = 0;
+  if (order.discountType === "percent" && Number(order.discountValue) > 0) {
+    discountAmount = Math.round((order.subtotalAmount * Number(order.discountValue)) / 100);
+  } else if (order.discountType === "fixed" && Number(order.discountValue) > 0) {
+    // discountValue is stored as Decimal (e.g., 10.50 for $10.50), convert to cents
+    discountAmount = Math.round(Number(order.discountValue) * 100);
+  }
+
   const h = (str: string | null | undefined) => {
     if (!str) return "";
     return String(str)
@@ -96,7 +105,7 @@ export async function GET(req: Request, ctx: Ctx) {
       <td>${h(componentName)}</td>
       <td style="text-align:center">${comp.quantity || ""}</td>
       <td style="text-align:right">${fmt(comp.unitPrice)}</td>
-      <td style="text-align:right">${fmt(comp.totalPrice)}</td>
+      <td style="text-align:right">${fmt(comp.lineTotal)}</td>
       ${!blind ? `<td style="font-size: 10px; color: #999;">${h(comp.priceCode?.code || "")}</td>` : "<td></td>"}
     </tr>`;
       }
@@ -225,10 +234,10 @@ export async function GET(req: Request, ctx: Ctx) {
         <td>Subtotal:</td>
         <td>${fmt(order.subtotalAmount)}</td>
       </tr>
-      ${order.discountAmount > 0 ? `
+      ${discountAmount > 0 ? `
       <tr>
         <td>Discount:</td>
-        <td style="color: #d32f2f;">-${fmt(order.discountAmount)}</td>
+        <td style="color: #d32f2f;">-${fmt(discountAmount)}</td>
       </tr>
       ` : ""}
       <tr>
