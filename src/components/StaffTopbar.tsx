@@ -24,6 +24,7 @@ const STAFF_NAV = [
   { href: "/staff/inventory", label: "Inventory" },
   { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/reports", label: "Reports" },
+  { href: "/staff/shopify", label: "Shopify" },
   { href: "/staff/users", label: "Users" },
 ];
 

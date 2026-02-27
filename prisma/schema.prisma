@@ -32,12 +32,33 @@ enum PaymentStatus {
   voided
 }
 
+// ─── Multi-Site Support ───────────────────────────────────
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique // e.g., "WRF", "BOS", "CAM"
+  address     String?
+  phone       String?
+  email       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders         Order[]
+  inventoryItems InventoryItem[]
+  purchaseOrders PurchaseOrder[]
+  users          User[]
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
   email        String   @unique
   role         String // "admin" | "staff"
   passwordHash String
+  locationId   String? // null = admin (can access all), set = staff assigned to location
+  location     Location? @relation(fields: [locationId], references: [id])
   createdAt    DateTime @default(now())
 
   orders                 Order[]
@@ -108,6 +129,8 @@ model Order {
   orderNumber String   @unique
   customerId  String
   customer    Customer @relation(fields: [customerId], references: [id])
+  locationId  String?  // Optional initially for migration, will be required after data migration
+  location    Location? @relation(fields: [locationId], references: [id])
 
   status          OrderStatus   @default(new_design)
   intakeChannel   IntakeChannel @default(walk_in)
@@ -421,6 +444,8 @@ model InventoryItem {
   id                String             @id @default(uuid())
   vendorItemId      String?
   vendorItem        VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
+  locationId        String?            // Optional initially for migration
+  location          Location?           @relation(fields: [locationId], references: [id])
   sku               String             @unique
   name              String
   category          String // moulding, matboard, glass, hardware, etc.
@@ -437,6 +462,8 @@ model InventoryItem {
   vendor             Vendor?             @relation(fields: [vendorId], references: [id])
   vendorId           String?
   purchaseOrderLines PurchaseOrderLine[]
+
+  @@index([locationId])
 }
 
 model InventoryLot {
@@ -461,6 +488,8 @@ model PurchaseOrder {
   poNumber        String    @unique
   vendorId        String
   vendor          Vendor    @relation(fields: [vendorId], references: [id])
+  locationId      String?   // null = combined PO for multiple locations
+  location        Location? @relation(fields: [locationId], references: [id])
   status          String    @default("draft") // draft, sent, partial, received, cancelled
   totalAmount     Int       @default(0) // cents
   notes           String?
@@ -475,6 +504,7 @@ model PurchaseOrder {
 
   @@index([vendorId])
   @@index([status])
+  @@index([locationId])
 }
 
 model PurchaseOrderLine {

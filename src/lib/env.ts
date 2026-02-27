@@ -37,4 +37,9 @@ export const env = {
   QBO_REFRESH_TOKEN: process.env.QBO_REFRESH_TOKEN || "",
   QBO_REALM_ID: process.env.QBO_REALM_ID || "",
   QBO_ENVIRONMENT: process.env.QBO_ENVIRONMENT || "sandbox",
+
+  // ── Shopify (optional) ───────────────────────────────────────
+  SHOPIFY_SHOP_DOMAIN: process.env.SHOPIFY_SHOP_DOMAIN || "",
+  SHOPIFY_ACCESS_TOKEN: process.env.SHOPIFY_ACCESS_TOKEN || "",
+  SHOPIFY_API_VERSION: process.env.SHOPIFY_API_VERSION || "2024-01",
 };
