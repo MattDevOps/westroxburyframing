@@ -8,6 +8,7 @@ import Link from "next/link";
 const STAFF_NAV = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
+  { href: "/staff/messages", label: "Messages", badge: true },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
   { href: "/staff/orders/new", label: "New order" },
@@ -29,10 +30,14 @@ function NavLink({
   href,
   children,
   onClick,
+  badge,
+  badgeCount,
 }: {
   href: string;
   children: React.ReactNode;
   onClick?: () => void;
+  badge?: boolean;
+  badgeCount?: number;
 }) {
   const pathname = usePathname();
 
@@ -54,19 +59,25 @@ function NavLink({
       href={href}
       onClick={onClick}
       className={[
-        "text-sm px-3 py-2 rounded-md transition block",
+        "text-sm px-3 py-2 rounded-md transition block relative",
         active
           ? "bg-neutral-900 text-white"
           : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
       ].join(" ")}
     >
       {children}
+      {badge && badgeCount !== undefined && badgeCount > 0 && (
+        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-xs font-medium">
+          {badgeCount}
+        </span>
+      )}
     </a>
   );
 }
 
 export default function StaffTopbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
 
   // Keyboard shortcut for search (Cmd/Ctrl+K)
@@ -81,6 +92,25 @@ export default function StaffTopbar() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router]);
+
+  // Fetch unread message count
+  useEffect(() => {
+    async function loadUnreadCount() {
+      try {
+        const res = await fetch("/staff/api/messages/unread-count");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count || 0);
+        }
+      } catch (e) {
+        // Silently fail
+      }
+    }
+
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="border-b border-neutral-200 bg-white no-print">
@@ -102,7 +132,12 @@ export default function StaffTopbar() {
             {/* Desktop nav */}
             <nav className="hidden lg:flex gap-1 flex-wrap">
               {STAFF_NAV.map((link) => (
-                <NavLink key={link.href} href={link.href}>
+                <NavLink
+                  key={link.href}
+                  href={link.href}
+                  badge={link.badge}
+                  badgeCount={link.badge ? unreadCount : undefined}
+                >
                   {link.label}
                   {link.shortcut && (
                     <span className="ml-2 text-xs text-neutral-400">
@@ -167,6 +202,8 @@ export default function StaffTopbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
+                badge={link.badge}
+                badgeCount={link.badge ? unreadCount : undefined}
               >
                 {link.label}
               </NavLink>

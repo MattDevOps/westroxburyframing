@@ -46,6 +46,8 @@ model User {
   orderActivity          OrderActivity[]
   purchaseOrders         PurchaseOrder[]
   giftCertificatesIssued GiftCertificate[]
+  sentMessages           StaffMessage[]    @relation("SentMessages")
+  receivedMessages       StaffMessage[]    @relation("ReceivedMessages")
 }
 
 model Customer {
@@ -513,4 +515,24 @@ model GiftCertificate {
   @@index([certificateNumber])
   @@index([issuedToCustomerId])
   @@index([redeemedOnOrderId])
+}
+
+// ─── Phase 7: In-house Messaging ───────────────────────────────────
+
+model StaffMessage {
+  id         String    @id @default(uuid())
+  fromUserId String
+  fromUser   User      @relation("SentMessages", fields: [fromUserId], references: [id])
+  toUserId   String
+  toUser     User      @relation("ReceivedMessages", fields: [toUserId], references: [id])
+  subject    String
+  body       String
+  read       Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([toUserId, read])
+  @@index([fromUserId])
+  @@index([createdAt])
 }
