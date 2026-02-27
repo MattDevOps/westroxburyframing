@@ -13,7 +13,7 @@ interface SummaryData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "moulding">("sales");
+  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "moulding" | "vendor-spending">("sales");
   const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [salesData, setSalesData] = useState<any>(null);
   const [loadingSales, setLoadingSales] = useState(false);
@@ -26,6 +26,10 @@ export default function ReportsPage() {
   const [customerTo, setCustomerTo] = useState<string>("");
   const [arAgingData, setArAgingData] = useState<any>(null);
   const [loadingArAging, setLoadingArAging] = useState(false);
+  const [vendorSpendingPeriod, setVendorSpendingPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [vendorSpendingData, setVendorSpendingData] = useState<any>(null);
+  const [loadingVendorSpending, setLoadingVendorSpending] = useState(false);
+  const [vendorSpendingStatus, setVendorSpendingStatus] = useState<string>("received");
   const [emailing, setEmailing] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -212,6 +216,37 @@ export default function ReportsPage() {
     loadArAgingReport();
   }, [loadArAgingReport]);
 
+  const loadVendorSpendingReport = useCallback(async () => {
+    if (reportType !== "vendor-spending") {
+      setVendorSpendingData(null);
+      return;
+    }
+    setLoadingVendorSpending(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("period", vendorSpendingPeriod);
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      if (vendorSpendingStatus) params.set("status", vendorSpendingStatus);
+
+      const res = await fetch(`/staff/api/reports/vendor-spending?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setVendorSpendingData(null);
+        return;
+      }
+      setVendorSpendingData(data);
+    } catch {
+      setVendorSpendingData(null);
+    } finally {
+      setLoadingVendorSpending(false);
+    }
+  }, [reportType, vendorSpendingPeriod, from, to, vendorSpendingStatus]);
+
+  useEffect(() => {
+    loadVendorSpendingReport();
+  }, [loadVendorSpendingReport]);
+
   async function handleEmailReport() {
     if (!emailTo) return;
     setEmailing(true);
@@ -232,6 +267,11 @@ export default function ReportsPage() {
       } else if (currentReportType === "customers") {
         if (customerFrom) body.from = customerFrom;
         if (customerTo) body.to = customerTo;
+      } else if (currentReportType === "vendor-spending") {
+        body.period = vendorSpendingPeriod;
+        if (from) body.from = from;
+        if (to) body.to = to;
+        if (vendorSpendingStatus) body.status = vendorSpendingStatus;
       }
 
       const res = await fetch("/staff/api/reports/email", {
@@ -286,6 +326,14 @@ export default function ReportsPage() {
       } else if (reportType === "ar-aging") {
         url = `/staff/api/reports/ar-aging/export`;
         filename = `ar-aging-report-${new Date().toISOString().split("T")[0]}.csv`;
+      } else if (reportType === "vendor-spending") {
+        const params = new URLSearchParams();
+        params.set("period", vendorSpendingPeriod);
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        if (vendorSpendingStatus) params.set("status", vendorSpendingStatus);
+        url = `/staff/api/reports/vendor-spending/export?${params.toString()}`;
+        filename = `vendor-spending-${vendorSpendingPeriod}-${new Date().toISOString().split("T")[0]}.csv`;
       } else {
         // orders or customers (legacy)
         const params = new URLSearchParams({ type: reportType });
@@ -338,8 +386,8 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
-  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" | "ar-aging" after the early return
-  const currentReportType: "sales" | "orders" | "open-orders" | "customers" | "ar-aging" = reportType;
+  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" after the early return
+  const currentReportType: "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" = reportType;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -395,6 +443,16 @@ export default function ReportsPage() {
           >
             Moulding Usage
           </button>
+          <button
+            onClick={() => setReportType("vendor-spending")}
+            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
+              currentReportType === "vendor-spending"
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+            }`}
+          >
+            Vendor Spending
+          </button>
         </div>
 
         {/* Period selector for Sales Report */}
@@ -436,6 +494,76 @@ export default function ReportsPage() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Period and Status selector for Vendor Spending Report */}
+        {currentReportType === "vendor-spending" && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Period
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setVendorSpendingPeriod("daily")}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    vendorSpendingPeriod === "daily"
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  Daily
+                </button>
+                <button
+                  onClick={() => setVendorSpendingPeriod("weekly")}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    vendorSpendingPeriod === "weekly"
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  Weekly
+                </button>
+                <button
+                  onClick={() => setVendorSpendingPeriod("monthly")}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    vendorSpendingPeriod === "monthly"
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  Monthly
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Status Filter
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setVendorSpendingStatus("received")}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    vendorSpendingStatus === "received"
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  Received Only
+                </button>
+                <button
+                  onClick={() => setVendorSpendingStatus("all")}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    vendorSpendingStatus === "all"
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  All Statuses
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Group by selector for Open Orders Report */}
@@ -537,7 +665,7 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Export button (for orders report only) */}
+        {/* Export button (for orders and vendor-spending reports) */}
         {currentReportType === "orders" && (
           <button
             onClick={handleExport}
@@ -548,8 +676,18 @@ export default function ReportsPage() {
           </button>
         )}
 
+        {currentReportType === "vendor-spending" && (
+          <button
+            onClick={handleExport}
+            disabled={exporting || !vendorSpendingData}
+            className="rounded-xl bg-black text-white px-4 py-2.5 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
+          >
+            {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        )}
+
         {/* Email report button */}
-        {currentReportType !== "orders" && (
+        {currentReportType !== "orders" && currentReportType !== "vendor-spending" && (
           <div className="flex items-center gap-2">
             {showEmailForm ? (
               <div className="flex items-center gap-2">
@@ -1231,6 +1369,170 @@ export default function ReportsPage() {
           ) : (
             <p className="text-sm text-neutral-400">
               {loadingArAging ? "Calculating…" : "No outstanding invoices found."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Vendor Spending Report */}
+      {currentReportType === "vendor-spending" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Vendor Spending Report ({vendorSpendingPeriod})
+              {loadingVendorSpending && (
+                <span className="text-sm font-normal text-neutral-400 ml-2">
+                  Loading…
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {vendorSpendingData ? (
+            <>
+              {/* Overall Totals */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Vendors
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {vendorSpendingData.overallTotals.totalVendors}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Purchase Orders
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {vendorSpendingData.overallTotals.totalPOs.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Spent
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(vendorSpendingData.overallTotals.totalSpent / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg PO Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(vendorSpendingData.overallTotals.avgPOValue / 100).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Vendor Totals */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                  Spending by Vendor
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left py-2 text-neutral-500 font-medium">Vendor</th>
+                        <th className="text-left py-2 text-neutral-500 font-medium">Code</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Purchase Orders</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Total Spent</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Avg PO Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendorSpendingData.vendorTotals.map((vendor: any) => (
+                        <tr key={vendor.vendorId} className="border-b border-neutral-100">
+                          <td className="py-2 text-neutral-700 font-medium">{vendor.vendorName}</td>
+                          <td className="py-2 text-neutral-600 text-xs font-mono">{vendor.vendorCode}</td>
+                          <td className="py-2 text-right text-neutral-700">{vendor.totalPOs}</td>
+                          <td className="py-2 text-right text-neutral-900 font-medium">
+                            ${(vendor.totalSpent / 100).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="py-2 text-right text-neutral-600">
+                            ${(vendor.avgPOValue / 100).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Period Breakdown by Vendor */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-semibold text-neutral-900">
+                  Period Breakdown by Vendor
+                </h3>
+                {vendorSpendingData.vendorTotals.map((vendor: any) => {
+                  const vendorPeriods = vendorSpendingData.vendorPeriods.filter(
+                    (vp: any) => vp.vendorId === vendor.vendorId
+                  );
+                  if (vendorPeriods.length === 0) return null;
+
+                  return (
+                    <div key={vendor.vendorId} className="border border-neutral-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-neutral-900">
+                          {vendor.vendorName} ({vendor.vendorCode})
+                        </h4>
+                        <div className="text-sm text-neutral-600">
+                          Total: ${(vendor.totalSpent / 100).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-neutral-200">
+                              <th className="text-left py-2 text-neutral-500 font-medium">Period</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">POs</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">Total Spent</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">Avg PO Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {vendorPeriods.map((vp: any) => (
+                              <tr key={`${vp.vendorId}-${vp.period}`} className="border-b border-neutral-100">
+                                <td className="py-2 text-neutral-700">
+                                  {vendorSpendingPeriod === "daily"
+                                    ? new Date(vp.period).toLocaleDateString()
+                                    : vendorSpendingPeriod === "weekly"
+                                    ? `Week of ${new Date(vp.period).toLocaleDateString()}`
+                                    : new Date(vp.date).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        year: "numeric",
+                                      })}
+                                </td>
+                                <td className="py-2 text-right text-neutral-700">{vp.poCount}</td>
+                                <td className="py-2 text-right text-neutral-900 font-medium">
+                                  ${(vp.totalSpent / 100).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </td>
+                                <td className="py-2 text-right text-neutral-600">
+                                  ${(vp.avgPOValue / 100).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingVendorSpending ? "Calculating…" : "No vendor spending data found."}
             </p>
           )}
         </div>

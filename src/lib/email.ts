@@ -194,7 +194,12 @@ export async function sendContactFormEmail(params: {
   fromPhone?: string;
   message: string;
 }) {
-  const to = process.env.CONTACT_FORM_EMAIL || "jake@westroxburyframing.com";
+  // Send to both email addresses
+  const recipients = [
+    process.env.CONTACT_FORM_EMAIL || "jake@westroxburyframing.com",
+    "frameguy1@hotmail.com",
+  ];
+  const to = recipients.join(", "); // Postmark supports comma-separated recipients
   const subject = `New contact form submission from ${params.fromName}`;
 
   const text = `New contact form submission
