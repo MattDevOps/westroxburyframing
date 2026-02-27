@@ -667,19 +667,30 @@ Phase 8: Guided Order Wizard (New Hire Mode) ← NEXT PRIORITY (3-5 days)
 
 ---
 
-## 8. Guided Order Wizard (New Hire Mode) — NEXT PRIORITY
-> **Goal:** Create a foolproof, structured intake flow that enables new employees to take complex framing orders without extensive training. This transforms the system from "database correct" to "retail-ready."
+## 8. Guided Order Wizard (Sales Rep Intake Flow) — NEXT PRIORITY
+> **Goal:** Create a foolproof, structured intake flow for **all sales reps at multiple locations** to walk customers through the order process. This is the primary order intake method that will be used at every location by every sales rep.
 
 ### Why This Is Critical
 
-The core engine (database, invoices, Square, activity, status flow) is complete. The missing piece is the **retail counter experience** that makes FrameReady powerful: a new employee can walk in and take a complex framing order without thinking.
+The core engine (database, invoices, Square, activity, status flow) is complete. The missing piece is the **retail counter experience** that makes FrameReady powerful: any sales rep can walk a customer through a complex framing order confidently.
 
-This wizard:
+This wizard will be:
+- **The primary order intake method** at all locations
+- **Used by all sales reps** (new hires and experienced staff)
+- **Customer-facing** — designed to be walked through with customers at the counter
+- **Location-aware** — automatically uses the sales rep's assigned location
+- **Simple enough for new hires** but efficient for experienced staff
 - **Prevents mistakes** through required field gates
 - **Applies pricing rules automatically** (protects margins)
 - **Feels polished** in front of customers
 - **Reduces training time** from weeks → days
 - **Protects the business** by enforcing margin guardrails
+
+### Multi-Location Support
+
+- **Automatic location assignment:** Orders created through the wizard automatically use the sales rep's assigned location (staff users are locked to their location; admins can select location)
+- **Location filtering:** Each location's sales reps only see orders for their location
+- **Consistent experience:** Same wizard interface at all locations, but data is location-scoped
 
 ### Recommended 5-Step Flow
 
@@ -770,15 +781,23 @@ This matches how real framing happens at the counter.
 **UI Style:** "A with a hint of B"
 - Simple, text-based (fast to build)
 - Clean, modern design
+- Customer-facing (designed to be shown on tablet/screen at counter)
 - Optional: frame preview mockups (future enhancement)
 - Optional: photo upload of artwork (future enhancement)
 
-**Guardrails (New Hire Proof):**
+**Guardrails (Sales Rep Proof):**
 - Required field gates (can't proceed without phone + item type + size)
 - Default statuses + auto status changes (new order starts `new_design`)
 - One button: "Create order + send deposit invoice"
 - Inline help text + examples (the "hint of B" polish)
 - Margin guardrails (if margin < 60% → warn manager, optional)
+- **Location automatically assigned** from sales rep's user account (no manual selection needed)
+
+**Access Control:**
+- Available to all staff users (admin and staff roles)
+- Staff users: automatically uses their assigned location
+- Admin users: uses their selected location (from location selector)
+- No need for location selection in wizard (handled automatically)
 
 **Integration Points:**
 - Uses existing `Order` model
@@ -791,11 +810,12 @@ This matches how real framing happens at the counter.
 
 After building this wizard:
 
-1. **"Fast Mode"** — For experienced staff → skip wizard, go directly to full order form
+1. **"Fast Mode"** — For experienced staff → skip wizard, go directly to full order form (`/staff/orders/new`)
 2. **"Training Mode"** — Shows margin breakdown internally (for learning)
 3. **"Margin Guardrails"** — If margin < 60% → warn manager before submission
 4. **Photo Upload** — Allow uploading photo of artwork during intake (Step 1 or Step 4)
-5. **Mobile-Optimized** — Tablet-friendly for counter use
+5. **Mobile-Optimized** — Tablet-friendly for counter use (already responsive)
+6. **Multi-location deployment** — Same wizard works at all locations with automatic location scoping
 
 ### Test Scenarios
 

@@ -190,20 +190,29 @@ All planned features from the blueprint have been implemented:
 
 ---
 
-## 🚀 Phase 8 — Guided Order Wizard (New Hire Mode) — NEXT PRIORITY
+## 🚀 Phase 8 — Guided Order Wizard (Sales Rep Intake Flow) — NEXT PRIORITY
 
 ### Status: ❌ **NOT STARTED**
 
 This is the next critical feature to transform the system from "database correct" to "retail-ready."
 
-**Goal:** Create a foolproof, structured 5-step intake flow that enables new employees to take complex framing orders without extensive training.
+**Goal:** Create a foolproof, structured 5-step intake flow for **all sales reps at multiple locations** to walk customers through the order process. This will be the primary order intake method used at every location.
 
 **Why This Is Critical:**
+- **Primary order intake method** at all locations
+- **Used by all sales reps** (new hires and experienced staff)
+- **Customer-facing** — designed to be walked through with customers at the counter
+- **Location-aware** — automatically uses the sales rep's assigned location
 - Reduces training time from weeks → days
 - Prevents mistakes through required field gates
 - Applies pricing rules automatically (protects margins)
 - Feels polished in front of customers
 - Protects the business by enforcing margin guardrails
+
+**Multi-Location Support:**
+- Orders automatically assigned to sales rep's location (no manual selection)
+- Staff users locked to their location; admins use selected location
+- Same wizard interface at all locations, with location-scoped data
 
 **Recommended Flow:**
 1. **Customer + Artwork** — Search/create customer, enter artwork type and size
@@ -224,6 +233,8 @@ This is the next critical feature to transform the system from "database correct
 - ✅ Pricing engine (exists)
 - ✅ Invoice creation (exists)
 - ✅ Square integration (exists)
+- ✅ Multi-location support (exists - location automatically assigned via `getLocationFilter`)
+- ✅ Staff user location assignment (exists - staff users have `locationId` field)
 
 ---
 

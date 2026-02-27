@@ -5,13 +5,20 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-const STAFF_NAV = [
+const STAFF_NAV: Array<{
+  href: string;
+  label: string;
+  shortcut?: string;
+  badge?: boolean;
+  highlight?: boolean;
+}> = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
   { href: "/staff/messages", label: "Messages", badge: true },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
-  { href: "/staff/orders/new", label: "New order" },
+  { href: "/staff/orders/intake", label: "New Order", highlight: true },
+  { href: "/staff/orders/new", label: "Advanced" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
@@ -34,12 +41,14 @@ function NavLink({
   onClick,
   badge,
   badgeCount,
+  highlight,
 }: {
   href: string;
   children: React.ReactNode;
   onClick?: () => void;
   badge?: boolean;
   badgeCount?: number;
+  highlight?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -64,6 +73,8 @@ function NavLink({
         "text-sm px-3 py-2 rounded-md transition block relative",
         active
           ? "bg-neutral-900 text-white"
+          : highlight
+          ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
           : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
       ].join(" ")}
     >
@@ -187,6 +198,7 @@ export default function StaffTopbar() {
                   href={link.href}
                   badge={link.badge}
                   badgeCount={link.badge ? unreadCount : undefined}
+                  highlight={link.highlight}
                 >
                   {link.label}
                   {link.shortcut && (
@@ -305,6 +317,7 @@ export default function StaffTopbar() {
                 onClick={() => setMobileOpen(false)}
                 badge={link.badge}
                 badgeCount={link.badge ? unreadCount : undefined}
+                highlight={link.highlight}
               >
                 {link.label}
               </NavLink>

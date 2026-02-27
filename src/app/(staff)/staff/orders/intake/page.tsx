@@ -1,0 +1,446 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+// Step components
+import Step1CustomerArtwork from "./Step1CustomerArtwork";
+import Step2FrameSelection from "./Step2FrameSelection";
+import Step3MatsGlass from "./Step3MatsGlass";
+import Step4PreviewScenarios from "./Step4PreviewScenarios";
+import Step5ConfirmDeposit from "./Step5ConfirmDeposit";
+
+export interface FrameSelection {
+  priceCodeId: string;
+  vendorItemId?: string;
+  description?: string;
+}
+
+export interface MatSelection {
+  priceCodeId: string;
+  vendorItemId?: string;
+  description?: string;
+}
+
+export interface Scenario {
+  id: string;
+  label: string;
+  frames: FrameSelection[];
+  mats: MatSelection[];
+  glassType: string | null;
+  mountingType: string | null;
+  addOns: {
+    spacers: boolean;
+    shadowbox: boolean;
+    stretching: boolean;
+    fabricWrap: boolean;
+  };
+  subtotal: number;
+  total: number;
+}
+
+export interface IntakeData {
+  // Step 1: Customer + Artwork
+  customerId: string | null;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    email: string | null;
+  } | null;
+  artworkType: string;
+  width: number;
+  height: number;
+  units: "in" | "cm";
+  itemDescription: string | null;
+  photos: string[];
+
+  // Step 2: Frame Selection
+  frames: FrameSelection[];
+
+  // Step 3: Mats + Glass
+  mats: MatSelection[];
+  glassType: string | null;
+  mountingType: string | null;
+  addOns: {
+    spacers: boolean;
+    shadowbox: boolean;
+    stretching: boolean;
+    fabricWrap: boolean;
+  };
+
+  // Step 4: Scenarios
+  scenarios: Scenario[];
+  selectedScenarioIndex: number | null;
+
+  // Step 5: Pricing
+  pricing: {
+    subtotal: number;
+    tax: number;
+    total: number;
+    lineItems: Array<{ description: string; lineTotal: number }>;
+  } | null;
+  discountType: "none" | "percent" | "fixed";
+  discountValue: number;
+  depositPercent: number;
+  expectedCompletionDays: number;
+  notesInternal: string | null;
+  notesCustomer: string | null;
+}
+
+const INITIAL_DATA: IntakeData = {
+  customerId: null,
+  customer: null,
+  artworkType: "",
+  width: 0,
+  height: 0,
+  units: "in",
+  itemDescription: null,
+  photos: [],
+  frames: [],
+  mats: [],
+  glassType: null,
+  mountingType: null,
+  addOns: {
+    spacers: false,
+    shadowbox: false,
+    stretching: false,
+    fabricWrap: false,
+  },
+  scenarios: [],
+  selectedScenarioIndex: null,
+  pricing: null,
+  discountType: "none",
+  discountValue: 0,
+  depositPercent: 50,
+  expectedCompletionDays: 10,
+  notesInternal: null,
+  notesCustomer: null,
+};
+
+export default function OrderIntakePage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [data, setData] = useState<IntakeData>(INITIAL_DATA);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const updateData = (updates: Partial<IntakeData>) => {
+    setData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const canProceedToStep = (step: number): boolean => {
+    switch (step) {
+      case 2:
+        return !!(
+          data.customerId &&
+          data.artworkType &&
+          data.width > 0 &&
+          data.height > 0
+        );
+      case 3:
+        return data.frames.length > 0;
+      case 4:
+        return data.mats.length >= 0 && data.glassType !== null;
+      case 5:
+        return data.pricing !== null;
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    if (canProceedToStep(currentStep + 1)) {
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
+      setError(null);
+    } else {
+      setError("Please complete all required fields before proceeding.");
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setError(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!data.customerId || !data.pricing) {
+      setError("Please complete all steps before submitting.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Build order components from selected scenario or current selections
+      const activeScenario = data.selectedScenarioIndex !== null 
+        ? data.scenarios[data.selectedScenarioIndex]
+        : null;
+
+      const frames = activeScenario?.frames || data.frames;
+      const mats = activeScenario?.mats || data.mats;
+      const glassType = activeScenario?.glassType || data.glassType;
+      const mountingType = activeScenario?.mountingType || data.mountingType;
+      const addOns = activeScenario?.addOns || data.addOns;
+
+      // Build components array
+      const components: any[] = [];
+      
+      // Add frames
+      frames.forEach((frame, idx) => {
+        components.push({
+          category: "frame",
+          position: idx,
+          priceCodeId: frame.priceCodeId,
+          vendorItemId: frame.vendorItemId || null,
+          description: frame.description || null,
+          quantity: 1,
+        });
+      });
+
+      // Add mats
+      mats.forEach((mat, idx) => {
+        components.push({
+          category: "mat",
+          position: frames.length + idx,
+          priceCodeId: mat.priceCodeId,
+          vendorItemId: mat.vendorItemId || null,
+          description: mat.description || null,
+          quantity: 1,
+        });
+      });
+
+      // Add glass
+      if (glassType) {
+        components.push({
+          category: "glass",
+          position: frames.length + mats.length,
+          priceCodeId: glassType,
+          quantity: 1,
+        });
+      }
+
+      // Add mounting
+      if (mountingType) {
+        components.push({
+          category: "mounting",
+          position: components.length,
+          priceCodeId: mountingType,
+          quantity: 1,
+        });
+      }
+
+      // Add add-ons
+      if (addOns.spacers) {
+        components.push({
+          category: "extra",
+          position: components.length,
+          priceCodeId: "spacers",
+          quantity: 1,
+        });
+      }
+      if (addOns.shadowbox) {
+        components.push({
+          category: "extra",
+          position: components.length,
+          priceCodeId: "shadowbox",
+          quantity: 1,
+        });
+      }
+      if (addOns.stretching) {
+        components.push({
+          category: "extra",
+          position: components.length,
+          priceCodeId: "stretching",
+          quantity: 1,
+        });
+      }
+      if (addOns.fabricWrap) {
+        components.push({
+          category: "extra",
+          position: components.length,
+          priceCodeId: "fabric_wrap",
+          quantity: 1,
+        });
+      }
+
+      // Calculate final pricing with discount (already calculated in Step 5, use that)
+      const finalSubtotal =
+        data.discountType === "percent"
+          ? Math.round(data.pricing.subtotal * (1 - data.discountValue / 100))
+          : data.discountType === "fixed"
+          ? Math.max(0, data.pricing.subtotal - Math.round(data.discountValue * 100))
+          : data.pricing.subtotal;
+      const finalTax = Math.round(finalSubtotal * 0.0625); // 6.25% MA tax
+      const finalTotal = finalSubtotal + finalTax;
+
+      // Convert units to inches for API (API expects inches)
+      const widthInches = data.units === "cm" ? data.width / 2.54 : data.width;
+      const heightInches = data.units === "cm" ? data.height / 2.54 : data.height;
+
+      // Create order (API will recalculate pricing from components, but we provide discount info)
+      const orderRes = await fetch("/staff/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: data.customerId,
+          item_type: data.artworkType,
+          item_description: data.itemDescription,
+          width: widthInches,
+          height: heightInches,
+          units: "in", // API expects inches
+          components: components,
+          discount_type: data.discountType,
+          discount_value: data.discountType === "none" ? 0 : data.discountValue,
+          tax_rate: 0.0625, // 6.25% MA tax
+          notes_internal: data.notesInternal,
+          notes_customer: data.notesCustomer,
+          intake_channel: "walk_in",
+        }),
+      });
+
+      if (!orderRes.ok) {
+        const errorData = await orderRes.json();
+        throw new Error(errorData.error || "Failed to create order");
+      }
+
+      const orderData = await orderRes.json();
+      const orderId = orderData.order.id;
+
+      // Upload photos if any
+      if (data.photos.length > 0) {
+        // TODO: Implement photo upload
+        console.log("Photos to upload:", data.photos);
+      }
+
+      // Create deposit invoice if deposit percent > 0
+      if (data.depositPercent > 0) {
+        const depositAmount = Math.round((finalTotal * data.depositPercent) / 100);
+        
+        const invoiceRes = await fetch(`/staff/api/orders/${orderId}/invoice/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "deposit",
+            depositPercent: data.depositPercent,
+          }),
+        });
+
+        if (!invoiceRes.ok) {
+          console.warn("Failed to create deposit invoice:", await invoiceRes.json());
+        }
+      }
+
+      // Navigate to order detail
+      router.push(`/staff/orders/${orderId}`);
+    } catch (e: any) {
+      setError(e.message || "Failed to create order");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-50">
+      {/* Header */}
+      <div className="bg-white border-b border-neutral-200">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <h1 className="text-2xl font-bold text-neutral-900">New Order Intake</h1>
+          <p className="text-sm text-neutral-600 mt-1">
+            Walk your customer through the framing process step by step
+          </p>
+        </div>
+      </div>
+
+      {/* Step Progress */}
+      <div className="bg-white border-b border-neutral-200">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex items-center justify-between py-4">
+            {[1, 2, 3, 4, 5].map((step) => (
+              <div key={step} className="flex items-center flex-1">
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold text-sm ${
+                    currentStep === step
+                      ? "bg-black text-white border-black"
+                      : currentStep > step
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "bg-white text-neutral-400 border-neutral-300"
+                  }`}
+                >
+                  {step}
+                </div>
+                {step < 5 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-2 ${
+                      currentStep > step ? "bg-neutral-900" : "bg-neutral-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between pb-4 text-xs text-neutral-600">
+            <span>Customer & Artwork</span>
+            <span>Frame</span>
+            <span>Mats & Glass</span>
+            <span>Preview</span>
+            <span>Confirm</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+            {error}
+          </div>
+        )}
+
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          {currentStep === 1 && (
+            <Step1CustomerArtwork
+              data={data}
+              updateData={updateData}
+              onNext={handleNext}
+            />
+          )}
+          {currentStep === 2 && (
+            <Step2FrameSelection
+              data={data}
+              updateData={updateData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 3 && (
+            <Step3MatsGlass
+              data={data}
+              updateData={updateData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 4 && (
+            <Step4PreviewScenarios
+              data={data}
+              updateData={updateData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 5 && (
+            <Step5ConfirmDeposit
+              data={data}
+              updateData={updateData}
+              onSubmit={handleSubmit}
+              onBack={handleBack}
+              loading={loading}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
