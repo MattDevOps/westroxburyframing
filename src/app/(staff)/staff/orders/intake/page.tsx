@@ -11,7 +11,7 @@ import Step4PreviewScenarios from "./Step4PreviewScenarios";
 import Step5ConfirmDeposit from "./Step5ConfirmDeposit";
 
 export interface FrameSelection {
-  priceCodeId: string;
+  priceCodeId?: string;
   vendorItemId?: string;
   description?: string;
 }
@@ -193,7 +193,7 @@ export default function OrderIntakePage() {
         components.push({
           category: "frame",
           position: idx,
-          priceCodeId: frame.priceCodeId,
+          priceCodeId: frame.priceCodeId || null,
           vendorItemId: frame.vendorItemId || null,
           description: frame.description || null,
           quantity: 1,

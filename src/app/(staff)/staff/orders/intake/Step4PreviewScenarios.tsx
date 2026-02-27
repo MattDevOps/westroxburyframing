@@ -37,8 +37,8 @@ export default function Step4PreviewScenarios({
       data.frames.forEach((frame) => {
         components.push({
           category: "frame",
-          priceCodeId: frame.priceCodeId,
-          vendorItemId: frame.vendorItemId,
+          priceCodeId: frame.priceCodeId || undefined,
+          vendorItemId: frame.vendorItemId || undefined,
           quantity: 1,
           width: data.units === "cm" ? data.width / 2.54 : data.width,
           height: data.units === "cm" ? data.height / 2.54 : data.height,
