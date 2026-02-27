@@ -125,20 +125,12 @@ export default function MaterialsNeededPage() {
             Materials required for incomplete orders, grouped by vendor
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href="/staff/pricing/vendors"
-            className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-          >
-            Manage Vendors
-          </Link>
-          <Link
-            href="/staff/pricing/vendors"
-            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
-          >
-            + Add Vendor
-          </Link>
-        </div>
+        <Link
+          href="/staff/pricing/vendors"
+          className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+        >
+          Manage Vendors
+        </Link>
       </div>
 
       {/* Summary */}
