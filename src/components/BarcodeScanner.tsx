@@ -94,21 +94,107 @@ export default function BarcodeScanner({
 
   async function startCameraScan() {
     try {
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError("Camera access not supported in this browser. Please use Chrome, Firefox, Safari, or Edge.");
+        return;
+      }
+
+      // Check if we're on HTTPS (required for camera access in most browsers)
+      if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+        setError("Camera access requires HTTPS. Please access this site over HTTPS.");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }, // Use back camera on mobile
+        video: { 
+          facingMode: "environment", // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
       });
 
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play();
         setScanning(true);
+        setError(null);
+        
+        // Start scanning for barcodes
+        startBarcodeDetection();
       }
     } catch (e: any) {
-      setError("Camera access denied or not available");
+      console.error("Camera error:", e);
+      let errorMessage = "Camera access denied or not available.";
+      
+      if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+        errorMessage = "Camera permission denied. Please allow camera access in your browser settings and try again.";
+      } else if (e.name === "NotFoundError" || e.name === "DevicesNotFoundError") {
+        errorMessage = "No camera found. Please connect a camera and try again.";
+      } else if (e.name === "NotReadableError" || e.name === "TrackStartError") {
+        errorMessage = "Camera is already in use by another application. Please close other apps using the camera.";
+      } else if (e.name === "OverconstrainedError") {
+        errorMessage = "Camera doesn't support the required settings. Trying with default settings...";
+        // Try again with default settings
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+            setScanning(true);
+            setError(null);
+            startBarcodeDetection();
+            return;
+          }
+        } catch (retryError: any) {
+          errorMessage = "Could not access camera. Please check your camera permissions.";
+        }
+      }
+      
+      setError(errorMessage);
     }
   }
 
+  function startBarcodeDetection() {
+    // Simple barcode detection using canvas and manual scanning
+    // For production, you'd want to use a library like @zxing/library
+    const scanInterval = setInterval(() => {
+      if (!videoRef.current || !scanning) {
+        clearInterval(scanInterval);
+        return;
+      }
+
+      const video = videoRef.current;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // Create canvas to capture frame
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Note: Actual barcode detection would require a library like @zxing/library
+          // For now, we'll just show the video feed and let users manually enter barcodes
+          // or use a USB barcode scanner (which works via keyboard input)
+        }
+      }
+    }, 500); // Check every 500ms
+
+    // Store interval ID for cleanup
+    (videoRef.current as any).scanInterval = scanInterval;
+  }
+
   function stopCameraScan() {
+    // Clear scanning interval if it exists
+    if (videoRef.current && (videoRef.current as any).scanInterval) {
+      clearInterval((videoRef.current as any).scanInterval);
+      (videoRef.current as any).scanInterval = null;
+    }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -117,7 +203,15 @@ export default function BarcodeScanner({
       videoRef.current.srcObject = null;
     }
     setScanning(false);
+    setError(null);
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCameraScan();
+    };
+  }, []);
 
   const allResults = results
     ? [...results.products, ...results.inventoryItems, ...results.catalogItems]
@@ -183,10 +277,14 @@ export default function BarcodeScanner({
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="w-full h-64 object-cover"
           />
           <div className="p-2 text-center text-white text-sm">
-            Point camera at barcode (manual entry also works)
+            Camera active - Use a USB barcode scanner or manually type barcodes above
+          </div>
+          <div className="p-2 text-center text-white text-xs text-neutral-400">
+            Note: Automatic barcode detection from camera requires additional setup
           </div>
         </div>
       )}
