@@ -610,10 +610,13 @@ Phase 6A: Reports                           ← (2-3 days)
 Phase 6B: Export                            ← (1-2 days)
 Phase 6C: Dashboard                         ← (1-2 days)
   ─── Milestone: FrameReady "Standard" parity ───
-Phase 7: Advanced (as needed)               ← ongoing
+Phase 7: Advanced (as needed)                ← ongoing
+Phase 8: Guided Order Wizard (New Hire Mode) ← NEXT PRIORITY (3-5 days)
+  ─── Milestone: Retail counter experience ───
 ```
 
 **Total estimated effort to FrameReady Standard parity: ~30-40 dev days**
+**Phase 8 (Guided Wizard): Additional 3-5 days for retail-ready experience**
 
 ---
 
@@ -661,3 +664,233 @@ Phase 7: Advanced (as needed)               ← ongoing
 - **Scenarios use OrderComponent:** Each scenario is a set of `OrderComponent` rows linked to an `OrderScenario`. The "active" scenario's components are the ones used for the order total.
 - **PriceCode = your pricing rules:** These are YOUR markup formulas, not vendor prices. Vendor prices live in `VendorCatalogItem`. Your retail price = vendor cost × PriceCode formula.
 - **Amounts in cents:** All monetary amounts stored as integers (cents) to avoid floating-point issues. Display as dollars in UI.
+
+---
+
+## 8. Guided Order Wizard (New Hire Mode) — NEXT PRIORITY
+> **Goal:** Create a foolproof, structured intake flow that enables new employees to take complex framing orders without extensive training. This transforms the system from "database correct" to "retail-ready."
+
+### Why This Is Critical
+
+The core engine (database, invoices, Square, activity, status flow) is complete. The missing piece is the **retail counter experience** that makes FrameReady powerful: a new employee can walk in and take a complex framing order without thinking.
+
+This wizard:
+- **Prevents mistakes** through required field gates
+- **Applies pricing rules automatically** (protects margins)
+- **Feels polished** in front of customers
+- **Reduces training time** from weeks → days
+- **Protects the business** by enforcing margin guardrails
+
+### Recommended 5-Step Flow
+
+This matches how real framing happens at the counter.
+
+#### Step 1 — Customer + Artwork
+**Screen:**
+- Search customer (live search by name/phone/email)
+- Or create new (name + phone required minimum)
+- Enter artwork type (print/photo/diploma/object/custom)
+- Enter size (width + height, units: inches/cm)
+- Auto-calculates base size category for pricing
+
+**Validation:** Cannot proceed without customer (existing or new) + artwork type + size
+
+**Then:** `Next →`
+
+#### Step 2 — Frame Selection
+**Display:**
+- Frame categories (budget / mid / premium) or browse all
+- Show sample images (optional, "hint of B" polish)
+- Show per-foot pricing impact
+- When selected:
+  - Auto-calc frame cost based on: `Perimeter × pricePerFoot × wasteFactor`
+  - Show running total at bottom
+  - Allow multiple frames (stacked frames)
+
+**Then:** `Next →`
+
+#### Step 3 — Mats + Glass
+**Choose:**
+- Mat? (none / single / double / triple)
+- Glass type: Regular / UV / Museum / None
+- Mounting method: Standard / Conservation / Dry mount / Stretch
+- Add-ons:
+  - Spacers
+  - Shadowbox
+  - Stretching
+  - Fabric wrap
+  - Hardware options
+
+**Every change updates live price.**
+
+**Show breakdown:**
+- Materials subtotal
+- Labor
+- Tax
+- **Total**
+
+**Then:** `Next →`
+
+#### Step 4 — Preview + Scenarios
+**Show:**
+- "Option A" design summary
+- Allow:
+  - Save as Scenario
+  - Duplicate and tweak (change glass / frame / mat)
+  - Let customer compare:
+    - Option A – $230
+    - Option B – $315
+- Side-by-side comparison view
+
+**Then:** `Select final design →`
+
+#### Step 5 — Confirm + Deposit
+**Final screen:**
+- Show complete summary (customer, artwork, design, pricing breakdown)
+- Show expected completion date (default: 7-10 business days, editable)
+- Choose deposit % (default 50%, or custom amount)
+- Apply discount if needed (job-level)
+- Notes (internal + customer-facing)
+
+**Click:** `Submit Order`
+
+**Then auto:**
+- Create order with all components
+- Create invoice (deposit amount)
+- Send invoice link to customer (email/SMS)
+- Show QR code for payment (optional)
+- Navigate to order detail page
+
+**Done.**
+
+### Implementation Details
+
+**Route:** `/staff/orders/intake`
+
+**UI Style:** "A with a hint of B"
+- Simple, text-based (fast to build)
+- Clean, modern design
+- Optional: frame preview mockups (future enhancement)
+- Optional: photo upload of artwork (future enhancement)
+
+**Guardrails (New Hire Proof):**
+- Required field gates (can't proceed without phone + item type + size)
+- Default statuses + auto status changes (new order starts `new_design`)
+- One button: "Create order + send deposit invoice"
+- Inline help text + examples (the "hint of B" polish)
+- Margin guardrails (if margin < 60% → warn manager, optional)
+
+**Integration Points:**
+- Uses existing `Order` model
+- Uses existing `OrderComponent` model
+- Uses existing pricing engine (`/api/pricing/calculate`)
+- Uses existing invoice creation flow
+- Uses existing Square invoice sending
+
+### What This Unlocks Next
+
+After building this wizard:
+
+1. **"Fast Mode"** — For experienced staff → skip wizard, go directly to full order form
+2. **"Training Mode"** — Shows margin breakdown internally (for learning)
+3. **"Margin Guardrails"** — If margin < 60% → warn manager before submission
+4. **Photo Upload** — Allow uploading photo of artwork during intake (Step 1 or Step 4)
+5. **Mobile-Optimized** — Tablet-friendly for counter use
+
+### Test Scenarios
+
+1. **New customer + new order:**
+   - Create new customer → new order → invoice link generated → order shows balance due
+
+2. **Existing customer + new order:**
+   - Search customer → select → new order attaches correctly → invoice sends
+
+3. **Multiple scenarios:**
+   - Create Option A → duplicate to Option B → modify Option B → compare → select Option B → order created with Option B design
+
+4. **Deposit flow:**
+   - Deposit invoice sends correct amount → order shows balance due → Square payment updates order
+
+5. **Photo upload:**
+   - Upload artwork photo → photo appears in order → photo included in work order print
+
+---
+
+## 9. Strategic Next Moves (Beyond Wizard)
+
+Now that core engine is complete, these are high-leverage additions:
+
+### 1️⃣ Production Board View (Kanban)
+**Status:** ✅ Already exists (`KanbanBoard.tsx`)
+
+**Enhancements:**
+- Drag and drop between stages
+- Filter by staff member
+- Filter by location
+- Bulk status updates
+- Visual indicators for overdue orders
+
+### 2️⃣ Purchase Order Automation
+**Status:** ⚠️ Partial (PO models exist, automation needed)
+
+**Enhancements:**
+- When order uses materials → auto-add to "Materials to Order"
+- Generate PO to vendor with one click
+- Mark received → update inventory automatically
+- PO status tracking (draft → sent → partial → received)
+
+### 3️⃣ SMS Pickup Notifications (Huge ROI)
+**Status:** ✅ SMS infrastructure exists (Twilio)
+
+**Enhancements:**
+- When status → `ready_for_pickup` → auto-send SMS
+- Template: "Hi [Name], your framing order #[OrderNumber] is ready for pickup at West Roxbury Framing. See you soon!"
+- Increases pickup speed and customer satisfaction
+
+### 4️⃣ Reporting Dashboard Enhancements
+**Status:** ✅ Dashboard exists
+
+**Additional metrics:**
+- Revenue this week
+- Avg ticket size
+- Open orders count
+- Overdue pickups
+- Top frame styles
+- Deposit % collected vs outstanding
+
+### 5️⃣ Webhook-Based Payment Auto-Reconciliation
+**Status:** ✅ Square webhook exists
+
+**Enhancements:**
+- Auto-advance order status when payment received (optional)
+- Auto-update invoice balance due
+- Auto-send confirmation email when payment received
+
+---
+
+## 10. Recommended Next Steps (Priority Order)
+
+1. **Build Guided Intake Wizard** (3-5 days)
+   - Highest impact: reduces training time, prevents mistakes, protects margins
+   - Route: `/staff/orders/intake`
+   - 5-step flow as outlined above
+
+2. **Enhance Production Board** (1-2 days)
+   - Drag-and-drop functionality
+   - Better filtering and bulk actions
+
+3. **SMS Pickup Notifications** (1 day)
+   - Auto-send when order ready
+   - High customer satisfaction impact
+
+4. **PO Automation** (2-3 days)
+   - Auto-generate POs from materials needed
+   - Streamline receiving process
+
+5. **Reporting Dashboard Enhancements** (1-2 days)
+   - Additional KPIs and metrics
+   - Visual improvements
+
+6. **Webhook Payment Auto-Reconciliation** (1 day)
+   - Auto-update order status on payment
+   - Reduce manual work

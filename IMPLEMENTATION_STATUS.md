@@ -190,4 +190,98 @@ All planned features from the blueprint have been implemented:
 
 ---
 
-*Last updated: After completing all phases and additional features*
+## 🚀 Phase 8 — Guided Order Wizard (New Hire Mode) — NEXT PRIORITY
+
+### Status: ❌ **NOT STARTED**
+
+This is the next critical feature to transform the system from "database correct" to "retail-ready."
+
+**Goal:** Create a foolproof, structured 5-step intake flow that enables new employees to take complex framing orders without extensive training.
+
+**Why This Is Critical:**
+- Reduces training time from weeks → days
+- Prevents mistakes through required field gates
+- Applies pricing rules automatically (protects margins)
+- Feels polished in front of customers
+- Protects the business by enforcing margin guardrails
+
+**Recommended Flow:**
+1. **Customer + Artwork** — Search/create customer, enter artwork type and size
+2. **Frame Selection** — Choose frame(s) with live pricing
+3. **Mats + Glass** — Select mats, glass type, mounting, add-ons
+4. **Preview + Scenarios** — Compare design options side-by-side
+5. **Confirm + Deposit** — Final summary, deposit selection, submit order
+
+**Route:** `/staff/orders/intake`
+
+**UI Style:** Simple, text-based with clean modern design ("A with a hint of B")
+
+**Estimated Effort:** 3-5 days
+
+**Dependencies:**
+- ✅ Order model (exists)
+- ✅ OrderComponent model (exists)
+- ✅ Pricing engine (exists)
+- ✅ Invoice creation (exists)
+- ✅ Square integration (exists)
+
+---
+
+## 📋 Strategic Next Moves (Beyond Wizard)
+
+### 1️⃣ Production Board Enhancements
+**Status:** ⚠️ **PARTIAL** (Kanban board exists, needs drag-and-drop)
+
+**Enhancements needed:**
+- Drag and drop between stages
+- Better filtering (by staff, location)
+- Bulk status updates
+- Visual indicators for overdue orders
+
+**Estimated Effort:** 1-2 days
+
+### 2️⃣ Purchase Order Automation
+**Status:** ⚠️ **PARTIAL** (PO models exist, automation needed)
+
+**Enhancements needed:**
+- Auto-add materials to "Materials to Order" when order created
+- One-click PO generation from materials needed
+- Auto-update inventory when PO received
+- PO status tracking improvements
+
+**Estimated Effort:** 2-3 days
+
+### 3️⃣ SMS Pickup Notifications
+**Status:** ⚠️ **PARTIAL** (Twilio infrastructure exists, auto-notifications needed)
+
+**Enhancements needed:**
+- Auto-send SMS when order status → `ready_for_pickup`
+- Template: "Hi [Name], your framing order #[OrderNumber] is ready for pickup at West Roxbury Framing. See you soon!"
+- High ROI: increases pickup speed and customer satisfaction
+
+**Estimated Effort:** 1 day
+
+### 4️⃣ Reporting Dashboard Enhancements
+**Status:** ✅ **COMPLETE** (dashboard exists with KPIs)
+
+**Additional metrics to consider:**
+- Revenue this week
+- Avg ticket size
+- Top frame styles
+- Deposit % collected vs outstanding
+
+**Estimated Effort:** 1-2 days
+
+### 5️⃣ Webhook Payment Auto-Reconciliation
+**Status:** ⚠️ **PARTIAL** (Square webhook exists, auto-advancement needed)
+
+**Enhancements needed:**
+- Auto-advance order status when payment received (optional setting)
+- Auto-update invoice balance due
+- Auto-send confirmation email when payment received
+
+**Estimated Effort:** 1 day
+
+---
+
+*Last updated: After adding Phase 8 (Guided Order Wizard) and strategic next moves*
