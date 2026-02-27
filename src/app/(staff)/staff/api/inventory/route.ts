@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter } from "@/lib/location";
+import { requireAdmin } from "@/lib/permissions";
 
 /**
  * GET /staff/api/inventory
