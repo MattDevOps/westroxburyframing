@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { prisma } from "@/lib/db";
 import {
   importShopifyOrders,
   importShopifyProducts,
@@ -9,8 +9,8 @@ import {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession();
-    if (!session?.user) {
+    const userId = getStaffUserIdFromRequest(req);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -68,14 +68,25 @@ export async function POST(req: Request) {
 
           // Create order
           if (customer) {
+            // Get default location
+            const defaultLocation = await prisma.location.findFirst({
+              where: { active: true },
+              orderBy: { createdAt: "asc" },
+            });
+
             await prisma.order.create({
               data: {
                 customerId: customer.id,
-                createdByUserId: session.user.id,
+                locationId: defaultLocation?.id || null,
+                createdByUserId: userId,
                 status: "new_design",
                 intakeChannel: "web_lead",
-                notes: `Imported from Shopify\nOrder: ${shopifyOrder.name}\nShopify Order ID: ${shopifyOrder.id}\nFinancial Status: ${shopifyOrder.financial_status}\nFulfillment Status: ${shopifyOrder.fulfillment_status || "unfulfilled"}\nTotal: ${shopifyOrder.currency} ${shopifyOrder.total_price}`,
-                totalPrice: Math.round(parseFloat(shopifyOrder.total_price) * 100), // Convert to cents
+                notesCustomer: `Imported from Shopify\nOrder: ${shopifyOrder.name}\nShopify Order ID: ${shopifyOrder.id}\nFinancial Status: ${shopifyOrder.financial_status}\nFulfillment Status: ${shopifyOrder.fulfillment_status || "unfulfilled"}\nTotal: ${shopifyOrder.currency} ${shopifyOrder.total_price}`,
+                subtotalAmount: Math.round(parseFloat(shopifyOrder.subtotal_price || shopifyOrder.total_price) * 100),
+                taxAmount: Math.round(parseFloat(shopifyOrder.total_tax || "0") * 100),
+                totalAmount: Math.round(parseFloat(shopifyOrder.total_price) * 100),
+                currency: shopifyOrder.currency || "USD",
+                paidInFull: shopifyOrder.financial_status === "paid",
               },
             });
             imported++;

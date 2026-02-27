@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { prisma } from "@/lib/db";
 
 /**
  * GET /staff/api/locations/[id]
@@ -11,8 +11,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.user) {
+    const userId = getStaffUserIdFromRequest(req);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -43,13 +43,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session?.user) {
+    const userId = getStaffUserIdFromRequest(req);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
     });
 
     if (!user || user.role !== "admin") {

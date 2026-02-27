@@ -94,22 +94,25 @@
 
 ---
 
-## ❌ Phase 4 — Purchasing + Inventory (NOT STARTED)
+## ✅ Phase 4 — Purchasing + Inventory (COMPLETE)
 
 ### Step 4A: Inventory Tracking
-- ❌ `InventoryItem` model — **NOT IMPLEMENTED**
-- ❌ Auto-deduct materials when order moves to `in_production` — **NOT IMPLEMENTED**
-- ❌ Manual inventory adjustments (waste, damage, recount) — **NOT IMPLEMENTED**
-- ❌ Low-stock alerts on dashboard — **NOT IMPLEMENTED**
+- ✅ `InventoryItem` model — **IMPLEMENTED**
+- ✅ Auto-deduct materials when order moves to `in_production` — **IMPLEMENTED**
+- ✅ Manual inventory adjustments (waste, damage, recount) — **IMPLEMENTED** (via inventory edit UI)
+- ✅ Low-stock alerts on dashboard — **IMPLEMENTED**
+- ✅ Inventory lots tracking — **IMPLEMENTED**
+- ✅ Location-based inventory — **IMPLEMENTED** (multi-site support)
 
-**Status:** ❌ **NOT STARTED**
+**Status:** ✅ **COMPLETE**
 
 ### Step 4B: Purchase Orders
-- ❌ `PurchaseOrder` + `PurchaseOrderLine` models — **NOT IMPLEMENTED**
-- ❌ Materials requirements view — **NOT IMPLEMENTED**
-- ❌ Moulding usage reports — **NOT IMPLEMENTED**
+- ✅ `PurchaseOrder` + `PurchaseOrderLine` models — **IMPLEMENTED**
+- ✅ Materials requirements view — **IMPLEMENTED** (`/staff/materials-needed`)
+- ✅ Moulding usage reports — **IMPLEMENTED** (`/staff/reports/moulding-usage`)
+- ✅ Cross-location purchase orders — **IMPLEMENTED** (admin can combine materials from multiple locations)
 
-**Status:** ❌ **NOT STARTED**
+**Status:** ✅ **COMPLETE**
 
 ---
 
@@ -125,30 +128,30 @@
 
 ---
 
-## ❌ Phase 6 — Reporting + Export
-- ❌ Sales report (daily/weekly/monthly) — **NOT IMPLEMENTED**
-- ❌ Open orders report (aging, by status, by staff) — **NOT IMPLEMENTED**
-- ❌ Customer report (new vs returning, lifetime value, frequency) — **NOT IMPLEMENTED**
-- ❌ A/R aging report — **NOT IMPLEMENTED**
-- ❌ CSV export for reports — **NOT IMPLEMENTED**
-- ❌ PDF generation for invoices/estimates — **NOT IMPLEMENTED**
-- ⚠️ Dashboard enhancements — **PARTIAL** (has KPI cards, missing charts)
+## ✅ Phase 6 — Reporting + Export (COMPLETE)
+- ✅ Sales report (daily/weekly/monthly) — **IMPLEMENTED** (`/staff/reports/sales`)
+- ✅ Open orders report (aging, by status, by staff) — **IMPLEMENTED** (`/staff/reports/open-orders`)
+- ✅ Customer report (new vs returning, lifetime value, frequency) — **IMPLEMENTED** (dashboard top customers, customer detail page)
+- ✅ A/R aging report — **IMPLEMENTED** (`/staff/reports/ar-aging`)
+- ✅ CSV export for reports — **IMPLEMENTED** (all reports have export endpoints)
+- ✅ PDF generation for invoices/estimates — **IMPLEMENTED** (`/staff/api/orders/[id]/pdf`)
+- ✅ Dashboard enhancements — **COMPLETE** (KPIs, charts, revenue by month, top customers, overdue orders)
 
-**Status:** ❌ **NOT STARTED** (except basic dashboard)
+**Status:** ✅ **COMPLETE**
 
 ---
 
-## ❌ Phase 7 — Advanced Features
-- ❌ Art/Retail Products — **NOT IMPLEMENTED**
-- ❌ Gift Certificates — **NOT IMPLEMENTED**
-- ❌ Global Search — **NOT IMPLEMENTED**
-- ❌ In-house Messaging — **NOT IMPLEMENTED**
-- ❌ QuickBooks Online — **NOT IMPLEMENTED**
-- ❌ Shopify — **NOT IMPLEMENTED**
-- ❌ Multi-site — **NOT IMPLEMENTED**
-- ❌ Barcode Support — **NOT IMPLEMENTED**
+## ✅ Phase 7 — Advanced Features (COMPLETE)
+- ✅ Art/Retail Products — **IMPLEMENTED** (`/staff/products`, Product model with artist support)
+- ✅ Gift Certificates — **IMPLEMENTED** (`/staff/gift-certificates`, issue, track, redeem)
+- ✅ Global Search — **IMPLEMENTED** (`/staff/search`, unified search across orders, customers, invoices, products)
+- ✅ In-house Messaging — **IMPLEMENTED** (`/staff/messages`, staff-to-staff messaging with unread counts)
+- ✅ QuickBooks Online — **IMPLEMENTED** (OAuth integration, sync customers and invoices)
+- ✅ Shopify — **IMPLEMENTED** (import orders, products, customers from Shopify)
+- ✅ Multi-site — **IMPLEMENTED** (Location model, location-based filtering, admin location switcher)
+- ✅ Barcode Support — **IMPLEMENTED** (barcode scanner component, lookup API for products/inventory/catalog)
 
-**Status:** ❌ **NOT STARTED**
+**Status:** ✅ **COMPLETE**
 
 ---
 
@@ -161,20 +164,30 @@
 | **Phase 2B** (Pricing Engine) | ✅ Complete | 100% |
 | **Phase 2C** (OrderComponent) | ✅ Complete | 100% |
 | **Phase 3** (Scenarios) | ✅ Complete | 100% |
-| **Phase 4** (Inventory) | ❌ Not Started | 0% |
-| **Phase 5** (Marketing) | ❌ Not Started | 0% |
-| **Phase 6** (Reporting) | ❌ Not Started | 0% |
-| **Phase 7** (Advanced) | ❌ Not Started | 0% |
+| **Phase 4** (Inventory) | ✅ Complete | 100% |
+| **Phase 5** (Marketing) | ✅ Complete | 100% |
+| **Phase 6** (Reporting) | ✅ Complete | 100% |
+| **Phase 7** (Advanced) | ✅ Complete | 100% |
 
 ---
 
-## 🎯 Next Steps (Recommended Priority)
+## 🎉 All Major Phases Complete!
 
-1. **Phase 4A** — Build Inventory Tracking (InventoryItem, InventoryLot models)
-2. **Phase 4B** — Build Purchase Orders system
-3. **Phase 5** — Customer Marketing + Communications
-4. **Phase 6** — Reporting + Export
+All planned features from the blueprint have been implemented:
+- ✅ Core operations and order management
+- ✅ Pricing engine and multi-component orders
+- ✅ Design scenarios
+- ✅ Inventory tracking and purchase orders
+- ✅ Customer marketing and communications
+- ✅ Comprehensive reporting and exports
+- ✅ Advanced features (gift certificates, search, messaging, integrations, multi-site, barcodes)
+
+### Additional Features Implemented:
+- ✅ Role-based permissions (admin vs staff)
+- ✅ Quote request handler (web lead to estimate conversion)
+- ✅ Location-based filtering and multi-site support
+- ✅ Cross-location purchase orders
 
 ---
 
-*Last updated: After Phase 3A completion*
+*Last updated: After completing all phases and additional features*
