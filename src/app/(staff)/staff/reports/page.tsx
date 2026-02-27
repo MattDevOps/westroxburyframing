@@ -13,7 +13,7 @@ interface SummaryData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "moulding" | "vendor-spending">("sales");
+  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "moulding" | "vendor-spending" | "top-materials">("sales");
   const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [salesData, setSalesData] = useState<any>(null);
   const [loadingSales, setLoadingSales] = useState(false);
@@ -30,6 +30,9 @@ export default function ReportsPage() {
   const [vendorSpendingData, setVendorSpendingData] = useState<any>(null);
   const [loadingVendorSpending, setLoadingVendorSpending] = useState(false);
   const [vendorSpendingStatus, setVendorSpendingStatus] = useState<string>("received");
+  const [topMaterialsData, setTopMaterialsData] = useState<any>(null);
+  const [loadingTopMaterials, setLoadingTopMaterials] = useState(false);
+  const [topMaterialsCategory, setTopMaterialsCategory] = useState<string>("all");
   const [emailing, setEmailing] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -247,6 +250,36 @@ export default function ReportsPage() {
     loadVendorSpendingReport();
   }, [loadVendorSpendingReport]);
 
+  const loadTopMaterialsReport = useCallback(async () => {
+    if (reportType !== "top-materials") {
+      setTopMaterialsData(null);
+      return;
+    }
+    setLoadingTopMaterials(true);
+    try {
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      if (topMaterialsCategory && topMaterialsCategory !== "all") params.set("category", topMaterialsCategory);
+
+      const res = await fetch(`/staff/api/reports/top-materials?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setTopMaterialsData(null);
+        return;
+      }
+      setTopMaterialsData(data);
+    } catch {
+      setTopMaterialsData(null);
+    } finally {
+      setLoadingTopMaterials(false);
+    }
+  }, [reportType, from, to, topMaterialsCategory]);
+
+  useEffect(() => {
+    loadTopMaterialsReport();
+  }, [loadTopMaterialsReport]);
+
   async function handleEmailReport() {
     if (!emailTo) return;
     setEmailing(true);
@@ -272,6 +305,10 @@ export default function ReportsPage() {
         if (from) body.from = from;
         if (to) body.to = to;
         if (vendorSpendingStatus) body.status = vendorSpendingStatus;
+      } else if (currentReportType === "top-materials") {
+        if (from) body.from = from;
+        if (to) body.to = to;
+        if (topMaterialsCategory && topMaterialsCategory !== "all") body.category = topMaterialsCategory;
       }
 
       const res = await fetch("/staff/api/reports/email", {
@@ -334,6 +371,13 @@ export default function ReportsPage() {
         if (vendorSpendingStatus) params.set("status", vendorSpendingStatus);
         url = `/staff/api/reports/vendor-spending/export?${params.toString()}`;
         filename = `vendor-spending-${vendorSpendingPeriod}-${new Date().toISOString().split("T")[0]}.csv`;
+      } else if (reportType === "top-materials") {
+        const params = new URLSearchParams();
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        if (topMaterialsCategory && topMaterialsCategory !== "all") params.set("category", topMaterialsCategory);
+        url = `/staff/api/reports/top-materials/export?${params.toString()}`;
+        filename = `top-materials-${new Date().toISOString().split("T")[0]}.csv`;
       } else {
         // orders or customers (legacy)
         const params = new URLSearchParams({ type: reportType });
@@ -386,8 +430,8 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
-  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" after the early return
-  const currentReportType: "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" = reportType;
+  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" | "top-materials" after the early return
+  const currentReportType: "sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "vendor-spending" | "top-materials" = reportType;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -452,6 +496,16 @@ export default function ReportsPage() {
             }`}
           >
             Vendor Spending
+          </button>
+          <button
+            onClick={() => setReportType("top-materials")}
+            className={`px-4 py-2 text-sm rounded-xl border transition-colors ${
+              currentReportType === "top-materials"
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+            }`}
+          >
+            Top Materials
           </button>
         </div>
 
@@ -564,6 +618,40 @@ export default function ReportsPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Category selector for Top Materials Report */}
+        {currentReportType === "top-materials" && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Category Filter
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setTopMaterialsCategory("all")}
+                className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                  topMaterialsCategory === "all"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                }`}
+              >
+                All Categories
+              </button>
+              {["moulding", "mat", "glass", "mounting", "hardware", "extra"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setTopMaterialsCategory(cat)}
+                  className={`px-3 py-1.5 text-xs rounded-xl border transition-colors ${
+                    topMaterialsCategory === cat
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Group by selector for Open Orders Report */}
@@ -686,8 +774,18 @@ export default function ReportsPage() {
           </button>
         )}
 
+        {currentReportType === "top-materials" && (
+          <button
+            onClick={handleExport}
+            disabled={exporting || !topMaterialsData}
+            className="rounded-xl bg-black text-white px-4 py-2.5 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
+          >
+            {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        )}
+
         {/* Email report button */}
-        {currentReportType !== "orders" && currentReportType !== "vendor-spending" && (
+        {currentReportType !== "orders" && currentReportType !== "vendor-spending" && currentReportType !== "top-materials" && (
           <div className="flex items-center gap-2">
             {showEmailForm ? (
               <div className="flex items-center gap-2">
@@ -1533,6 +1631,139 @@ export default function ReportsPage() {
           ) : (
             <p className="text-sm text-neutral-400">
               {loadingVendorSpending ? "Calculating…" : "No vendor spending data found."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Top Materials Report */}
+      {currentReportType === "top-materials" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Top Materials Report
+              {loadingTopMaterials && (
+                <span className="text-sm font-normal text-neutral-400 ml-2">
+                  Loading…
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {topMaterialsData ? (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Materials
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {topMaterialsData.summary.totalMaterials}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Usage
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {topMaterialsData.summary.totalUsage.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Revenue
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(topMaterialsData.summary.totalRevenue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Revenue/Material
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${topMaterialsData.summary.totalMaterials > 0
+                      ? ((topMaterialsData.summary.totalRevenue / topMaterialsData.summary.totalMaterials) / 100).toFixed(2)
+                      : "0.00"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Category Breakdown */}
+              {Object.keys(topMaterialsData.summary.categoryBreakdown).length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                    Usage by Category
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Object.entries(topMaterialsData.summary.categoryBreakdown)
+                      .sort(([, a], [, b]) => (b as number) - (a as number))
+                      .map(([category, count]) => (
+                        <div key={category} className="rounded-xl border border-neutral-200 p-3">
+                          <div className="text-xs text-neutral-500 uppercase">{category}</div>
+                          <div className="text-lg font-bold text-neutral-900 mt-1">{count as number}</div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Top Materials Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-200">
+                      <th className="text-left py-2 text-neutral-500 font-medium">Rank</th>
+                      <th className="text-left py-2 text-neutral-500 font-medium">Material</th>
+                      <th className="text-left py-2 text-neutral-500 font-medium">Category</th>
+                      <th className="text-left py-2 text-neutral-500 font-medium">Vendor</th>
+                      <th className="text-left py-2 text-neutral-500 font-medium">Item #</th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">Usage Count</th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">Total Qty</th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">Total Revenue</th>
+                      <th className="text-right py-2 text-neutral-500 font-medium">Avg Order Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topMaterialsData.materials.map((material: any, idx: number) => (
+                      <tr key={material.id} className="border-b border-neutral-100">
+                        <td className="py-2 text-neutral-600 font-medium">{idx + 1}</td>
+                        <td className="py-2 text-neutral-900 font-medium">{material.name}</td>
+                        <td className="py-2 text-neutral-600">
+                          <span className="px-2 py-0.5 rounded text-xs bg-neutral-100">
+                            {material.category}
+                          </span>
+                        </td>
+                        <td className="py-2 text-neutral-600 text-xs">
+                          {material.vendor || "—"}
+                        </td>
+                        <td className="py-2 text-neutral-600 text-xs font-mono">
+                          {material.itemNumber || material.priceCode || "—"}
+                        </td>
+                        <td className="py-2 text-right text-neutral-700">{material.usageCount}</td>
+                        <td className="py-2 text-right text-neutral-600">
+                          {material.totalQuantity.toFixed(2)}
+                        </td>
+                        <td className="py-2 text-right text-neutral-900 font-medium">
+                          ${(material.totalRevenue / 100).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="py-2 text-right text-neutral-600">
+                          ${(material.avgOrderValue / 100).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingTopMaterials ? "Calculating…" : "No materials data found."}
             </p>
           )}
         </div>

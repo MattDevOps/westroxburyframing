@@ -15,6 +15,8 @@ type InventoryItem = {
   reorderPoint: number;
   reorderQty: number;
   locationNote: string | null;
+  averageCost?: number;
+  totalInventoryValue?: number;
   vendorItem: {
     id: string;
     itemNumber: string;
@@ -151,6 +153,8 @@ export default function InventoryPage() {
                 <th className="text-left px-4 py-3 font-medium text-neutral-700">Category</th>
                 <th className="text-right px-4 py-3 font-medium text-neutral-700">On Hand</th>
                 <th className="text-right px-4 py-3 font-medium text-neutral-700">Reorder Point</th>
+                <th className="text-right px-4 py-3 font-medium text-neutral-700">Avg Cost</th>
+                <th className="text-right px-4 py-3 font-medium text-neutral-700">Total Value</th>
                 <th className="text-left px-4 py-3 font-medium text-neutral-700">Vendor</th>
                 <th className="text-right px-4 py-3 font-medium text-neutral-700">Actions</th>
               </tr>
@@ -178,6 +182,24 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {Number(item.reorderPoint).toFixed(2)} {item.unitType}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm">
+                      {item.averageCost && item.averageCost > 0 ? (
+                        <span className="text-neutral-700">
+                          ${item.averageCost.toFixed(2)}/{item.unitType}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-medium">
+                      {item.totalInventoryValue && item.totalInventoryValue > 0 ? (
+                        <span className="text-neutral-900">
+                          ${item.totalInventoryValue.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {item.vendorItem ? (

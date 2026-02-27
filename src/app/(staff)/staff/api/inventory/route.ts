@@ -40,7 +40,39 @@ export async function GET(req: Request) {
     ? allItems.filter((item) => Number(item.quantityOnHand) <= Number(item.reorderPoint))
     : allItems;
 
-  return NextResponse.json({ items });
+  // Calculate average cost per unit from lots
+  const itemsWithCost = items.map((item) => {
+    let averageCost = 0;
+    let totalCost = 0;
+    let totalQuantity = 0;
+
+    if (item.lots && item.lots.length > 0) {
+      for (const lot of item.lots) {
+        const lotCost = Number(lot.costPerUnit || 0);
+        const lotQty = Number(lot.quantity || 0);
+        if (lotCost > 0 && lotQty > 0) {
+          totalCost += lotCost * lotQty;
+          totalQuantity += lotQty;
+        }
+      }
+      if (totalQuantity > 0) {
+        averageCost = totalCost / totalQuantity;
+      }
+    }
+
+    // Use costPerUnit from item if no lots, or if it's explicitly set
+    if (averageCost === 0 && item.costPerUnit) {
+      averageCost = Number(item.costPerUnit);
+    }
+
+    return {
+      ...item,
+      averageCost,
+      totalInventoryValue: averageCost * Number(item.quantityOnHand),
+    };
+  });
+
+  return NextResponse.json({ items: itemsWithCost });
 }
 
 /**
