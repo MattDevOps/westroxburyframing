@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Layers, Shield, Maximize, CheckSquare, X, Plus } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface PriceCode {
@@ -90,24 +91,28 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
   const canProceed = data.glassType !== null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Step 3: Mats & Glass</h2>
-        <p className="text-sm text-neutral-600">
+    <div className="space-y-8">
+      <div className="text-center md:text-left">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-100 mb-4">
+          <Layers className="w-8 h-8 text-indigo-600" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2">Step 3: Mats & Glass</h2>
+        <p className="text-base text-neutral-600">
           Select mats (optional), glass type, mounting method, and any add-ons
         </p>
       </div>
 
       {/* Mats */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Layers className="w-5 h-5 text-indigo-600" />
           Mats (Optional)
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <select
             value={selectedMatId}
             onChange={(e) => setSelectedMatId(e.target.value)}
-            className="flex-1 rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
             disabled={loading}
           >
             <option value="">Choose a mat (optional)...</option>
@@ -120,36 +125,42 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
           <button
             onClick={addMat}
             disabled={!selectedMatId || loading}
-            className="rounded-xl bg-black px-6 py-2 text-white font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-2xl bg-indigo-600 px-6 py-4 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center gap-2"
           >
-            Add Mat
+            <Plus className="w-5 h-5" />
+            Add
           </button>
         </div>
 
         {data.mats.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-3">
             {data.mats.map((mat, index) => {
               const priceCode = matPriceCodes.find((pc) => pc.id === mat.priceCodeId);
               return (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3"
+                  className="flex items-center justify-between rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-4 shadow-sm"
                 >
-                  <div>
-                    <div className="font-medium text-neutral-900">
-                      {mat.description || priceCode?.name || "Mat"}
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+                      <Layers className="w-5 h-5 text-white" />
                     </div>
-                    {priceCode && (
-                      <div className="text-sm text-neutral-500">
-                        {priceCode.code} • ${(priceCode.baseRate / 100).toFixed(2)}/sqft
+                    <div>
+                      <div className="font-bold text-base text-neutral-900">
+                        {mat.description || priceCode?.name || "Mat"}
                       </div>
-                    )}
+                      {priceCode && (
+                        <div className="text-sm text-neutral-600">
+                          {priceCode.code} • ${(priceCode.baseRate / 100).toFixed(2)}/sqft
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => removeMat(index)}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    className="w-10 h-10 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors"
                   >
-                    Remove
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               );
@@ -159,14 +170,15 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
       </div>
 
       {/* Glass */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Shield className="w-5 h-5 text-indigo-600" />
           Glass Type <span className="text-red-500">*</span>
         </label>
         <select
           value={data.glassType || ""}
           onChange={(e) => updateData({ glassType: e.target.value || null })}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
           disabled={loading}
         >
           <option value="">Select glass type...</option>
@@ -179,14 +191,15 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
       </div>
 
       {/* Mounting */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Maximize className="w-5 h-5 text-indigo-600" />
           Mounting Method
         </label>
         <select
           value={data.mountingType || ""}
           onChange={(e) => updateData({ mountingType: e.target.value || null })}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
         >
           <option value="">Select mounting method...</option>
           {mountingPriceCodes.map((pc) => (
@@ -199,11 +212,12 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
 
       {/* Add-ons */}
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-neutral-700">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <CheckSquare className="w-5 h-5 text-indigo-600" />
           Add-ons (Optional)
         </label>
-        <div className="space-y-2">
-          <label className="flex items-center gap-3 cursor-pointer">
+        <div className="grid grid-cols-2 gap-4">
+          <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 border-neutral-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all">
             <input
               type="checkbox"
               checked={data.addOns.spacers}
@@ -212,11 +226,11 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
                   addOns: { ...data.addOns, spacers: e.target.checked },
                 })
               }
-              className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-2 focus:ring-blue-500"
+              className="w-6 h-6 rounded border-neutral-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
             />
-            <span className="text-sm text-neutral-700">Spacers</span>
+            <span className="text-base font-medium text-neutral-700">Spacers</span>
           </label>
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 border-neutral-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all">
             <input
               type="checkbox"
               checked={data.addOns.shadowbox}
@@ -225,11 +239,11 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
                   addOns: { ...data.addOns, shadowbox: e.target.checked },
                 })
               }
-              className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-2 focus:ring-blue-500"
+              className="w-6 h-6 rounded border-neutral-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
             />
-            <span className="text-sm text-neutral-700">Shadowbox</span>
+            <span className="text-base font-medium text-neutral-700">Shadowbox</span>
           </label>
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 border-neutral-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all">
             <input
               type="checkbox"
               checked={data.addOns.stretching}
@@ -238,11 +252,11 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
                   addOns: { ...data.addOns, stretching: e.target.checked },
                 })
               }
-              className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-2 focus:ring-blue-500"
+              className="w-6 h-6 rounded border-neutral-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
             />
-            <span className="text-sm text-neutral-700">Stretching</span>
+            <span className="text-base font-medium text-neutral-700">Stretching</span>
           </label>
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 border-neutral-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all">
             <input
               type="checkbox"
               checked={data.addOns.fabricWrap}
@@ -251,25 +265,25 @@ export default function Step3MatsGlass({ data, updateData, onNext, onBack }: Ste
                   addOns: { ...data.addOns, fabricWrap: e.target.checked },
                 })
               }
-              className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-2 focus:ring-blue-500"
+              className="w-6 h-6 rounded border-neutral-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
             />
-            <span className="text-sm text-neutral-700">Fabric Wrap</span>
+            <span className="text-base font-medium text-neutral-700">Fabric Wrap</span>
           </label>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-neutral-200">
+      <div className="flex justify-between pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onBack}
-          className="rounded-xl border border-neutral-300 px-6 py-3 text-neutral-700 font-medium hover:bg-neutral-50"
+          className="rounded-2xl border-2 border-neutral-300 px-8 py-4 text-neutral-700 text-base font-bold hover:bg-neutral-50 transition-all min-w-[150px]"
         >
           ← Back
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="rounded-xl bg-black px-6 py-3 text-white font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-2xl bg-black px-8 py-4 text-white text-base font-bold hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl min-w-[200px]"
         >
           Next: Preview & Scenarios →
         </button>

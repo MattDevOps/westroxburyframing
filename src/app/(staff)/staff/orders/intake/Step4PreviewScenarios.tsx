@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Eye, Copy, CheckCircle, DollarSign, Calculator } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface Step4Props {
@@ -193,106 +194,131 @@ export default function Step4PreviewScenarios({
   const canProceed = data.pricing !== null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Step 4: Preview & Scenarios</h2>
-        <p className="text-sm text-neutral-600">
+    <div className="space-y-8">
+      <div className="text-center md:text-left">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 mb-4">
+          <Eye className="w-8 h-8 text-emerald-600" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2">Step 4: Preview & Scenarios</h2>
+        <p className="text-base text-neutral-600">
           Review the design and pricing. Create multiple options to compare side-by-side.
         </p>
       </div>
 
       {/* Current Design Preview */}
       {data.pricing && (
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-neutral-900">Current Design</h3>
+        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 md:p-8 shadow-lg">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+              <Calculator className="w-6 h-6 text-emerald-600" />
+              Current Design
+            </h3>
             <button
               onClick={saveAsScenario}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white text-sm font-medium hover:bg-blue-700"
+              className="rounded-xl bg-emerald-600 px-6 py-3 text-white text-base font-bold hover:bg-emerald-700 transition-all shadow-lg flex items-center gap-2"
             >
+              <Copy className="w-5 h-5" />
               Save as Scenario
             </button>
           </div>
 
           {/* Design Summary */}
-          <div className="space-y-3 mb-4">
-            <div className="text-sm">
-              <span className="font-medium">Size:</span> {data.width} × {data.height} {data.units}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-xl p-4 text-center">
+              <div className="text-xs text-neutral-500 mb-1">Size</div>
+              <div className="font-bold text-lg">{data.width} × {data.height}</div>
+              <div className="text-xs text-neutral-500">{data.units}</div>
             </div>
-            <div className="text-sm">
-              <span className="font-medium">Frames:</span> {data.frames.length}
+            <div className="bg-white rounded-xl p-4 text-center">
+              <div className="text-xs text-neutral-500 mb-1">Frames</div>
+              <div className="font-bold text-2xl">{data.frames.length}</div>
             </div>
-            <div className="text-sm">
-              <span className="font-medium">Mats:</span> {data.mats.length || "None"}
+            <div className="bg-white rounded-xl p-4 text-center">
+              <div className="text-xs text-neutral-500 mb-1">Mats</div>
+              <div className="font-bold text-2xl">{data.mats.length || 0}</div>
             </div>
-            <div className="text-sm">
-              <span className="font-medium">Glass:</span> {data.glassType ? "Selected" : "None"}
+            <div className="bg-white rounded-xl p-4 text-center">
+              <div className="text-xs text-neutral-500 mb-1">Glass</div>
+              <div className="font-bold text-lg">{data.glassType ? "Yes" : "No"}</div>
             </div>
           </div>
 
           {/* Pricing Breakdown */}
-          <div className="border-t border-neutral-200 pt-4 space-y-2">
-            <div className="flex justify-between text-sm">
+          <div className="border-t-2 border-emerald-200 pt-6 space-y-3">
+            <div className="flex justify-between text-base">
               <span className="text-neutral-600">Subtotal:</span>
-              <span className="font-medium">${(data.pricing.subtotal / 100).toFixed(2)}</span>
+              <span className="font-semibold text-lg">${(data.pricing.subtotal / 100).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-base">
               <span className="text-neutral-600">Tax (6.25%):</span>
-              <span className="font-medium">${(data.pricing.tax / 100).toFixed(2)}</span>
+              <span className="font-semibold text-lg">${(data.pricing.tax / 100).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold border-t border-neutral-200 pt-2">
-              <span>Total:</span>
-              <span>${(data.pricing.total / 100).toFixed(2)}</span>
+            <div className="flex justify-between text-2xl font-bold border-t-2 border-emerald-200 pt-3">
+              <span className="flex items-center gap-2">
+                <DollarSign className="w-6 h-6" />
+                Total:
+              </span>
+              <span className="text-emerald-600">${(data.pricing.total / 100).toFixed(2)}</span>
             </div>
           </div>
         </div>
       )}
 
       {calculating && (
-        <div className="text-center py-4 text-neutral-500">Calculating pricing...</div>
+        <div className="text-center py-8 text-neutral-500 text-lg">Calculating pricing...</div>
       )}
 
       {/* Scenarios */}
       {data.scenarios.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-neutral-900">Design Options</h3>
+          <h3 className="text-xl font-bold text-neutral-900">Design Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data.scenarios.map((scenario, index) => (
               <div
                 key={scenario.id}
-                className={`rounded-xl border-2 p-4 ${
+                className={`rounded-2xl border-2 p-6 transition-all ${
                   data.selectedScenarioIndex === index
-                    ? "border-black bg-neutral-50"
-                    : "border-neutral-200 bg-white"
+                    ? "border-emerald-500 bg-emerald-50 shadow-lg scale-105"
+                    : "border-neutral-200 bg-white hover:border-emerald-300 hover:shadow-md"
                 }`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-neutral-900">{scenario.label}</h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-xl text-neutral-900">{scenario.label}</h4>
                   {data.selectedScenarioIndex === index && (
-                    <span className="text-xs bg-black text-white px-2 py-1 rounded">
+                    <span className="flex items-center gap-1 text-sm bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-semibold">
+                      <CheckCircle className="w-4 h-4" />
                       Selected
                     </span>
                   )}
                 </div>
-                <div className="space-y-2 mb-4 text-sm">
-                  <div>Frames: {scenario.frames.length}</div>
-                  <div>Mats: {scenario.mats.length || "None"}</div>
-                  <div className="font-bold text-lg">
-                    ${(scenario.total / 100).toFixed(2)}
+                <div className="space-y-2 mb-5 text-base">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Frames:</span>
+                    <span className="font-semibold">{scenario.frames.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Mats:</span>
+                    <span className="font-semibold">{scenario.mats.length || "None"}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-neutral-200">
+                    <span className="text-neutral-600 font-semibold">Total:</span>
+                    <span className="font-bold text-2xl text-emerald-600">
+                      ${(scenario.total / 100).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     onClick={() => loadScenario(index)}
-                    className="flex-1 rounded-lg bg-black px-3 py-2 text-white text-sm font-medium hover:bg-neutral-800"
+                    className="flex-1 rounded-xl bg-black px-4 py-3 text-white text-base font-bold hover:bg-neutral-800 transition-all shadow-lg"
                   >
                     Select
                   </button>
                   <button
                     onClick={() => duplicateScenario(index)}
-                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                    className="rounded-xl border-2 border-neutral-300 px-4 py-3 text-base text-neutral-700 font-semibold hover:bg-neutral-50 transition-all"
                   >
-                    Duplicate
+                    <Copy className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -302,26 +328,26 @@ export default function Step4PreviewScenarios({
       )}
 
       {/* Help Text */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Create multiple scenarios to show customers different design options.
+      <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-5">
+        <p className="text-base text-blue-800">
+          <strong>💡 Tip:</strong> Create multiple scenarios to show customers different design options.
           You can modify the current design and save it as a new scenario, or duplicate an existing
           scenario and make changes.
         </p>
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-neutral-200">
+      <div className="flex justify-between pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onBack}
-          className="rounded-xl border border-neutral-300 px-6 py-3 text-neutral-700 font-medium hover:bg-neutral-50"
+          className="rounded-2xl border-2 border-neutral-300 px-8 py-4 text-neutral-700 text-base font-bold hover:bg-neutral-50 transition-all min-w-[150px]"
         >
           ← Back
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="rounded-xl bg-black px-6 py-3 text-white font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-2xl bg-black px-8 py-4 text-white text-base font-bold hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl min-w-[200px]"
         >
           Next: Confirm & Deposit →
         </button>

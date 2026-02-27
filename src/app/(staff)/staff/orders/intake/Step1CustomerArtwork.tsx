@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { User, Search, Plus, Image, Ruler, FileText } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface Customer {
@@ -152,50 +153,55 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Step 1: Customer & Artwork</h2>
-        <p className="text-sm text-neutral-600">
+    <div className="space-y-8">
+      <div className="text-center md:text-left">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4">
+          <User className="w-8 h-8 text-blue-600" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2">Step 1: Customer & Artwork</h2>
+        <p className="text-base text-neutral-600">
           Find or create a customer, then enter the artwork details
         </p>
       </div>
 
       {/* Customer Search */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <User className="w-5 h-5 text-blue-600" />
           Customer <span className="text-red-500">*</span>
         </label>
         
         {!data.customerId ? (
           <>
             <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, phone, or email..."
-                className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-2xl border-2 border-neutral-300 px-12 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 autoFocus
               />
               {searching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
                   Searching...
                 </div>
               )}
             </div>
 
             {searchResults.length > 0 && (
-              <div className="border border-neutral-200 rounded-xl bg-white shadow-lg max-h-60 overflow-y-auto">
+              <div className="border-2 border-neutral-200 rounded-2xl bg-white shadow-xl max-h-64 overflow-y-auto">
                 {searchResults.map((customer) => (
                   <button
                     key={customer.id}
                     onClick={() => selectCustomer(customer)}
-                    className="w-full text-left px-4 py-3 hover:bg-neutral-50 border-b border-neutral-100 last:border-b-0"
+                    className="w-full text-left px-5 py-4 hover:bg-blue-50 border-b border-neutral-100 last:border-b-0 transition-colors"
                   >
-                    <div className="font-medium text-neutral-900">
+                    <div className="font-semibold text-base text-neutral-900">
                       {customer.firstName} {customer.lastName}
                     </div>
-                    <div className="text-sm text-neutral-500">
+                    <div className="text-sm text-neutral-600 mt-1">
                       {customer.phone && `📞 ${customer.phone}`}
                       {customer.phone && customer.email && " • "}
                       {customer.email && `✉️ ${customer.email}`}
@@ -208,77 +214,78 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
             {!showCreateForm && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="flex items-center gap-2 text-base text-blue-600 hover:text-blue-700 font-semibold py-2"
               >
-                + Create New Customer
+                <Plus className="w-5 h-5" />
+                Create New Customer
               </button>
             )}
 
             {showCreateForm && (
-              <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="border-2 border-blue-200 rounded-2xl p-5 md:p-6 bg-blue-50 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
                       First Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={newFirstName}
                       onChange={(e) => setNewFirstName(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="First name"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
                       Last Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={newLastName}
                       onChange={(e) => setNewLastName(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Last name"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
                       Phone
                     </label>
                     <input
                       type="tel"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="(555) 123-4567"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="email@example.com"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3 pt-2">
                   <button
                     onClick={handleCreateCustomer}
                     disabled={creating}
-                    className="flex-1 rounded-lg bg-black px-4 py-2 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-black px-6 py-4 text-white text-base font-semibold hover:bg-neutral-800 disabled:opacity-50 transition-all shadow-lg"
                   >
                     {creating ? "Creating..." : "Create Customer"}
                   </button>
                   <button
                     onClick={() => setShowCreateForm(false)}
-                    className="px-4 py-2 rounded-lg border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50"
+                    className="px-6 py-4 rounded-xl border-2 border-neutral-300 text-base text-neutral-700 font-medium hover:bg-neutral-50 transition-all"
                   >
                     Cancel
                   </button>
@@ -287,16 +294,21 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
             )}
           </>
         ) : (
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-neutral-900">
-                  {data.customer?.firstName} {data.customer?.lastName}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
                 </div>
-                <div className="text-sm text-neutral-600">
-                  {data.customer?.phone && `📞 ${data.customer.phone}`}
-                  {data.customer?.phone && data.customer?.email && " • "}
-                  {data.customer?.email && `✉️ ${data.customer.email}`}
+                <div>
+                  <div className="font-bold text-lg text-neutral-900">
+                    {data.customer?.firstName} {data.customer?.lastName}
+                  </div>
+                  <div className="text-sm text-neutral-600">
+                    {data.customer?.phone && `📞 ${data.customer.phone}`}
+                    {data.customer?.phone && data.customer?.email && " • "}
+                    {data.customer?.email && `✉️ ${data.customer.email}`}
+                  </div>
                 </div>
               </div>
               <button
@@ -304,7 +316,7 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                   updateData({ customerId: null, customer: null });
                   setSearchQuery("");
                 }}
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-base text-blue-600 hover:text-blue-700 font-semibold px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
               >
                 Change
               </button>
@@ -314,14 +326,15 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
       </div>
 
       {/* Artwork Type */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Image className="w-5 h-5 text-blue-600" />
           Artwork Type <span className="text-red-500">*</span>
         </label>
         <select
           value={data.artworkType}
           onChange={(e) => updateData({ artworkType: e.target.value })}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
         >
           <option value="">Select artwork type...</option>
           {ARTWORK_TYPES.map((type) => (
@@ -333,70 +346,77 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
       </div>
 
       {/* Size */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-neutral-700">
-            Width <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            value={data.width || ""}
-            onChange={(e) => updateData({ width: parseFloat(e.target.value) || 0 })}
-            min="0"
-            step="0.125"
-            className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="0"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-neutral-700">
-            Height <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            value={data.height || ""}
-            onChange={(e) => updateData({ height: parseFloat(e.target.value) || 0 })}
-            min="0"
-            step="0.125"
-            className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="0"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-neutral-700">
-            Units
-          </label>
-          <select
-            value={data.units}
-            onChange={(e) => updateData({ units: e.target.value as "in" | "cm" })}
-            className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="in">Inches</option>
-            <option value="cm">Centimeters</option>
-          </select>
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Ruler className="w-5 h-5 text-blue-600" />
+          Dimensions <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Width
+            </label>
+            <input
+              type="number"
+              value={data.width || ""}
+              onChange={(e) => updateData({ width: parseFloat(e.target.value) || 0 })}
+              min="0"
+              step="0.125"
+              className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Height
+            </label>
+            <input
+              type="number"
+              value={data.height || ""}
+              onChange={(e) => updateData({ height: parseFloat(e.target.value) || 0 })}
+              min="0"
+              step="0.125"
+              className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Units
+            </label>
+            <select
+              value={data.units}
+              onChange={(e) => updateData({ units: e.target.value as "in" | "cm" })}
+              className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="in">Inches</option>
+              <option value="cm">Centimeters</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Description */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-neutral-700">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <FileText className="w-5 h-5 text-blue-600" />
           Description (Optional)
         </label>
         <textarea
           value={data.itemDescription || ""}
           onChange={(e) => updateData({ itemDescription: e.target.value || null })}
-          rows={2}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          rows={3}
+          className="w-full rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           placeholder="Additional details about the artwork..."
         />
       </div>
 
       {/* Next Button */}
-      <div className="flex justify-end pt-4 border-t border-neutral-200">
+      <div className="flex justify-end pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="rounded-xl bg-black px-6 py-3 text-white font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-2xl bg-black px-8 py-4 text-white text-base font-bold hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl min-w-[200px]"
         >
           Next: Frame Selection →
         </button>

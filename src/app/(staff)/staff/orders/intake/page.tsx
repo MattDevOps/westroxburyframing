@@ -342,27 +342,27 @@ export default function OrderIntakePage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-neutral-900">New Order Intake</h1>
-          <p className="text-sm text-neutral-600 mt-1">
+      <div className="bg-white border-b border-neutral-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 md:px-8 py-6 md:py-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-neutral-900">New Order Intake</h1>
+          <p className="text-base md:text-lg text-neutral-600 mt-2">
             Walk your customer through the framing process step by step
           </p>
         </div>
       </div>
 
       {/* Step Progress */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="flex items-center justify-between py-4">
+      <div className="bg-white border-b border-neutral-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 md:px-8">
+          <div className="flex items-center justify-between py-6 md:py-8">
             {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold text-sm ${
+                  className={`flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border-2 font-bold text-base md:text-lg transition-all ${
                     currentStep === step
-                      ? "bg-black text-white border-black"
+                      ? "bg-black text-white border-black shadow-lg scale-110"
                       : currentStep > step
                       ? "bg-neutral-900 text-white border-neutral-900"
                       : "bg-white text-neutral-400 border-neutral-300"
@@ -372,7 +372,7 @@ export default function OrderIntakePage() {
                 </div>
                 {step < 5 && (
                   <div
-                    className={`flex-1 h-0.5 mx-2 ${
+                    className={`flex-1 h-1 mx-3 md:mx-4 transition-colors ${
                       currentStep > step ? "bg-neutral-900" : "bg-neutral-200"
                     }`}
                   />
@@ -380,25 +380,26 @@ export default function OrderIntakePage() {
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between pb-4 text-xs text-neutral-600">
-            <span>Customer & Artwork</span>
-            <span>Frame</span>
-            <span>Mats & Glass</span>
-            <span>Preview</span>
-            <span>Confirm</span>
+          <div className="flex items-center justify-between pb-6 text-sm md:text-base text-neutral-600 font-medium">
+            <span className="text-center flex-1">Customer & Artwork</span>
+            <span className="text-center flex-1">Frame</span>
+            <span className="text-center flex-1">Mats & Glass</span>
+            <span className="text-center flex-1">Preview</span>
+            <span className="text-center flex-1">Confirm</span>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 md:px-8 py-8 md:py-12">
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
-            {error}
+          <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-5 md:p-6 text-red-800 shadow-sm">
+            <div className="font-semibold text-lg mb-1">Error</div>
+            <div>{error}</div>
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg p-6 md:p-8 lg:p-10">
           {currentStep === 1 && (
             <Step1CustomerArtwork
               data={data}

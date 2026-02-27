@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircle, DollarSign, Calendar, FileText, Percent, CreditCard, User } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface Step5Props {
@@ -45,81 +46,90 @@ export default function Step5ConfirmDeposit({
   completionDate.setDate(completionDate.getDate() + data.expectedCompletionDays);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Step 5: Confirm & Deposit</h2>
-        <p className="text-sm text-neutral-600">
+    <div className="space-y-8">
+      <div className="text-center md:text-left">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2">Step 5: Confirm & Deposit</h2>
+        <p className="text-base text-neutral-600">
           Review the order summary and set deposit amount
         </p>
       </div>
 
       {/* Customer Summary */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Customer</h3>
-        <div className="space-y-1 text-sm">
-          <div>
-            <span className="font-medium">Name:</span> {data.customer?.firstName}{" "}
-            {data.customer?.lastName}
+      <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-4 flex items-center gap-2">
+          <User className="w-6 h-6 text-blue-600" />
+          Customer
+        </h3>
+        <div className="space-y-2 text-base">
+          <div className="font-semibold text-lg">
+            {data.customer?.firstName} {data.customer?.lastName}
           </div>
           {data.customer?.phone && (
-            <div>
-              <span className="font-medium">Phone:</span> {data.customer.phone}
+            <div className="text-neutral-600">
+              📞 {data.customer.phone}
             </div>
           )}
           {data.customer?.email && (
-            <div>
-              <span className="font-medium">Email:</span> {data.customer.email}
+            <div className="text-neutral-600">
+              ✉️ {data.customer.email}
             </div>
           )}
         </div>
       </div>
 
       {/* Order Summary */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Order Summary</h3>
-        <div className="space-y-3 text-sm">
+      <div className="rounded-2xl border-2 border-neutral-200 bg-white p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-4">Order Summary</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-base">
           <div>
-            <span className="font-medium">Artwork Type:</span> {data.artworkType}
+            <div className="text-sm text-neutral-500 mb-1">Artwork Type</div>
+            <div className="font-semibold">{data.artworkType}</div>
           </div>
           <div>
-            <span className="font-medium">Size:</span> {data.width} × {data.height} {data.units}
+            <div className="text-sm text-neutral-500 mb-1">Size</div>
+            <div className="font-semibold">{data.width} × {data.height} {data.units}</div>
           </div>
           {data.itemDescription && (
-            <div>
-              <span className="font-medium">Description:</span> {data.itemDescription}
+            <div className="col-span-2 md:col-span-1">
+              <div className="text-sm text-neutral-500 mb-1">Description</div>
+              <div className="font-semibold">{data.itemDescription}</div>
             </div>
           )}
           <div>
-            <span className="font-medium">Frames:</span> {data.frames.length}
+            <div className="text-sm text-neutral-500 mb-1">Frames</div>
+            <div className="font-semibold">{data.frames.length}</div>
           </div>
           <div>
-            <span className="font-medium">Mats:</span> {data.mats.length || "None"}
+            <div className="text-sm text-neutral-500 mb-1">Mats</div>
+            <div className="font-semibold">{data.mats.length || "None"}</div>
           </div>
           <div>
-            <span className="font-medium">Glass:</span> {data.glassType ? "Selected" : "None"}
+            <div className="text-sm text-neutral-500 mb-1">Glass</div>
+            <div className="font-semibold">{data.glassType ? "Selected" : "None"}</div>
           </div>
-          {data.mountingType && (
-            <div>
-              <span className="font-medium">Mounting:</span> {data.mountingType}
-            </div>
-          )}
         </div>
       </div>
 
       {/* Pricing Breakdown */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Pricing</h3>
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
+      <div className="rounded-2xl border-2 border-neutral-200 bg-white p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-6 flex items-center gap-2">
+          <DollarSign className="w-6 h-6 text-green-600" />
+          Pricing
+        </h3>
+        <div className="space-y-3 mb-6">
+          <div className="flex justify-between text-base">
             <span className="text-neutral-600">Subtotal:</span>
-            <span className="font-medium">${(data.pricing.subtotal / 100).toFixed(2)}</span>
+            <span className="font-semibold text-lg">${(data.pricing.subtotal / 100).toFixed(2)}</span>
           </div>
 
           {/* Discount */}
           {data.discountType !== "none" && (
-            <div className="flex justify-between text-sm text-red-600">
-              <span>Discount:</span>
-              <span>
+            <div className="flex justify-between text-base text-red-600 bg-red-50 p-3 rounded-xl">
+              <span className="font-semibold">Discount:</span>
+              <span className="font-bold">
                 -$
                 {data.discountType === "percent"
                   ? ((data.pricing.subtotal * data.discountValue) / 100 / 100).toFixed(2)
@@ -128,33 +138,34 @@ export default function Step5ConfirmDeposit({
             </div>
           )}
 
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-base">
             <span className="text-neutral-600">Subtotal (after discount):</span>
-            <span className="font-medium">${(finalSubtotal / 100).toFixed(2)}</span>
+            <span className="font-semibold text-lg">${(finalSubtotal / 100).toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-base">
             <span className="text-neutral-600">Tax (6.25%):</span>
-            <span className="font-medium">${(finalTax / 100).toFixed(2)}</span>
+            <span className="font-semibold text-lg">${(finalTax / 100).toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-lg font-bold border-t border-neutral-200 pt-2">
-            <span>Total:</span>
-            <span>${(finalTotal / 100).toFixed(2)}</span>
+          <div className="flex justify-between text-2xl font-bold border-t-2 border-neutral-200 pt-3">
+            <span className="flex items-center gap-2">Total:</span>
+            <span className="text-green-600">${(finalTotal / 100).toFixed(2)}</span>
           </div>
         </div>
 
         {/* Discount Toggle */}
-        <div className="border-t border-neutral-200 pt-4">
+        <div className="border-t-2 border-neutral-200 pt-6">
           <button
             onClick={() => setShowDiscount(!showDiscount)}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="flex items-center gap-2 text-base text-blue-600 hover:text-blue-700 font-semibold"
           >
+            <Percent className="w-5 h-5" />
             {showDiscount ? "Hide" : "Apply"} Discount
           </button>
 
           {showDiscount && (
-            <div className="mt-3 space-y-3">
+            <div className="mt-4 space-y-4 bg-neutral-50 p-5 rounded-xl">
               <div>
-                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-semibold text-neutral-700 mb-2">
                   Discount Type
                 </label>
                 <select
@@ -165,7 +176,7 @@ export default function Step5ConfirmDeposit({
                       discountValue: 0,
                     })
                   }
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="none">No Discount</option>
                   <option value="percent">Percentage</option>
@@ -174,7 +185,7 @@ export default function Step5ConfirmDeposit({
               </div>
               {data.discountType !== "none" && (
                 <div>
-                  <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
                     {data.discountType === "percent" ? "Discount %" : "Discount Amount ($)"}
                   </label>
                   <input
@@ -186,7 +197,7 @@ export default function Step5ConfirmDeposit({
                     min="0"
                     max={data.discountType === "percent" ? 100 : undefined}
                     step={data.discountType === "percent" ? 1 : 0.01}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               )}
@@ -196,14 +207,17 @@ export default function Step5ConfirmDeposit({
       </div>
 
       {/* Deposit */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Deposit</h3>
-        <div className="space-y-3">
+      <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-6 flex items-center gap-2">
+          <CreditCard className="w-6 h-6 text-green-600" />
+          Deposit
+        </h3>
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
+            <label className="block text-base font-semibold text-neutral-700 mb-3">
               Deposit Percentage
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-3 items-center">
               <input
                 type="number"
                 value={data.depositPercent}
@@ -212,30 +226,33 @@ export default function Step5ConfirmDeposit({
                 }
                 min="0"
                 max="100"
-                className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                className="flex-1 rounded-xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
-              <span className="text-sm text-neutral-600 self-center">%</span>
+              <span className="text-xl text-neutral-600 font-semibold">%</span>
             </div>
           </div>
-          <div className="space-y-1 text-sm border-t border-neutral-200 pt-3">
-            <div className="flex justify-between">
-              <span className="text-neutral-600">Deposit Amount:</span>
-              <span className="font-medium">${(depositAmount / 100).toFixed(2)}</span>
+          <div className="space-y-3 border-t-2 border-green-200 pt-4">
+            <div className="flex justify-between text-base">
+              <span className="text-neutral-600 font-semibold">Deposit Amount:</span>
+              <span className="font-bold text-xl text-green-600">${(depositAmount / 100).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-neutral-600">Balance Due:</span>
-              <span className="font-medium">${(balanceDue / 100).toFixed(2)}</span>
+            <div className="flex justify-between text-base">
+              <span className="text-neutral-600 font-semibold">Balance Due:</span>
+              <span className="font-bold text-xl">${(balanceDue / 100).toFixed(2)}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Completion Date */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Expected Completion</h3>
-        <div className="space-y-3">
+      <div className="rounded-2xl border-2 border-neutral-200 bg-white p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-4 flex items-center gap-2">
+          <Calendar className="w-6 h-6 text-blue-600" />
+          Expected Completion
+        </h3>
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
+            <label className="block text-base font-semibold text-neutral-700 mb-3">
               Days to Complete
             </label>
             <input
@@ -245,11 +262,11 @@ export default function Step5ConfirmDeposit({
                 updateData({ expectedCompletionDays: Math.max(1, parseInt(e.target.value) || 10) })
               }
               min="1"
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div className="text-sm text-neutral-600">
-            Expected ready: {completionDate.toLocaleDateString("en-US", {
+          <div className="text-base text-neutral-600 bg-blue-50 p-4 rounded-xl">
+            <span className="font-semibold">Expected ready:</span> {completionDate.toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",
@@ -260,30 +277,33 @@ export default function Step5ConfirmDeposit({
       </div>
 
       {/* Notes */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Notes</h3>
-        <div className="space-y-3">
+      <div className="rounded-2xl border-2 border-neutral-200 bg-white p-6 md:p-8 shadow-sm">
+        <h3 className="text-xl font-bold text-neutral-900 mb-4 flex items-center gap-2">
+          <FileText className="w-6 h-6 text-blue-600" />
+          Notes
+        </h3>
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
+            <label className="block text-base font-semibold text-neutral-700 mb-2">
               Internal Notes (staff only)
             </label>
             <textarea
               value={data.notesInternal || ""}
               onChange={(e) => updateData({ notesInternal: e.target.value || null })}
-              rows={2}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+              rows={3}
+              className="w-full rounded-xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Internal notes..."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
+            <label className="block text-base font-semibold text-neutral-700 mb-2">
               Customer Notes (visible to customer)
             </label>
             <textarea
               value={data.notesCustomer || ""}
               onChange={(e) => updateData({ notesCustomer: e.target.value || null })}
-              rows={2}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+              rows={3}
+              className="w-full rounded-xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Notes for customer..."
             />
           </div>
@@ -291,20 +311,30 @@ export default function Step5ConfirmDeposit({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-neutral-200">
+      <div className="flex justify-between pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onBack}
           disabled={loading}
-          className="rounded-xl border border-neutral-300 px-6 py-3 text-neutral-700 font-medium hover:bg-neutral-50 disabled:opacity-50"
+          className="rounded-2xl border-2 border-neutral-300 px-8 py-4 text-neutral-700 text-base font-bold hover:bg-neutral-50 disabled:opacity-50 transition-all min-w-[150px]"
         >
           ← Back
         </button>
         <button
           onClick={onSubmit}
           disabled={loading}
-          className="rounded-xl bg-black px-6 py-3 text-white font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-2xl bg-green-600 px-10 py-5 text-white text-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl hover:shadow-2xl flex items-center gap-2 min-w-[250px] justify-center"
         >
-          {loading ? "Creating Order..." : "Submit Order"}
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Creating Order...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-6 h-6" />
+              Submit Order
+            </>
+          )}
         </button>
       </div>
     </div>
