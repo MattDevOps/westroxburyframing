@@ -212,7 +212,7 @@ model Payment {
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   processor        String        @default("square")
-  squarePaymentId  String        @unique
+  squarePaymentId  String?       @unique
   squareReceiptUrl String?
   amount           Int
   status           PaymentStatus @default(paid)

@@ -80,8 +80,8 @@ export async function POST(req: Request, ctx: Ctx) {
       data: {
         orderId: order.id,
         processor: paymentMethod === "card" ? "square" : "cash",
-        squarePaymentId,
-        squareReceiptUrl,
+        squarePaymentId: squarePaymentId || null,
+        squareReceiptUrl: squareReceiptUrl || null,
         amount,
         status: "paid",
         paidAt: new Date(),
