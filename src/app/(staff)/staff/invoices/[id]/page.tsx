@@ -51,6 +51,10 @@ export default function InvoiceDetailPage({
   // Send to Square state
   const [sending, setSending] = useState(false);
   const [sendMsg, setSendMsg] = useState<string | null>(null);
+  
+  // QuickBooks Online sync state
+  const [syncingQBO, setSyncingQBO] = useState(false);
+  const [qboSyncMsg, setQboSyncMsg] = useState<string | null>(null);
 
   // Email invoice state
   const [emailing, setEmailing] = useState(false);
@@ -131,6 +135,29 @@ export default function InvoiceDetailPage({
       setSendMsg(e?.message || "Error");
     } finally {
       setSending(false);
+    }
+  }
+
+  async function syncToQBO() {
+    setSyncingQBO(true);
+    setQboSyncMsg(null);
+    try {
+      const res = await fetch(`/staff/api/quickbooks/sync-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setQboSyncMsg(data.error || "Sync failed");
+        return;
+      }
+      setQboSyncMsg(`Synced to QuickBooks! Invoice #${data.qboDocNumber || data.qboInvoiceId}`);
+      await loadInvoice();
+    } catch (e: any) {
+      setQboSyncMsg(e?.message || "Error syncing to QuickBooks");
+    } finally {
+      setSyncingQBO(false);
     }
   }
 
@@ -293,6 +320,14 @@ export default function InvoiceDetailPage({
             Download PDF
           </a>
           <button
+            onClick={syncToQBO}
+            disabled={syncingQBO || invoice.status === "draft"}
+            className="rounded-xl border border-purple-300 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={invoice.status === "draft" ? "Invoice must be sent before syncing to QuickBooks" : "Sync to QuickBooks Online"}
+          >
+            {syncingQBO ? "Syncing..." : invoice.qboInvoiceId ? "Re-sync to QBO" : "Sync to QBO"}
+          </button>
+          <button
             onClick={() => router.back()}
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
           >
@@ -300,6 +335,26 @@ export default function InvoiceDetailPage({
           </button>
         </div>
       </div>
+
+      {qboSyncMsg && (
+        <div className={`rounded-xl border p-4 ${
+          qboSyncMsg.includes("Synced") || qboSyncMsg.includes("success")
+            ? "border-green-200 bg-green-50 text-green-700"
+            : "border-red-200 bg-red-50 text-red-700"
+        }`}>
+          {qboSyncMsg}
+        </div>
+      )}
+
+      {invoice.qboInvoiceId && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+          <div className="text-sm font-medium text-purple-900 mb-1">QuickBooks Online</div>
+          <div className="text-xs text-purple-700">
+            Synced {invoice.qboSyncedAt ? new Date(invoice.qboSyncedAt).toLocaleString() : ""}
+            {invoice.qboInvoiceId && ` • QBO ID: ${invoice.qboInvoiceId}`}
+          </div>
+        </div>
+      )}
 
       {/* Financial Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

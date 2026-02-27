@@ -65,7 +65,7 @@ export default function SearchPage() {
       setSelectedIndex(0);
     } catch (e: any) {
       console.error("Search error:", e);
-      setResults({ orders: [], customers: [], invoices: [] });
+      setResults({ orders: [], customers: [], invoices: [], products: [] });
     } finally {
       setLoading(false);
     }

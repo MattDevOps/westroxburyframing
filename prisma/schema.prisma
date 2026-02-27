@@ -67,6 +67,7 @@ model Customer {
   marketingOptInAt DateTime?
   smsOptIn         Boolean   @default(false)
   smsOptInAt       DateTime?
+  qboCustomerId   String?   // QuickBooks Online customer ID
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -277,6 +278,11 @@ model Invoice {
 
   squareInvoiceId  String?
   squareInvoiceUrl String?
+
+  // QuickBooks Online sync
+  qboInvoiceId   String?
+  qboSyncToken   String?
+  qboSyncedAt    DateTime?
 
   notes String?
 

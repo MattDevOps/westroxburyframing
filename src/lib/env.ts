@@ -29,4 +29,12 @@ export const env = {
   // ── Google Reviews (optional — falls back to static reviews) ──
   GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY || "",
   GOOGLE_PLACES_PLACE_ID: process.env.GOOGLE_PLACES_PLACE_ID || "",
+
+  // ── QuickBooks Online (optional) ─────────────────────────────
+  QBO_CLIENT_ID: process.env.QBO_CLIENT_ID || "",
+  QBO_CLIENT_SECRET: process.env.QBO_CLIENT_SECRET || "",
+  QBO_ACCESS_TOKEN: process.env.QBO_ACCESS_TOKEN || "",
+  QBO_REFRESH_TOKEN: process.env.QBO_REFRESH_TOKEN || "",
+  QBO_REALM_ID: process.env.QBO_REALM_ID || "",
+  QBO_ENVIRONMENT: process.env.QBO_ENVIRONMENT || "sandbox",
 };
