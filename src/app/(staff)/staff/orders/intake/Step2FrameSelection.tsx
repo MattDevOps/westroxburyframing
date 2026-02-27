@@ -13,6 +13,21 @@ interface PriceCode {
   baseRate: number;
 }
 
+interface VendorCatalogItem {
+  id: string;
+  itemNumber: string;
+  description: string | null;
+  category: string;
+  unitType: string;
+  costPerUnit: number;
+  retailPerUnit: number | null;
+  vendor: {
+    id: string;
+    name: string;
+    code: string;
+  };
+}
+
 interface Step2Props {
   data: IntakeData;
   updateData: (updates: Partial<IntakeData>) => void;
@@ -20,43 +35,74 @@ interface Step2Props {
   onBack: () => void;
 }
 
+type FrameSource = "priceCode" | "vendorItem";
+
 export default function Step2FrameSelection({ data, updateData, onNext, onBack }: Step2Props) {
   const [priceCodes, setPriceCodes] = useState<PriceCode[]>([]);
+  const [vendorItems, setVendorItems] = useState<VendorCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFrameId, setSelectedFrameId] = useState<string>("");
+  const [frameSource, setFrameSource] = useState<FrameSource>("priceCode");
 
   useEffect(() => {
-    async function loadPriceCodes() {
+    async function loadFrames() {
       try {
-        const res = await fetch("/staff/api/price-codes?category=frame&active=true");
-        if (res.ok) {
-          const result = await res.json();
-          setPriceCodes(result.priceCodes || []);
+        const [priceCodesRes, vendorItemsRes] = await Promise.all([
+          fetch("/staff/api/price-codes?category=frame&active=true"),
+          fetch("/staff/api/pricing/quick-price-check?category=moulding"),
+        ]);
+
+        if (priceCodesRes.ok) {
+          const priceCodesData = await priceCodesRes.json();
+          setPriceCodes(priceCodesData.priceCodes || []);
+        }
+
+        if (vendorItemsRes.ok) {
+          const vendorItemsData = await vendorItemsRes.json();
+          setVendorItems(vendorItemsData.items || []);
         }
       } catch (e) {
-        console.error("Failed to load price codes:", e);
+        console.error("Failed to load frames:", e);
       } finally {
         setLoading(false);
       }
     }
-    loadPriceCodes();
+    loadFrames();
   }, []);
 
   const addFrame = () => {
     if (!selectedFrameId) return;
 
-    const priceCode = priceCodes.find((pc) => pc.id === selectedFrameId);
-    if (!priceCode) return;
+    if (frameSource === "priceCode") {
+      const priceCode = priceCodes.find((pc) => pc.id === selectedFrameId);
+      if (!priceCode) return;
 
-    updateData({
-      frames: [
-        ...data.frames,
-        {
-          priceCodeId: priceCode.id,
-          description: priceCode.name,
-        },
-      ],
-    });
+      updateData({
+        frames: [
+          ...data.frames,
+          {
+            priceCodeId: priceCode.id,
+            description: priceCode.name,
+          },
+        ],
+      });
+    } else {
+      const vendorItem = vendorItems.find((vi) => vi.id === selectedFrameId);
+      if (!vendorItem) return;
+
+      // Find or create a matching price code for this vendor item
+      // For now, we'll use the vendor item's retail price if available
+      // In a full implementation, you'd want to link vendor items to price codes
+      updateData({
+        frames: [
+          ...data.frames,
+          {
+            vendorItemId: vendorItem.id,
+            description: vendorItem.description || `${vendorItem.vendor.code} ${vendorItem.itemNumber}`,
+          },
+        ],
+      });
+    }
     setSelectedFrameId("");
   };
 
@@ -86,6 +132,39 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
           <Frame className="w-5 h-5 text-purple-600" />
           Select Frame <span className="text-red-500">*</span>
         </label>
+
+        {/* Source Toggle */}
+        <div className="flex gap-2 p-1 bg-neutral-100 rounded-xl">
+          <button
+            type="button"
+            onClick={() => {
+              setFrameSource("priceCode");
+              setSelectedFrameId("");
+            }}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+              frameSource === "priceCode"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            Price Codes ({priceCodes.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFrameSource("vendorItem");
+              setSelectedFrameId("");
+            }}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+              frameSource === "vendorItem"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            Vendor Frames ({vendorItems.length})
+          </button>
+        </div>
+
         <div className="flex gap-3">
           <select
             value={selectedFrameId}
@@ -93,12 +172,23 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
             className="flex-1 rounded-2xl border-2 border-neutral-300 px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
             disabled={loading}
           >
-            <option value="">Choose a frame...</option>
-            {priceCodes.map((pc) => (
-              <option key={pc.id} value={pc.id}>
-                {pc.name} ({pc.code}) - ${(pc.baseRate / 100).toFixed(2)}/ft
-              </option>
-            ))}
+            <option value="">
+              {frameSource === "priceCode"
+                ? "Choose a price code..."
+                : "Choose a vendor frame..."}
+            </option>
+            {frameSource === "priceCode"
+              ? priceCodes.map((pc) => (
+                  <option key={pc.id} value={pc.id}>
+                    {pc.name} ({pc.code}) - ${(pc.baseRate / 100).toFixed(2)}/ft
+                  </option>
+                ))
+              : vendorItems.map((vi) => (
+                  <option key={vi.id} value={vi.id}>
+                    {vi.vendor.code} {vi.itemNumber} - {vi.description || "No description"}
+                    {vi.retailPerUnit && ` - $${(Number(vi.retailPerUnit) * 100 / 100).toFixed(2)}/${vi.unitType}`}
+                  </option>
+                ))}
           </select>
           <button
             onClick={addFrame}
@@ -112,6 +202,17 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
         {loading && (
           <p className="text-base text-neutral-500 text-center py-4">Loading frames...</p>
         )}
+        {!loading && frameSource === "vendorItem" && vendorItems.length === 0 && (
+          <div className="rounded-xl border-2 border-yellow-200 bg-yellow-50 p-4">
+            <p className="text-sm text-yellow-800">
+              <strong>No vendor frames found.</strong> Add frames by going to{" "}
+              <a href="/staff/pricing/vendors" className="underline font-semibold">
+                Pricing → Vendors
+              </a>{" "}
+              and adding catalog items with category "moulding".
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Selected Frames */}
@@ -122,7 +223,12 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
           </label>
           <div className="space-y-3">
             {data.frames.map((frame, index) => {
-              const priceCode = priceCodes.find((pc) => pc.id === frame.priceCodeId);
+              const priceCode = frame.priceCodeId
+                ? priceCodes.find((pc) => pc.id === frame.priceCodeId)
+                : null;
+              const vendorItem = frame.vendorItemId
+                ? vendorItems.find((vi) => vi.id === frame.vendorItemId)
+                : null;
               return (
                 <div
                   key={index}
@@ -134,16 +240,30 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
                     </div>
                     <div>
                       <div className="font-bold text-lg text-neutral-900">
-                        {frame.description || priceCode?.name || "Frame"}
+                        {frame.description || priceCode?.name || vendorItem?.description || "Frame"}
                       </div>
                       {priceCode && (
                         <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
-                          <span>{priceCode.code}</span>
+                          <span>Price Code: {priceCode.code}</span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
                             {(priceCode.baseRate / 100).toFixed(2)}/ft
                           </span>
+                        </div>
+                      )}
+                      {vendorItem && (
+                        <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
+                          <span>{vendorItem.vendor.code} {vendorItem.itemNumber}</span>
+                          {vendorItem.retailPerUnit && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <DollarSign className="w-4 h-4" />
+                                {(Number(vendorItem.retailPerUnit) * 100 / 100).toFixed(2)}/{vendorItem.unitType}
+                              </span>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -162,10 +282,21 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
       )}
 
       {/* Help Text */}
-      <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-5">
+      <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-5 space-y-2">
         <p className="text-base text-blue-800">
           <strong>💡 Tip:</strong> For stacked frames, add multiple frames in order (outermost first).
           Pricing will be calculated based on the artwork size and frame perimeter.
+        </p>
+        <p className="text-sm text-blue-700">
+          <strong>Where to add frames:</strong>{" "}
+          <a href="/staff/pricing/price-codes" className="underline font-semibold">
+            Price Codes
+          </a>{" "}
+          for pricing tiers, or{" "}
+          <a href="/staff/pricing/vendors" className="underline font-semibold">
+            Vendors → Catalog Items
+          </a>{" "}
+          for specific frame models from suppliers.
         </p>
       </div>
 
