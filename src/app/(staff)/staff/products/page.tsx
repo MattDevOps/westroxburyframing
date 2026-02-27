@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 interface Product {
   id: string;
@@ -93,6 +94,12 @@ export default function ProductsPage() {
             ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
+      </div>
+
+      {/* Barcode Scanner */}
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-neutral-700 mb-3">Barcode Scanner</h2>
+        <BarcodeScanner />
       </div>
 
       {/* Filters */}
