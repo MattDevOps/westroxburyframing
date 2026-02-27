@@ -384,6 +384,38 @@ export default function OrderDetailPage() {
             📄 PDF
           </a>
           <a
+            href={`/staff/api/orders/${order.id}/receipt`}
+            target="_blank"
+            className="rounded-xl bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 transition-colors"
+            title="Print Customer Receipt"
+          >
+            🧾 Receipt
+          </a>
+          {order.customer.email && (
+            <button
+              onClick={async () => {
+                if (!confirm(`Email receipt to ${order.customer.email}?`)) return;
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/email-receipt`, {
+                    method: "POST",
+                  });
+                  const result = await res.json();
+                  if (res.ok) {
+                    alert(`Receipt emailed to ${order.customer.email}`);
+                  } else {
+                    alert(result.error || "Failed to email receipt");
+                  }
+                } catch (e: any) {
+                  alert("Failed to email receipt: " + e.message);
+                }
+              }}
+              className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
+              title="Email Receipt to Customer"
+            >
+              📧 Email Receipt
+            </button>
+          )}
+          <a
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders"
           >

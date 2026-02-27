@@ -5,27 +5,34 @@ export async function createSquarePayment(params: {
   currency: string;
   note: string;
   idempotencyKey: string;
+  sourceId?: string; // Card token from Square Web Payments SDK
 }) {
   const base =
     env.SQUARE_ENV === "production"
       ? "https://connect.squareup.com"
       : "https://connect.squareupsandbox.com";
 
-  // NOTE: Card-present flows typically require Terminal API or Reader SDK.
-  // This is a skeleton for server-side payment recording.
+  // Build payment request body
+  const paymentBody: any = {
+    idempotency_key: params.idempotencyKey,
+    amount_money: { amount: params.amountCents, currency: params.currency },
+    note: params.note,
+    location_id: env.SQUARE_LOCATION_ID,
+  };
+
+  // Add source_id if provided (card token from Square Web Payments SDK)
+  if (params.sourceId) {
+    paymentBody.source_id = params.sourceId;
+  }
+
+  // Process payment via Square Payments API
   const res = await fetch(`${base}/v2/payments`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      idempotency_key: params.idempotencyKey,
-      amount_money: { amount: params.amountCents, currency: params.currency },
-      note: params.note,
-      location_id: env.SQUARE_LOCATION_ID,
-      // source_id: "...", // set when you implement your chosen Square card-present method
-    }),
+    body: JSON.stringify(paymentBody),
   });
 
   const text = await res.text();

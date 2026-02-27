@@ -592,6 +592,156 @@ West Roxbury Framing
   return result;
 }
 
+/* ─── Email: Receipt to Customer ─────────────────────────────────── */
+
+export async function sendReceiptToCustomer(params: {
+  to: string;
+  customerName: string;
+  orderNumber: string;
+  orderDate: string;
+  itemType: string;
+  itemDescription?: string;
+  size?: string;
+  lineItems: Array<{ description: string; quantity: number; unitPrice: string; lineTotal: string }>;
+  subtotal: string;
+  discountAmount?: string;
+  subtotalAfterDiscount: string;
+  tax: string;
+  total: string;
+  paymentStatus: string;
+  notes?: string;
+  receiptUrl?: string;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = `Your Receipt — Order ${params.orderNumber}`;
+
+  const lineItemsHtml = params.lineItems
+    .map(
+      (item) => `
+        <tr>
+          <td style="padding:8px 0;font-size:14px;color:#1a1a1a;border-bottom:1px solid #f0f0f0">
+            ${item.description}${item.quantity > 1 ? ` <span style="color:#666;font-size:12px">(×${item.quantity})</span>` : ""}
+          </td>
+          <td style="padding:8px 0;font-size:14px;color:#1a1a1a;text-align:right;font-weight:600;border-bottom:1px solid #f0f0f0">
+            ${item.lineTotal}
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+
+  const text = `Hi ${params.customerName},
+
+Thank you for your order! Here's your receipt:
+
+Order Number: ${params.orderNumber}
+Date: ${params.orderDate}
+
+${params.itemType ? `Item Type: ${params.itemType}` : ""}
+${params.itemDescription ? `Description: ${params.itemDescription}` : ""}
+${params.size ? `Size: ${params.size}` : ""}
+
+Items:
+${params.lineItems.map((item) => `  ${item.description}${item.quantity > 1 ? ` (×${item.quantity})` : ""} - ${item.lineTotal}`).join("\n")}
+
+Subtotal: ${params.subtotal}
+${params.discountAmount ? `Discount: -${params.discountAmount}` : ""}
+${params.discountAmount ? `Subtotal (after discount): ${params.subtotalAfterDiscount}` : ""}
+Tax (6.25%): ${params.tax}
+Total: ${params.total}
+
+Payment Status: ${params.paymentStatus}
+${params.notes ? `\nNotes: ${params.notes}` : ""}
+
+Thank you for choosing West Roxbury Framing!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `Your receipt for order ${params.orderNumber} (${params.total})`,
+    heading: "Your Receipt",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>Thank you for your order! Here's your receipt:</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:120px">Order Number</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Date</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.orderDate}</td>
+            </tr>
+            ${params.itemType ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Item Type</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.itemType}</td>
+            </tr>` : ""}
+            ${params.itemDescription ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;vertical-align:top">Description</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.itemDescription}</td>
+            </tr>` : ""}
+            ${params.size ? `<tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Size</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.size}</td>
+            </tr>` : ""}
+          </table>
+        </td></tr>
+      </table>
+
+      <h3 style="margin:24px 0 12px;font-size:16px;font-weight:600;color:#1a1a1a">Items</h3>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px">
+        ${lineItemsHtml}
+      </table>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:#666;text-align:right">Subtotal</td>
+              <td style="padding:6px 0;font-size:14px;color:#1a1a1a;text-align:right;font-weight:600;width:100px">${params.subtotal}</td>
+            </tr>
+            ${params.discountAmount ? `<tr>
+              <td style="padding:6px 0;font-size:14px;color:#d32f2f;text-align:right">Discount</td>
+              <td style="padding:6px 0;font-size:14px;color:#d32f2f;text-align:right;font-weight:600;width:100px">-${params.discountAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:#666;text-align:right">Subtotal (after discount)</td>
+              <td style="padding:6px 0;font-size:14px;color:#1a1a1a;text-align:right;font-weight:600;width:100px">${params.subtotalAfterDiscount}</td>
+            </tr>` : ""}
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:#666;text-align:right">Tax (6.25%)</td>
+              <td style="padding:6px 0;font-size:14px;color:#1a1a1a;text-align:right;font-weight:600;width:100px">${params.tax}</td>
+            </tr>
+            <tr style="border-top:2px solid #1a1a1a;margin-top:8px">
+              <td style="padding:12px 0 6px;font-size:18px;color:#1a1a1a;text-align:right;font-weight:700">Total</td>
+              <td style="padding:12px 0 6px;font-size:18px;color:#1a1a1a;text-align:right;font-weight:700;width:100px">${params.total}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373;margin-bottom:16px"><strong>Payment Status:</strong> ${params.paymentStatus}</p>
+      ${params.notes ? `<p style="font-size:14px;color:#666;line-height:1.6;background:#fafaf9;padding:12px;border-radius:6px;margin:16px 0"><strong>Notes:</strong> ${params.notes}</p>` : ""}
+      <p style="font-size:14px;color:#737373">Please keep this receipt for your records.</p>
+    `,
+    cta: params.receiptUrl
+      ? { label: "View Printable Receipt", url: params.receiptUrl }
+      : undefined,
+    footer: "Thank you for choosing West Roxbury Framing!",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
 /* ─── Email: New Web Lead (to staff) ─────────────────────────────── */
 
 export async function sendNewWebLeadNotification(params: {

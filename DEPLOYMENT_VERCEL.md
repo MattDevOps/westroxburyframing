@@ -18,8 +18,11 @@ Add these in **Vercel Dashboard → Project → Settings → Environment Variabl
 | Variable | Description |
 |----------|-------------|
 | `SQUARE_ENV` | `production` for live; `sandbox` for testing |
-| `SQUARE_ACCESS_TOKEN` | Production or Sandbox access token from Square Developer Dashboard |
-| `SQUARE_LOCATION_ID` | Your Square location ID |
+| `SQUARE_ACCESS_TOKEN` | Production or Sandbox access token from Square Developer Dashboard (PRIVATE - server-side only) |
+| `SQUARE_LOCATION_ID` | Your Square location ID (can be public) |
+| `NEXT_PUBLIC_SQUARE_APPLICATION_ID` | Your Square Application ID (public - safe to expose) |
+| `NEXT_PUBLIC_SQUARE_LOCATION_ID` | Your Square Location ID (public - safe to expose) |
+| `NEXT_PUBLIC_SQUARE_ENV` | `production` or `sandbox` (must match `SQUARE_ENV`) |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | **Required for auto-sync** – from Square webhook subscription (see below) |
 
 ### Webhook URL (required for auto-sync)

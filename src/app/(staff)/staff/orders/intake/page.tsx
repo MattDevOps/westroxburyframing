@@ -9,6 +9,7 @@ import Step2FrameSelection from "./Step2FrameSelection";
 import Step3MatsGlass from "./Step3MatsGlass";
 import Step4PreviewScenarios from "./Step4PreviewScenarios";
 import Step5ConfirmDeposit from "./Step5ConfirmDeposit";
+import Step6Payment from "./Step6Payment";
 
 export interface FrameSelection {
   priceCodeId?: string;
@@ -125,6 +126,9 @@ export default function OrderIntakePage() {
   const [data, setData] = useState<IntakeData>(INITIAL_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [emailingReceipt, setEmailingReceipt] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   const updateData = (updates: Partial<IntakeData>) => {
     setData((prev) => ({ ...prev, ...updates }));
@@ -333,8 +337,20 @@ export default function OrderIntakePage() {
         }
       }
 
-      // Navigate to order detail
-      router.push(`/staff/orders/${orderId}`);
+      // Show payment step if deposit is required
+      if (data.depositPercent > 0) {
+        setShowPayment(true);
+        setCreatedOrderId(orderId);
+        setCurrentStep(6);
+      } else {
+        // Set created order ID to show success message
+        setCreatedOrderId(orderId);
+        // Navigate to order detail after a short delay
+        setTimeout(() => {
+          router.push(`/staff/orders/${orderId}`);
+        }, 3000);
+      }
+      setLoading(false);
     } catch (e: any) {
       setError(e.message || "Failed to create order");
       setLoading(false);
@@ -357,28 +373,33 @@ export default function OrderIntakePage() {
       <div className="bg-white border-b border-neutral-200 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 md:px-8">
           <div className="flex items-center justify-between py-6 md:py-8">
-            {[1, 2, 3, 4, 5].map((step) => (
-              <div key={step} className="flex items-center flex-1">
-                <div
-                  className={`flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border-2 font-bold text-base md:text-lg transition-all ${
-                    currentStep === step
-                      ? "bg-black text-white border-black shadow-lg scale-110"
-                      : currentStep > step
-                      ? "bg-neutral-900 text-white border-neutral-900"
-                      : "bg-white text-neutral-400 border-neutral-300"
-                  }`}
-                >
-                  {step}
-                </div>
-                {step < 5 && (
+            {[1, 2, 3, 4, 5, 6].map((step) => {
+              // Hide step 6 if payment not needed
+              if (step === 6 && !showPayment && currentStep < 6) return null;
+              
+              return (
+                <div key={step} className="flex items-center flex-1">
                   <div
-                    className={`flex-1 h-1 mx-3 md:mx-4 transition-colors ${
-                      currentStep > step ? "bg-neutral-900" : "bg-neutral-200"
+                    className={`flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border-2 font-bold text-base md:text-lg transition-all ${
+                      currentStep === step
+                        ? "bg-black text-white border-black shadow-lg scale-110"
+                        : currentStep > step
+                        ? "bg-neutral-900 text-white border-neutral-900"
+                        : "bg-white text-neutral-400 border-neutral-300"
                     }`}
-                  />
-                )}
-              </div>
-            ))}
+                  >
+                    {step}
+                  </div>
+                  {step < 6 && (
+                    <div
+                      className={`flex-1 h-1 mx-3 md:mx-4 transition-colors ${
+                        currentStep > step ? "bg-neutral-900" : "bg-neutral-200"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="flex items-center justify-between pb-6 text-sm md:text-base text-neutral-600 font-medium">
             <span className="text-center flex-1">Customer & Artwork</span>
@@ -386,12 +407,72 @@ export default function OrderIntakePage() {
             <span className="text-center flex-1">Mats & Glass</span>
             <span className="text-center flex-1">Preview</span>
             <span className="text-center flex-1">Confirm</span>
+            {showPayment && <span className="text-center flex-1">Payment</span>}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-6 md:px-8 py-8 md:py-12">
+        {createdOrderId && (
+          <div className="mb-6 rounded-2xl border-2 border-green-200 bg-green-50 p-6 md:p-8 text-green-800 shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="font-bold text-xl mb-2">✅ Order Created Successfully!</div>
+                <div className="text-base mb-4">
+                  Order #{createdOrderId.slice(0, 8)}... has been created. Redirecting to order details...
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href={`/staff/api/orders/${createdOrderId}/receipt`}
+                    target="_blank"
+                    className="rounded-xl bg-green-600 text-white px-6 py-3 text-base font-semibold hover:bg-green-700 transition-all shadow-lg"
+                  >
+                    🧾 Print Receipt
+                  </a>
+                  {data.customer?.email && (
+                    <button
+                      onClick={async () => {
+                        setEmailingReceipt(true);
+                        try {
+                          const res = await fetch(`/staff/api/orders/${createdOrderId}/email-receipt`, {
+                            method: "POST",
+                          });
+                          const result = await res.json();
+                          if (res.ok) {
+                            alert(`Receipt emailed to ${data.customer?.email}`);
+                          } else {
+                            alert(result.error || "Failed to email receipt");
+                          }
+                        } catch (e: any) {
+                          alert("Failed to email receipt: " + e.message);
+                        } finally {
+                          setEmailingReceipt(false);
+                        }
+                      }}
+                      disabled={emailingReceipt}
+                      className="rounded-xl bg-blue-600 text-white px-6 py-3 text-base font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50"
+                    >
+                      {emailingReceipt ? "Sending..." : "📧 Email Receipt"}
+                    </button>
+                  )}
+                  <a
+                    href={`/staff/orders/${createdOrderId}`}
+                    className="rounded-xl border-2 border-green-600 text-green-700 px-6 py-3 text-base font-semibold hover:bg-green-100 transition-all"
+                  >
+                    View Order
+                  </a>
+                </div>
+                {!data.customer?.email && (
+                  <div className="mt-3 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
+                    ⚠️ Customer doesn't have an email address. Cannot send receipt via email.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
         {error && (
           <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-5 md:p-6 text-red-800 shadow-sm">
             <div className="font-semibold text-lg mb-1">Error</div>
@@ -438,6 +519,30 @@ export default function OrderIntakePage() {
               onSubmit={handleSubmit}
               onBack={handleBack}
               loading={loading}
+            />
+          )}
+          {currentStep === 6 && createdOrderId && (
+            <Step6Payment
+              data={data}
+              orderId={createdOrderId}
+              totalAmount={data.pricing ? data.pricing.total : 0}
+              depositAmount={
+                data.pricing && data.depositPercent > 0
+                  ? Math.round((data.pricing.total * data.depositPercent) / 100)
+                  : 0
+              }
+              onPaymentComplete={() => {
+                setCreatedOrderId(createdOrderId);
+                setTimeout(() => {
+                  router.push(`/staff/orders/${createdOrderId}`);
+                }, 1000);
+              }}
+              onSkip={() => {
+                setCreatedOrderId(createdOrderId);
+                setTimeout(() => {
+                  router.push(`/staff/orders/${createdOrderId}`);
+                }, 1000);
+              }}
             />
           )}
         </div>
