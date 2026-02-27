@@ -285,6 +285,13 @@ export default function InvoiceDetailPage({
           >
             Delete
           </button>
+          <a
+            href={`/staff/api/invoices/${id}/pdf`}
+            target="_blank"
+            className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800 transition-colors"
+          >
+            Download PDF
+          </a>
           <button
             onClick={() => router.back()}
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"

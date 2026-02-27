@@ -26,6 +26,10 @@ export default function ReportsPage() {
   const [customerTo, setCustomerTo] = useState<string>("");
   const [arAgingData, setArAgingData] = useState<any>(null);
   const [loadingArAging, setLoadingArAging] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -207,6 +211,53 @@ export default function ReportsPage() {
   useEffect(() => {
     loadArAgingReport();
   }, [loadArAgingReport]);
+
+  async function handleEmailReport() {
+    if (!emailTo) return;
+    setEmailing(true);
+    setEmailMessage(null);
+    try {
+      const body: any = {
+        reportType: currentReportType,
+        emailTo,
+      };
+
+      // Add report-specific params
+      if (currentReportType === "sales") {
+        body.period = salesPeriod;
+        if (from) body.from = from;
+        if (to) body.to = to;
+      } else if (currentReportType === "open-orders") {
+        body.groupBy = openOrdersGroupBy;
+      } else if (currentReportType === "customers") {
+        if (customerFrom) body.from = customerFrom;
+        if (customerTo) body.to = customerTo;
+      }
+
+      const res = await fetch("/staff/api/reports/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setEmailMessage(`Error: ${data.error || "Failed to send email"}`);
+        return;
+      }
+
+      setEmailMessage(`Report sent to ${emailTo}`);
+      setTimeout(() => {
+        setShowEmailForm(false);
+        setEmailTo("");
+        setEmailMessage(null);
+      }, 3000);
+    } catch (e: any) {
+      setEmailMessage(`Error: ${e?.message || "Failed to send email"}`);
+    } finally {
+      setEmailing(false);
+    }
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -495,6 +546,52 @@ export default function ReportsPage() {
           >
             {exporting ? "Exporting…" : "Export Orders CSV"}
           </button>
+        )}
+
+        {/* Email report button */}
+        {currentReportType !== "orders" && (
+          <div className="flex items-center gap-2">
+            {showEmailForm ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="Email address"
+                  className="rounded-xl border border-neutral-300 px-4 py-2.5 text-sm flex-1 min-w-[200px]"
+                />
+                <button
+                  onClick={handleEmailReport}
+                  disabled={emailing || !emailTo}
+                  className="rounded-xl bg-blue-600 text-white px-4 py-2.5 text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                >
+                  {emailing ? "Sending…" : "Send"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEmailForm(false);
+                    setEmailTo("");
+                    setEmailMessage(null);
+                  }}
+                  className="rounded-xl border border-neutral-300 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowEmailForm(true)}
+                className="rounded-xl bg-blue-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                📧 Email Report
+              </button>
+            )}
+            {emailMessage && (
+              <span className={`text-sm ${emailMessage.includes("error") || emailMessage.includes("Failed") ? "text-red-600" : "text-green-600"}`}>
+                {emailMessage}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

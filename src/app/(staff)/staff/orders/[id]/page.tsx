@@ -376,6 +376,14 @@ export default function OrderDetailPage() {
             🖨️ Print
           </button>
           <a
+            href={`/staff/api/orders/${order.id}/pdf${blindPrint ? "?blind=true" : ""}`}
+            target="_blank"
+            className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800 transition-colors"
+            title="Download PDF"
+          >
+            📄 PDF
+          </a>
+          <a
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders"
           >
