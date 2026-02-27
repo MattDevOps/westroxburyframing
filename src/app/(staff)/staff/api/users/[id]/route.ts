@@ -23,7 +23,31 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const data: Record<string, unknown> = {};
     if (body.name) data.name = body.name.toString().trim();
     if (body.email) data.email = body.email.toString().trim().toLowerCase();
-    if (body.role) data.role = body.role === "admin" ? "admin" : "staff";
+    if (body.role) {
+        const newRole = body.role === "admin" ? "admin" : "staff";
+        data.role = newRole;
+        // If changing to staff, require locationId; if changing to admin, set locationId to null
+        if (newRole === "staff" && body.locationId) {
+            // Verify location exists
+            const location = await prisma.location.findUnique({ where: { id: body.locationId } });
+            if (!location) {
+                return NextResponse.json({ error: "Location not found" }, { status: 400 });
+            }
+            data.locationId = body.locationId;
+        } else if (newRole === "admin") {
+            data.locationId = null; // Admin can access all locations
+        }
+    }
+    if (body.locationId !== undefined && body.role === "staff") {
+        // Only update location if role is staff
+        if (body.locationId) {
+            const location = await prisma.location.findUnique({ where: { id: body.locationId } });
+            if (!location) {
+                return NextResponse.json({ error: "Location not found" }, { status: 400 });
+            }
+        }
+        data.locationId = body.locationId || null;
+    }
     if (body.password && body.password.length >= 6) {
         data.passwordHash = hashPassword(body.password);
     }

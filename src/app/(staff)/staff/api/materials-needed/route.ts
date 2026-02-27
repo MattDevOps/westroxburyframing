@@ -122,6 +122,8 @@ export async function GET(req: Request) {
         // Get inventory info if linked
         // For multi-location, sum inventory across all locations
         let quantityOnHand = 0;
+        let inventoryItemId: string | null = null;
+        
         if (locationIds.length > 0) {
           const inventoryItems = await prisma.inventoryItem.findMany({
             where: { 
@@ -130,6 +132,8 @@ export async function GET(req: Request) {
             },
           });
           quantityOnHand = inventoryItems.reduce((sum, inv) => sum + Number(inv.quantityOnHand), 0);
+          // Use the first inventory item's ID (or null if none found)
+          inventoryItemId = inventoryItems.length > 0 ? inventoryItems[0].id : null;
         } else if (locationFilter.locationId) {
           const inventoryItem = await prisma.inventoryItem.findFirst({
             where: { 
@@ -138,6 +142,7 @@ export async function GET(req: Request) {
             },
           });
           quantityOnHand = inventoryItem ? Number(inventoryItem.quantityOnHand) : 0;
+          inventoryItemId = inventoryItem?.id || null;
         }
 
         item = {
@@ -147,7 +152,7 @@ export async function GET(req: Request) {
           unitType: component.vendorItem.unitType || "each",
           quantityNeeded: 0,
           quantityOnHand,
-          inventoryItemId: inventoryItem?.id || null,
+          inventoryItemId,
           orders: [],
         };
         vendorGroup.items.push(item);

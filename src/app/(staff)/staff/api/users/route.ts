@@ -17,6 +17,14 @@ export async function GET(req: Request) {
             name: true,
             email: true,
             role: true,
+            locationId: true,
+            location: {
+                select: {
+                    id: true,
+                    name: true,
+                    code: true,
+                },
+            },
             createdAt: true,
         },
     });
@@ -42,12 +50,32 @@ export async function POST(req: Request) {
     const email = (body.email ?? "").toString().trim().toLowerCase();
     const password = (body.password ?? "").toString();
     const role = body.role === "admin" ? "admin" : "staff";
+    const locationId = body.locationId || null;
 
     if (!name || !email || password.length < 6) {
         return NextResponse.json(
             { error: "Name, email, and password (min 6 chars) are required." },
             { status: 400 },
         );
+    }
+
+    // Staff users must have a location assigned
+    if (role === "staff" && !locationId) {
+        return NextResponse.json(
+            { error: "Staff users must be assigned to a location." },
+            { status: 400 },
+        );
+    }
+
+    // Verify location exists if provided
+    if (locationId) {
+        const location = await prisma.location.findUnique({ where: { id: locationId } });
+        if (!location) {
+            return NextResponse.json(
+                { error: "Location not found." },
+                { status: 400 },
+            );
+        }
     }
 
     // Check for duplicate email
@@ -62,6 +90,7 @@ export async function POST(req: Request) {
             email,
             passwordHash: hashPassword(password),
             role,
+            locationId: role === "admin" ? null : locationId, // Admin = null (all locations), Staff = assigned location
         },
     });
 

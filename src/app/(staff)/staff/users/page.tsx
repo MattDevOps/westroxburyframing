@@ -7,11 +7,20 @@ interface StaffUser {
     name: string;
     email: string;
     role: string;
+    locationId: string | null;
+    location: { id: string; name: string; code: string } | null;
     createdAt: string;
+}
+
+interface Location {
+    id: string;
+    name: string;
+    code: string;
 }
 
 export default function StaffUsersPage() {
     const [users, setUsers] = useState<StaffUser[]>([]);
+    const [locations, setLocations] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Modal state
@@ -21,14 +30,22 @@ export default function StaffUsersPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [role, setRole] = useState("staff");
+    const [locationId, setLocationId] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
-        const res = await fetch("/staff/api/users");
-        if (res.ok) {
-            const data = await res.json();
+        const [usersRes, locationsRes] = await Promise.all([
+            fetch("/staff/api/users"),
+            fetch("/staff/api/locations"),
+        ]);
+        if (usersRes.ok) {
+            const data = await usersRes.json();
             setUsers(data.users);
+        }
+        if (locationsRes.ok) {
+            const data = await locationsRes.json();
+            setLocations(data.locations || []);
         }
         setLoading(false);
     }, []);
@@ -41,6 +58,7 @@ export default function StaffUsersPage() {
         setEmail("");
         setPassword("");
         setRole("staff");
+        setLocationId("");
         setError(null);
         setShowModal(true);
     }
@@ -51,6 +69,7 @@ export default function StaffUsersPage() {
         setEmail(u.email);
         setPassword("");
         setRole(u.role);
+        setLocationId(u.locationId || "");
         setError(null);
         setShowModal(true);
     }
@@ -64,8 +83,19 @@ export default function StaffUsersPage() {
             const url = editUser ? `/staff/api/users/${editUser.id}` : "/staff/api/users";
             const method = editUser ? "PATCH" : "POST";
 
-            const body: Record<string, string> = { name, email, role };
+            const body: Record<string, any> = { name, email, role };
             if (password) body.password = password;
+            // Staff users must have a location, admins can be null (access all locations)
+            if (role === "staff" && !locationId) {
+                setError("Staff users must be assigned to a location");
+                setSaving(false);
+                return;
+            }
+            if (role === "staff") {
+                body.locationId = locationId;
+            } else {
+                body.locationId = null; // Admin can access all locations
+            }
 
             const res = await fetch(url, {
                 method,
@@ -124,6 +154,7 @@ export default function StaffUsersPage() {
                                 <th className="px-4 py-3 text-left font-medium text-neutral-600">Name</th>
                                 <th className="px-4 py-3 text-left font-medium text-neutral-600">Email</th>
                                 <th className="px-4 py-3 text-left font-medium text-neutral-600">Role</th>
+                                <th className="px-4 py-3 text-left font-medium text-neutral-600">Location</th>
                                 <th className="px-4 py-3 text-left font-medium text-neutral-600">Created</th>
                                 <th className="px-4 py-3 text-right font-medium text-neutral-600">Actions</th>
                             </tr>
@@ -138,6 +169,9 @@ export default function StaffUsersPage() {
                                             }`}>
                                             {u.role}
                                         </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-neutral-600">
+                                        {u.location ? `${u.location.name} (${u.location.code})` : u.role === "admin" ? "All Locations" : "—"}
                                     </td>
                                     <td className="px-4 py-3 text-neutral-500">{new Date(u.createdAt).toLocaleDateString()}</td>
                                     <td className="px-4 py-3 text-right space-x-2">
@@ -206,12 +240,40 @@ export default function StaffUsersPage() {
                             <select
                                 className="w-full rounded-xl border p-3 text-sm"
                                 value={role}
-                                onChange={(e) => setRole(e.target.value)}
+                                onChange={(e) => {
+                                    setRole(e.target.value);
+                                    if (e.target.value === "admin") {
+                                        setLocationId(""); // Admin doesn't need location
+                                    }
+                                }}
                             >
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
+                        {role === "staff" && (
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-neutral-700">
+                                    Location <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    className="w-full rounded-xl border p-3 text-sm"
+                                    value={locationId}
+                                    onChange={(e) => setLocationId(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select a location</option>
+                                    {locations.map((loc) => (
+                                        <option key={loc.id} value={loc.id}>
+                                            {loc.name} ({loc.code})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-neutral-500 mt-1">
+                                    Staff users can only access orders and inventory for their assigned location.
+                                </p>
+                            </div>
+                        )}
 
                         {error && (
                             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
