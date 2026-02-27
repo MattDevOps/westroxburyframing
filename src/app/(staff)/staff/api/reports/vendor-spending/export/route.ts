@@ -160,7 +160,7 @@ export async function GET(req: Request) {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="vendor-spending-${data.period}-${new Date().toISOString().split("T")[0]}.csv"`,
+        "Content-Disposition": `attachment; filename="vendor-spending-${period}-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     });
   } catch (error: any) {
