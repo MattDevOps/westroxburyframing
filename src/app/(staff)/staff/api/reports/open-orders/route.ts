@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { OrderStatus } from "@/lib/orderStatus";
 
 /**
  * GET /staff/api/reports/open-orders
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
 
   try {
     // Get all open orders (not completed, cancelled, or picked up)
-    const openStatuses = [
+    const openStatuses: OrderStatus[] = [
       "estimate",
       "new_design",
       "awaiting_materials",
