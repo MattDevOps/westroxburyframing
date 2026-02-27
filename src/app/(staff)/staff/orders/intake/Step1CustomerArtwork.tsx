@@ -40,7 +40,7 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Search customers
   useEffect(() => {
