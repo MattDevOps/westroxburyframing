@@ -40,11 +40,12 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  orders          Order[]
-  invoicesCreated Invoice[]       @relation("InvoiceCreatedBy")
-  activity        ActivityLog[]   @relation("ActorActivity")
-  orderActivity   OrderActivity[]
-  purchaseOrders  PurchaseOrder[]
+  orders                 Order[]
+  invoicesCreated        Invoice[]         @relation("InvoiceCreatedBy")
+  activity               ActivityLog[]     @relation("ActorActivity")
+  orderActivity          OrderActivity[]
+  purchaseOrders         PurchaseOrder[]
+  giftCertificatesIssued GiftCertificate[]
 }
 
 model Customer {
@@ -67,10 +68,11 @@ model Customer {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  orders         Order[]
-  invoices       Invoice[]
-  appointments   Appointment[]
-  tagAssignments CustomerTagAssignment[]
+  orders           Order[]
+  invoices         Invoice[]
+  appointments     Appointment[]
+  tagAssignments   CustomerTagAssignment[]
+  giftCertificates GiftCertificate[]
 }
 
 // ─── Phase 5A: Customer Tags ───────────────────────────────────
@@ -145,7 +147,8 @@ model Order {
   activityLogs ActivityLog[] @relation("OrderActivityLog")
 
   /// New dedicated order timeline entries (status changes, edits, invoice sent, etc.)
-  activity OrderActivity[]
+  activity         OrderActivity[]
+  giftCertificates GiftCertificate[]
 }
 
 model OrderSpecs {
@@ -312,9 +315,10 @@ model Vendor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  catalogItems   VendorCatalogItem[]
-  inventoryItems InventoryItem[]
-  purchaseOrders PurchaseOrder[]
+  catalogItems     VendorCatalogItem[]
+  inventoryItems   InventoryItem[]
+  purchaseOrders   PurchaseOrder[]
+  giftCertificates GiftCertificate[]
 }
 
 model VendorCatalogItem {
@@ -482,4 +486,31 @@ model PurchaseOrderLine {
 
   @@index([purchaseOrderId])
   @@index([inventoryItemId])
+}
+
+// ─── Phase 7: Gift Certificates ───────────────────────────────────
+
+model GiftCertificate {
+  id                 String    @id @default(uuid())
+  certificateNumber  String    @unique // Human-readable number (e.g., GC-2026-001)
+  amount             Int // cents
+  balance            Int // cents (remaining balance)
+  issuedToCustomerId String?
+  issuedToCustomer   Customer? @relation(fields: [issuedToCustomerId], references: [id])
+  issuedByUserId     String
+  issuedBy           User      @relation(fields: [issuedByUserId], references: [id])
+  issuedAt           DateTime  @default(now())
+  expiresAt          DateTime?
+  redeemedAt         DateTime?
+  redeemedOnOrderId  String?
+  redeemedOnOrder    Order?    @relation(fields: [redeemedOnOrderId], references: [id])
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  vendor             Vendor?   @relation(fields: [vendorId], references: [id])
+  vendorId           String?
+
+  @@index([certificateNumber])
+  @@index([issuedToCustomerId])
+  @@index([redeemedOnOrderId])
 }

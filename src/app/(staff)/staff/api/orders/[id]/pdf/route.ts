@@ -38,6 +38,16 @@ export async function GET(req: Request, ctx: Ctx) {
       components: {
         include: {
           priceCode: true,
+          vendorItem: {
+            include: {
+              vendor: {
+                select: {
+                  name: true,
+                  code: true,
+                },
+              },
+            },
+          },
         },
         orderBy: { position: "asc" },
       },
@@ -79,14 +89,17 @@ export async function GET(req: Request, ctx: Ctx) {
   // Build component rows
   const componentRows = order.components
     .map(
-      (comp) => `
+      (comp) => {
+        const componentName = comp.description || comp.vendorItem?.description || comp.priceCode?.name || comp.category || "";
+        return `
     <tr>
-      <td>${h(comp.name || comp.priceCode?.name || "")}</td>
+      <td>${h(componentName)}</td>
       <td style="text-align:center">${comp.quantity || ""}</td>
       <td style="text-align:right">${fmt(comp.unitPrice)}</td>
       <td style="text-align:right">${fmt(comp.totalPrice)}</td>
       ${!blind ? `<td style="font-size: 10px; color: #999;">${h(comp.priceCode?.code || "")}</td>` : "<td></td>"}
-    </tr>`
+    </tr>`;
+      }
     )
     .join("");
 

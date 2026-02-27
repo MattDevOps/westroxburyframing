@@ -14,6 +14,7 @@ const STAFF_NAV = [
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
+  { href: "/staff/gift-certificates", label: "Gift Certs" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/pricing", label: "Pricing" },
   { href: "/staff/materials-needed", label: "Materials" },
