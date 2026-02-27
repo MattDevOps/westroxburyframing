@@ -13,13 +13,19 @@ interface SummaryData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "moulding">("sales");
+  const [reportType, setReportType] = useState<"sales" | "orders" | "open-orders" | "customers" | "ar-aging" | "moulding">("sales");
   const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [salesData, setSalesData] = useState<any>(null);
   const [loadingSales, setLoadingSales] = useState(false);
   const [openOrdersGroupBy, setOpenOrdersGroupBy] = useState<"status" | "staff" | "aging">("status");
   const [openOrdersData, setOpenOrdersData] = useState<any>(null);
   const [loadingOpenOrders, setLoadingOpenOrders] = useState(false);
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [customerFrom, setCustomerFrom] = useState<string>("");
+  const [customerTo, setCustomerTo] = useState<string>("");
+  const [arAgingData, setArAgingData] = useState<any>(null);
+  const [loadingArAging, setLoadingArAging] = useState(false);
   const [from, setFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -148,15 +154,101 @@ export default function ReportsPage() {
     loadOpenOrdersReport();
   }, [loadOpenOrdersReport]);
 
+  const loadCustomerReport = useCallback(async () => {
+    if (reportType !== "customers") {
+      setCustomerData(null);
+      return;
+    }
+    setLoadingCustomers(true);
+    try {
+      const params = new URLSearchParams();
+      if (customerFrom) params.set("from", customerFrom);
+      if (customerTo) params.set("to", customerTo);
+
+      const res = await fetch(`/staff/api/reports/customers?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setCustomerData(null);
+        return;
+      }
+      setCustomerData(data);
+    } catch {
+      setCustomerData(null);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  }, [reportType, customerFrom, customerTo]);
+
+  useEffect(() => {
+    loadCustomerReport();
+  }, [loadCustomerReport]);
+
+  const loadArAgingReport = useCallback(async () => {
+    if (reportType !== "ar-aging") {
+      setArAgingData(null);
+      return;
+    }
+    setLoadingArAging(true);
+    try {
+      const res = await fetch(`/staff/api/reports/ar-aging`);
+      const data = await res.json();
+      if (!res.ok) {
+        setArAgingData(null);
+        return;
+      }
+      setArAgingData(data);
+    } catch {
+      setArAgingData(null);
+    } finally {
+      setLoadingArAging(false);
+    }
+  }, [reportType]);
+
+  useEffect(() => {
+    loadArAgingReport();
+  }, [loadArAgingReport]);
+
   async function handleExport() {
     setExporting(true);
     try {
-      const params = new URLSearchParams({ type: reportType });
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
-      selectedStatuses.forEach((s) => params.append("status", s));
+      let url = "";
+      let filename = "";
 
-      const res = await fetch(`/staff/api/reports/export?${params.toString()}`);
+      if (reportType === "sales") {
+        const params = new URLSearchParams();
+        params.set("period", salesPeriod);
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        url = `/staff/api/reports/sales/export?${params.toString()}`;
+        filename = `sales-report-${salesPeriod}-${new Date().toISOString().split("T")[0]}.csv`;
+      } else if (reportType === "open-orders") {
+        const params = new URLSearchParams();
+        params.set("groupBy", openOrdersGroupBy);
+        url = `/staff/api/reports/open-orders/export?${params.toString()}`;
+        filename = `open-orders-report-${openOrdersGroupBy}-${new Date().toISOString().split("T")[0]}.csv`;
+      } else if (reportType === "customers") {
+        const params = new URLSearchParams();
+        if (customerFrom) params.set("from", customerFrom);
+        if (customerTo) params.set("to", customerTo);
+        url = `/staff/api/reports/customers/export?${params.toString()}`;
+        filename = `customer-report-${new Date().toISOString().split("T")[0]}.csv`;
+      } else if (reportType === "ar-aging") {
+        url = `/staff/api/reports/ar-aging/export`;
+        filename = `ar-aging-report-${new Date().toISOString().split("T")[0]}.csv`;
+      } else {
+        // orders or customers (legacy)
+        const params = new URLSearchParams({ type: reportType });
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        selectedStatuses.forEach((s) => params.append("status", s));
+        url = `/staff/api/reports/export?${params.toString()}`;
+        filename =
+          reportType === "orders"
+            ? `orders-export-${from || "all"}-to-${to || "now"}.csv`
+            : `customers-export-${from || "all"}-to-${to || "now"}.csv`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) {
         const err = await res.json();
         alert(err.error || "Export failed");
@@ -164,17 +256,14 @@ export default function ReportsPage() {
       }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download =
-        reportType === "orders"
-          ? `orders-export-${from || "all"}-to-${to || "now"}.csv`
-          : `customers-export-${from || "all"}-to-${to || "now"}.csv`;
+      a.href = downloadUrl;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
     } catch (e: any) {
       alert(e?.message || "Export failed");
     } finally {
@@ -198,8 +287,8 @@ export default function ReportsPage() {
     return null; // Will redirect
   }
 
-  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" after the early return
-  const currentReportType: "sales" | "orders" | "open-orders" | "customers" = reportType;
+  // TypeScript now knows reportType is "sales" | "orders" | "open-orders" | "customers" | "ar-aging" after the early return
+  const currentReportType: "sales" | "orders" | "open-orders" | "customers" | "ar-aging" = reportType;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -397,14 +486,14 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Export button */}
-        {currentReportType !== "sales" && (
+        {/* Export button (for orders report only) */}
+        {currentReportType === "orders" && (
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="rounded-xl bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50"
+            className="rounded-xl bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
           >
-            {exporting ? "Exporting…" : `Export ${currentReportType === "orders" ? "Orders" : "Customers"} CSV`}
+            {exporting ? "Exporting…" : "Export Orders CSV"}
           </button>
         )}
       </div>
@@ -541,14 +630,23 @@ export default function ReportsPage() {
       {/* Open Orders Report */}
       {currentReportType === "open-orders" && (
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-            Open Orders Report ({openOrdersGroupBy})
-            {loadingOpenOrders && (
-              <span className="text-sm font-normal text-neutral-400 ml-2">
-                Loading…
-              </span>
-            )}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Open Orders Report ({openOrdersGroupBy})
+              {loadingOpenOrders && (
+                <span className="text-sm font-normal text-neutral-400 ml-2">
+                  Loading…
+                </span>
+              )}
+            </h2>
+            <button
+              onClick={handleExport}
+              disabled={exporting || !openOrdersData}
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
+            >
+              {exporting ? "Exporting…" : "Export CSV"}
+            </button>
+          </div>
 
           {openOrdersData ? (
             <>
@@ -655,6 +753,387 @@ export default function ReportsPage() {
           ) : (
             <p className="text-sm text-neutral-400">
               {loadingOpenOrders ? "Calculating…" : "No open orders found."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Customer Report */}
+      {currentReportType === "customers" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Customer Report
+              {loadingCustomers && (
+                <span className="text-sm font-normal text-neutral-400 ml-2">
+                  Loading…
+                </span>
+              )}
+            </h2>
+            <button
+              onClick={handleExport}
+              disabled={exporting || !customerData}
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
+            >
+              {exporting ? "Exporting…" : "Export CSV"}
+            </button>
+          </div>
+
+          {customerData ? (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Customers
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.totalCustomers}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    New Customers
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.newCustomers}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Returning Customers
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.returningCustomers}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Lifetime Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(customerData.summary.totalLifetimeValue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Lifetime Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(customerData.summary.avgLifetimeValue / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Frequency
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.avgFrequency.toFixed(1)} orders/yr
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Orders
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.totalOrders}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Order Value
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {customerData.summary.totalOrders > 0
+                      ? `$${((customerData.summary.totalLifetimeValue / customerData.summary.totalOrders) / 100).toFixed(2)}`
+                      : "$0.00"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Segments */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                    Lifetime Value Segments
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">High Value ($1000+)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.valueSegments.high}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Medium Value ($500-$999)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.valueSegments.medium}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Low Value ($1-$499)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.valueSegments.low}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">No Value ($0)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.valueSegments.none}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                    Frequency Segments
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Frequent (2+ orders/yr)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.frequencySegments.frequent}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Occasional (0.5-2 orders/yr)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.frequencySegments.occasional}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Rare (&lt;0.5 orders/yr)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.frequencySegments.rare}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Inactive (0 orders)</span>
+                      <span className="font-medium text-neutral-900">
+                        {customerData.summary.frequencySegments.inactive}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Customers Table */}
+              <div className="border border-neutral-200 rounded-xl p-4">
+                <h3 className="font-semibold text-neutral-900 mb-3">
+                  Top Customers by Lifetime Value
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left py-2 text-neutral-500 font-medium">Customer</th>
+                        <th className="text-left py-2 text-neutral-500 font-medium">Contact</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Orders</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Lifetime Value</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Avg Order</th>
+                        <th className="text-right py-2 text-neutral-500 font-medium">Frequency</th>
+                        <th className="text-left py-2 text-neutral-500 font-medium">First Order</th>
+                        <th className="text-left py-2 text-neutral-500 font-medium">Last Order</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customerData.customers.slice(0, 50).map((customer: any) => (
+                        <tr key={customer.id} className="border-b border-neutral-100">
+                          <td className="py-2 text-neutral-700">
+                            {customer.firstName} {customer.lastName}
+                          </td>
+                          <td className="py-2 text-neutral-600 text-xs">
+                            {customer.email || customer.phone || "—"}
+                          </td>
+                          <td className="py-2 text-right text-neutral-700">
+                            {customer.totalOrders} ({customer.completedOrders})
+                          </td>
+                          <td className="py-2 text-right text-neutral-900 font-medium">
+                            ${(customer.lifetimeValue / 100).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="py-2 text-right text-neutral-600">
+                            ${(customer.avgOrderValue / 100).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="py-2 text-right text-neutral-600">
+                            {customer.frequency.toFixed(1)}/yr
+                          </td>
+                          <td className="py-2 text-neutral-600 text-xs">
+                            {new Date(customer.firstOrderDate).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 text-neutral-600 text-xs">
+                            {new Date(customer.lastOrderDate).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {customerData.customers.length > 50 && (
+                  <p className="text-xs text-neutral-400 mt-3">
+                    Showing top 50 customers. Total: {customerData.customers.length}
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingCustomers ? "Calculating…" : "No customer data found."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* A/R Aging Report */}
+      {currentReportType === "ar-aging" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Accounts Receivable Aging Report
+              {loadingArAging && (
+                <span className="text-sm font-normal text-neutral-400 ml-2">
+                  Loading…
+                </span>
+              )}
+            </h2>
+            <button
+              onClick={handleExport}
+              disabled={exporting || !arAgingData}
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors"
+            >
+              {exporting ? "Exporting…" : "Export CSV"}
+            </button>
+          </div>
+
+          {arAgingData ? (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Outstanding Invoices
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {arAgingData.summary.totalInvoices}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Total Outstanding
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    ${(arAgingData.summary.totalOutstanding / 100).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Avg Days Old
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {arAgingData.summary.avgDaysOld}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 p-4">
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                    Oldest Invoice
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-900">
+                    {arAgingData.summary.oldestDays} days
+                  </div>
+                </div>
+              </div>
+
+              {/* Aging Buckets */}
+              <div className="space-y-6">
+                {arAgingData.buckets.map((bucket: any) => (
+                  <div key={bucket.bucket} className="border border-neutral-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-neutral-900">
+                        {bucket.bucket} ({bucket.count} invoices)
+                      </h3>
+                      <div className="text-sm text-neutral-600">
+                        ${(bucket.totalBalance / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    {bucket.invoices.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-neutral-200">
+                              <th className="text-left py-2 text-neutral-500 font-medium">Invoice #</th>
+                              <th className="text-left py-2 text-neutral-500 font-medium">Customer</th>
+                              <th className="text-left py-2 text-neutral-500 font-medium">Contact</th>
+                              <th className="text-left py-2 text-neutral-500 font-medium">Order #</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">Total</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">Balance Due</th>
+                              <th className="text-right py-2 text-neutral-500 font-medium">Days Old</th>
+                              <th className="text-left py-2 text-neutral-500 font-medium">Status</th>
+                              <th className="text-left py-2 text-neutral-500 font-medium">Invoice Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bucket.invoices.map((invoice: any) => (
+                              <tr key={invoice.id} className="border-b border-neutral-100">
+                                <td className="py-2 text-neutral-700 font-mono">{invoice.invoiceNumber}</td>
+                                <td className="py-2 text-neutral-700">{invoice.customerName}</td>
+                                <td className="py-2 text-neutral-600 text-xs">
+                                  {invoice.customerEmail || invoice.customerPhone || "—"}
+                                </td>
+                                <td className="py-2 text-neutral-600 text-xs">{invoice.orderNumbers || "—"}</td>
+                                <td className="py-2 text-right text-neutral-600">
+                                  ${(invoice.totalAmount / 100).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </td>
+                                <td className="py-2 text-right text-neutral-900 font-medium">
+                                  ${(invoice.balanceDue / 100).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </td>
+                                <td className="py-2 text-right text-neutral-600">{invoice.daysOld}</td>
+                                <td className="py-2 text-neutral-600">
+                                  <span className={`px-2 py-0.5 rounded text-xs ${
+                                    invoice.status === "partial" 
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : invoice.status === "sent"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-gray-100 text-gray-800"
+                                  }`}>
+                                    {invoice.status}
+                                  </span>
+                                </td>
+                                <td className="py-2 text-neutral-600 text-xs">
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-neutral-400 py-4">No invoices in this age bucket.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              {loadingArAging ? "Calculating…" : "No outstanding invoices found."}
             </p>
           )}
         </div>
