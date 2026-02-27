@@ -33,7 +33,7 @@ Go to **Vercel Dashboard → Your Project → Settings → Environment Variables
 | `TWILIO_ACCOUNT_SID` | Your Account SID | From Twilio Console dashboard |
 | `TWILIO_AUTH_TOKEN` | Your Auth Token | From Twilio Console (click to reveal) |
 | `TWILIO_PHONE_NUMBER` | Your Twilio number | E.164 format: `+16175551234` |
-| `PUBLIC_BASE_URL` | Your Vercel URL | e.g. `https://westroxburyframing.vercel.app` (no trailing slash) |
+| `PUBLIC_BASE_URL` | Your production domain | e.g. `https://westroxburyframing.com` or `https://westroxburyframing.vercel.app` (no trailing slash) |
 
 **Important:** 
 - Add these to **Production** environment (and Preview if you want to test)
@@ -46,9 +46,9 @@ Go to **Vercel Dashboard → Your Project → Settings → Environment Variables
 3. Go to the **Configure** tab
 4. Under **Messaging Configuration**:
    - **A message comes in:** Set to "Webhook"
-   - **URL:** Enter `https://YOUR-VERCEL-URL.vercel.app/api/webhooks/twilio/sms`
-     - Replace `YOUR-VERCEL-URL` with your actual Vercel domain
-     - Example: `https://westroxburyframing.vercel.app/api/webhooks/twilio/sms`
+   - **URL:** Enter `https://YOUR-PRODUCTION-DOMAIN/api/webhooks/twilio/sms`
+     - Use your actual production domain (e.g. `https://westroxburyframing.com`)
+     - If you don't have a custom domain yet, use your Vercel URL (e.g. `https://westroxburyframing.vercel.app`)
    - **HTTP:** Select "HTTP POST"
    - **Primary handler fails:** Leave empty (or set to same URL)
 5. Under **Voice Configuration** (optional - only if you use voice):
@@ -60,7 +60,7 @@ Go to **Vercel Dashboard → Your Project → Settings → Environment Variables
 ### 4. Test SMS Functionality
 
 1. **Test the opt-in page:**
-   - Visit `https://your-domain.com/sms-opt-in`
+   - Visit `https://YOUR-PRODUCTION-DOMAIN/sms-opt-in`
    - Enter a phone number and submit
    - Check your database to verify the customer record has `smsOptIn: true`
 
