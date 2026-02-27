@@ -92,6 +92,15 @@ export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Get current location for new orders
+  const locationFilter = await getLocationFilter(req);
+  if (!locationFilter.locationId) {
+    return NextResponse.json(
+      { error: "Location required. Please select a location." },
+      { status: 400 }
+    );
+  }
+
   const body = await req.json();
 
   const last = await prisma.order.findFirst({
