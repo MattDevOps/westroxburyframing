@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { requireAdmin } from "@/lib/permissions";
 
 type Ctx = { params: Promise<{ id: string }> };
 

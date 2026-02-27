@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { OrderStatus } from "@/lib/orderStatus";
+import { getLocationFilter } from "@/lib/location";
 
 /**
  * GET /staff/api/reports/open-orders
@@ -13,6 +14,8 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const groupBy = searchParams.get("groupBy") || "status"; // "status" | "staff" | "aging"
+
+  const locationFilter = await getLocationFilter(req);
 
   try {
     // Get all open orders (not completed, cancelled, or picked up)

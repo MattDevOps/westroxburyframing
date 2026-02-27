@@ -72,28 +72,35 @@ export async function POST(req: Request) {
   }
 
   // Check if SKU already exists for this location
+  const existingWhere: any = { sku: body.sku };
+  if (locationFilter.locationId) {
+    existingWhere.locationId = locationFilter.locationId;
+  }
   const existing = await prisma.inventoryItem.findFirst({
-    where: { sku: body.sku, locationId: locationFilter.locationId },
+    where: existingWhere,
   });
 
   if (existing) {
     return NextResponse.json({ error: "SKU already exists for this location" }, { status: 400 });
   }
 
+  const itemData: any = {
+    sku: String(body.sku),
+    name: String(body.name),
+    category: String(body.category),
+    unitType: String(body.unitType),
+    vendorItemId: body.vendorItemId || null,
+    quantityOnHand: body.quantityOnHand ? Number(body.quantityOnHand) : 0,
+    reorderPoint: body.reorderPoint ? Number(body.reorderPoint) : 0,
+    reorderQty: body.reorderQty ? Number(body.reorderQty) : 0,
+    preferredVendorId: body.preferredVendorId || null,
+    locationNote: body.locationNote || null,
+  };
+  if (locationFilter.locationId) {
+    itemData.locationId = locationFilter.locationId;
+  }
   const item = await prisma.inventoryItem.create({
-    data: {
-      sku: String(body.sku),
-      name: String(body.name),
-      category: String(body.category),
-      unitType: String(body.unitType),
-      locationId: locationFilter.locationId,
-      vendorItemId: body.vendorItemId || null,
-      quantityOnHand: body.quantityOnHand ? Number(body.quantityOnHand) : 0,
-      reorderPoint: body.reorderPoint ? Number(body.reorderPoint) : 0,
-      reorderQty: body.reorderQty ? Number(body.reorderQty) : 0,
-      preferredVendorId: body.preferredVendorId || null,
-      locationNote: body.locationNote || null,
-    },
+    data: itemData,
     include: {
       vendorItem: {
         include: { vendor: { select: { name: true, code: true } } },

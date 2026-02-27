@@ -59,7 +59,7 @@ export async function getCurrentLocationId(req: Request): Promise<string | null>
  * Get location filter for Prisma queries
  * Returns a where clause object or empty object (for admins viewing all)
  */
-export async function getLocationFilter(req: Request): Promise<{ locationId?: string }> {
+export async function getLocationFilter(req: Request): Promise<{ locationId: string } | Record<string, never>> {
   const locationId = await getCurrentLocationId(req);
-  return locationId ? { locationId } : {};
+  return locationId ? { locationId } : ({} as Record<string, never>);
 }

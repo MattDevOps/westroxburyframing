@@ -19,10 +19,11 @@ interface QBOInvoice {
     Amount: number;
     DetailType: string;
     SalesItemLineDetail?: {
-      ItemRef: { value: string; name: string };
+      ItemRef?: { value: string; name: string };
       Qty: number;
       UnitPrice: number;
     };
+    TaxLineDetail?: {};
     Description?: string;
   }>;
   CustomerRef: { value: string; name: string };

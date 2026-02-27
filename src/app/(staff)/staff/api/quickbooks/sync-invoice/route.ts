@@ -112,6 +112,10 @@ export async function POST(req: Request) {
     }
 
     // Sync invoice to QBO
+    // Calculate due date as 30 days from invoice date (standard payment terms)
+    const dueDate = new Date(invoice.createdAt);
+    dueDate.setDate(dueDate.getDate() + 30);
+
     const qboInvoice = await syncInvoiceToQBO(accessToken, env.QBO_REALM_ID, {
       invoiceNumber: invoice.invoiceNumber,
       customerId: qboCustomerId,
@@ -120,8 +124,8 @@ export async function POST(req: Request) {
       totalAmount: invoice.totalAmount,
       taxAmount: invoice.taxAmount,
       invoiceDate: invoice.createdAt,
-      dueDate: invoice.dueDate || null,
-      notes: invoice.notes || null,
+      dueDate: dueDate,
+      notes: invoice.notes || undefined,
     });
 
     // Save QBO invoice ID to our invoice record

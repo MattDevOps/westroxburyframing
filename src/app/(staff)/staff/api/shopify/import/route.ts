@@ -6,6 +6,7 @@ import {
   importShopifyProducts,
   importShopifyCustomers,
 } from "@/lib/shopify";
+import { nextOrderNumber } from "@/lib/ids";
 
 export async function POST(req: Request) {
   try {
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
                   firstName: shopifyOrder.customer.first_name || "Shopify",
                   lastName: shopifyOrder.customer.last_name || "Customer",
                   phone: shopifyOrder.customer.phone || null,
-                  marketingOptIn: shopifyOrder.customer.accepts_marketing || false,
+                  marketingOptIn: false, // Customer object in order doesn't include accepts_marketing
                 },
               });
             }
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
           // Check if order already exists (by Shopify order name/number)
           const existingOrder = await prisma.order.findFirst({
             where: {
-              notes: {
+              notesCustomer: {
                 contains: `Shopify Order: ${shopifyOrder.name}`,
               },
             },
@@ -74,13 +75,28 @@ export async function POST(req: Request) {
               orderBy: { createdAt: "asc" },
             });
 
+            // Get last order number to generate next one
+            const lastOrder = await prisma.order.findFirst({
+              orderBy: { orderNumber: "desc" },
+              select: { orderNumber: true },
+            });
+            const orderNumber = nextOrderNumber(lastOrder?.orderNumber);
+
+            // Determine item type from line items
+            const itemType = shopifyOrder.line_items.length > 0 
+              ? shopifyOrder.line_items[0].title 
+              : "Shopify Import";
+
             await prisma.order.create({
               data: {
+                orderNumber,
                 customerId: customer.id,
                 locationId: defaultLocation?.id || null,
                 createdByUserId: userId,
                 status: "new_design",
                 intakeChannel: "web_lead",
+                itemType,
+                itemDescription: shopifyOrder.line_items.map(item => `${item.title} (x${item.quantity})`).join(", "),
                 notesCustomer: `Imported from Shopify\nOrder: ${shopifyOrder.name}\nShopify Order ID: ${shopifyOrder.id}\nFinancial Status: ${shopifyOrder.financial_status}\nFulfillment Status: ${shopifyOrder.fulfillment_status || "unfulfilled"}\nTotal: ${shopifyOrder.currency} ${shopifyOrder.total_price}`,
                 subtotalAmount: Math.round(parseFloat(shopifyOrder.subtotal_price || shopifyOrder.total_price) * 100),
                 taxAmount: Math.round(parseFloat(shopifyOrder.total_tax || "0") * 100),

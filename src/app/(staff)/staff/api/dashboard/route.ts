@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     }),
     prisma.order.groupBy({
       by: ["status"],
-      where: locationFilter,
+      where: locationFilter as any,
       _count: { id: true },
     }),
     prisma.customer.count(),
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
   const revenueToday = todayRevenueAgg._sum.totalAmount || 0;
   const byStatus = statusCounts.map((s) => ({
     status: s.status,
-    count: s._count.id,
+    count: typeof s._count === 'object' && s._count !== null && 'id' in s._count ? s._count.id : 0,
   }));
 
   // Average turnaround (days from creation to completion) - limit to recent 100 for performance
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
   // Phase 4A: Low stock items
   // Note: Prisma doesn't support comparing fields directly, so we fetch all and filter
   // We only select the fields we need to minimize data transfer
-  const inventoryLocationFilter = locationFilter.locationId ? { locationId: locationFilter.locationId } : {};
+  const inventoryLocationFilter: { locationId?: string } = locationFilter.locationId ? { locationId: locationFilter.locationId } : {};
   const allInventoryItems = await prisma.inventoryItem.findMany({
     where: inventoryLocationFilter,
     select: {
