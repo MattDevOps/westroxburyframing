@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type Vendor = {
   id: string;
@@ -26,6 +27,7 @@ type CatalogItem = {
 
 export default function VendorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { isAdmin } = useUserRole();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,12 +190,14 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-neutral-900">Catalog Items</h2>
-        <button
-          onClick={openCreate}
-          className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
-        >
-          + Add Item
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openCreate}
+            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+          >
+            + Add Item
+          </button>
+        )}
       </div>
 
       {items.length === 0 ? (
@@ -257,18 +261,22 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(item)}
-                        className="text-sm text-neutral-600 hover:text-neutral-900 px-2 py-1"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="text-sm text-red-600 hover:text-red-800 px-2 py-1"
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => openEdit(item)}
+                            className="text-sm text-neutral-600 hover:text-neutral-900 px-2 py-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            className="text-sm text-red-600 hover:text-red-800 px-2 py-1"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

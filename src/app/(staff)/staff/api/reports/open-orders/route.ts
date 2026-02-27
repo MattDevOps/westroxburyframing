@@ -28,6 +28,7 @@ export async function GET(req: Request) {
 
     const orders = await prisma.order.findMany({
       where: {
+        ...locationFilter,
         status: { in: openStatuses },
       },
       include: {

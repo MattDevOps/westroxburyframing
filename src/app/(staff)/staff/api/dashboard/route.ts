@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter } from "@/lib/location";
 
 /**
  * GET /staff/api/dashboard
@@ -10,6 +11,8 @@ export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const locationFilter = await getLocationFilter(req);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -27,27 +30,28 @@ export async function GET(req: Request) {
     statusCounts,
     totalCustomers,
   ] = await Promise.all([
-    prisma.order.count(),
+    prisma.order.count({ where: locationFilter }),
     prisma.order.count({
-      where: { createdAt: { gte: startOfMonth } },
+      where: { ...locationFilter, createdAt: { gte: startOfMonth } },
     }),
     prisma.order.count({
-      where: { createdAt: { gte: startOfToday } },
+      where: { ...locationFilter, createdAt: { gte: startOfToday } },
     }),
     prisma.order.aggregate({
       _sum: { totalAmount: true },
-      where: { paidInFull: true },
+      where: { ...locationFilter, paidInFull: true },
     }),
     prisma.order.aggregate({
       _sum: { totalAmount: true },
-      where: { paidInFull: true, createdAt: { gte: startOfMonth } },
+      where: { ...locationFilter, paidInFull: true, createdAt: { gte: startOfMonth } },
     }),
     prisma.order.aggregate({
       _sum: { totalAmount: true },
-      where: { paidInFull: true, createdAt: { gte: startOfToday } },
+      where: { ...locationFilter, paidInFull: true, createdAt: { gte: startOfToday } },
     }),
     prisma.order.groupBy({
       by: ["status"],
+      where: locationFilter,
       _count: { id: true },
     }),
     prisma.customer.count(),
@@ -63,7 +67,7 @@ export async function GET(req: Request) {
 
   // Average turnaround (days from creation to completion) - limit to recent 100 for performance
   const completedOrders = await prisma.order.findMany({
-    where: { status: { in: ["completed", "picked_up"] } },
+    where: { ...locationFilter, status: { in: ["completed", "picked_up"] } },
     select: { createdAt: true, updatedAt: true },
     take: 100, // Reduced from 200 for better performance
     orderBy: { updatedAt: "desc" },
@@ -97,6 +101,7 @@ export async function GET(req: Request) {
       prisma.order.aggregate({
         _sum: { totalAmount: true },
         where: {
+          ...locationFilter,
           paidInFull: true,
           createdAt: { gte: mStart, lte: mEnd },
         },
@@ -114,7 +119,9 @@ export async function GET(req: Request) {
   // Phase 4A: Low stock items
   // Note: Prisma doesn't support comparing fields directly, so we fetch all and filter
   // We only select the fields we need to minimize data transfer
+  const inventoryLocationFilter = locationFilter.locationId ? { locationId: locationFilter.locationId } : {};
   const allInventoryItems = await prisma.inventoryItem.findMany({
+    where: inventoryLocationFilter,
     select: {
       id: true,
       sku: true,
@@ -155,6 +162,7 @@ export async function GET(req: Request) {
     // Overdue orders
     prisma.order.findMany({
       where: {
+        ...locationFilter,
         dueDate: { lt: now },
         status: {
           notIn: ["completed", "picked_up", "cancelled"],
@@ -175,13 +183,14 @@ export async function GET(req: Request) {
     // Overdue count
     prisma.order.count({
       where: {
+        ...locationFilter,
         dueDate: { lt: now },
         status: { notIn: ["completed", "picked_up", "cancelled"] },
       },
     }),
     // Ready for pickup
     prisma.order.findMany({
-      where: { status: "ready_for_pickup" },
+      where: { ...locationFilter, status: "ready_for_pickup" },
       select: {
         id: true,
         orderNumber: true,
@@ -195,11 +204,11 @@ export async function GET(req: Request) {
     }),
     // Estimates count
     prisma.order.count({
-      where: { status: "estimate" },
+      where: { ...locationFilter, status: "estimate" },
     }),
     // On hold count
     prisma.order.count({
-      where: { status: "on_hold" },
+      where: { ...locationFilter, status: "on_hold" },
     }),
     // A/R totals
     prisma.invoice.findMany({
@@ -222,6 +231,7 @@ export async function GET(req: Request) {
       include: {
         orders: {
           where: {
+            ...locationFilter,
             status: { in: ["completed", "picked_up"] },
           },
           select: {

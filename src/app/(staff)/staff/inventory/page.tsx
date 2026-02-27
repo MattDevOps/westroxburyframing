@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type InventoryItem = {
   id: string;
@@ -22,6 +23,7 @@ type InventoryItem = {
 };
 
 export default function InventoryPage() {
+  const { isAdmin } = useUserRole();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,12 +65,14 @@ export default function InventoryPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <Link
-          href="/staff/inventory/new"
-          className="rounded-xl bg-black px-4 py-2 text-white hover:bg-neutral-800"
-        >
-          + Add Item
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/staff/inventory/new"
+            className="rounded-xl bg-black px-4 py-2 text-white hover:bg-neutral-800"
+          >
+            + Add Item
+          </Link>
+        )}
       </div>
 
       {/* Barcode Scanner */}

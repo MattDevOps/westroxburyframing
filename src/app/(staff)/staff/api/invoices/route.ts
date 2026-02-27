@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter } from "@/lib/location";
 import { nextInvoiceNumber } from "@/lib/ids";
 
 /**
@@ -12,6 +13,8 @@ export async function GET(req: Request) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const locationFilter = await getLocationFilter(req);
+
   const { searchParams } = new URL(req.url);
   const customerId = searchParams.get("customerId");
   const status = searchParams.get("status");
@@ -20,6 +23,15 @@ export async function GET(req: Request) {
   const where: any = {};
   if (customerId) where.customerId = customerId;
   if (status) where.status = status;
+  
+  // Filter invoices by location through their orders
+  if (locationFilter.locationId) {
+    where.orders = {
+      some: {
+        locationId: locationFilter.locationId,
+      },
+    };
+  }
   if (search) {
     where.OR = [
       { invoiceNumber: { contains: search, mode: "insensitive" } },

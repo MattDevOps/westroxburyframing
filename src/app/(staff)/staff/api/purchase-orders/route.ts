@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter } from "@/lib/location";
 
 /**
  * GET /staff/api/purchase-orders
@@ -10,11 +11,13 @@ export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const locationFilter = await getLocationFilter(req);
+
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const vendorId = searchParams.get("vendorId");
 
-  const where: any = {};
+  const where: any = { ...locationFilter };
   if (status) where.status = status;
   if (vendorId) where.vendorId = vendorId;
 
@@ -39,13 +42,49 @@ export async function GET(req: Request) {
 /**
  * POST /staff/api/purchase-orders
  * Create a new purchase order
+ * Supports cross-location POs for admins (locationIds array in body)
  */
 export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { vendorId, notes, lines } = body;
+  const { vendorId, notes, lines, locationIds } = body;
+
+  // Determine location(s) for the PO
+  let targetLocationId: string | null = null;
+  
+  if (locationIds && Array.isArray(locationIds) && locationIds.length > 0) {
+    // Cross-location PO (admin only) - use first location as primary, store others in notes
+    const { isAdmin } = await import("@/lib/permissions");
+    if (!(await isAdmin(req))) {
+      return NextResponse.json(
+        { error: "Cross-location purchase orders require admin access" },
+        { status: 403 }
+      );
+    }
+    // Verify all locations exist
+    const locations = await prisma.location.findMany({
+      where: { id: { in: locationIds }, active: true },
+    });
+    if (locations.length !== locationIds.length) {
+      return NextResponse.json(
+        { error: "One or more locations not found" },
+        { status: 400 }
+      );
+    }
+    targetLocationId = locationIds[0]; // Primary location
+  } else {
+    // Single location PO
+    const locationFilter = await getLocationFilter(req);
+    if (!locationFilter.locationId) {
+      return NextResponse.json(
+        { error: "Location required. Please select a location." },
+        { status: 400 }
+      );
+    }
+    targetLocationId = locationFilter.locationId;
+  }
 
   if (!vendorId) {
     return NextResponse.json({ error: "vendorId is required" }, { status: 400 });
@@ -78,13 +117,25 @@ export async function POST(req: Request) {
     }
   }
 
+  // Build notes with location info for cross-location POs
+  let finalNotes = notes || null;
+  if (locationIds && locationIds.length > 1) {
+    const locationNames = await prisma.location.findMany({
+      where: { id: { in: locationIds } },
+      select: { name: true, code: true },
+    });
+    const locationList = locationNames.map((l) => `${l.name} (${l.code})`).join(", ");
+    finalNotes = `[Cross-Location PO] Locations: ${locationList}\n${notes || ""}`.trim();
+  }
+
   const po = await prisma.purchaseOrder.create({
     data: {
       poNumber,
       vendorId,
+      locationId: targetLocationId!,
       status: "draft",
       totalAmount,
-      notes: notes || null,
+      notes: finalNotes,
       createdByUserId: userId,
       lines: lines
         ? {

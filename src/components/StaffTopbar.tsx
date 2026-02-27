@@ -77,9 +77,19 @@ function NavLink({
   );
 }
 
+interface Location {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export default function StaffTopbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
   const router = useRouter();
 
   // Keyboard shortcut for search (Cmd/Ctrl+K)
@@ -94,6 +104,25 @@ export default function StaffTopbar() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router]);
+
+  // Fetch location context
+  useEffect(() => {
+    async function loadLocation() {
+      try {
+        const res = await fetch("/staff/api/location/current");
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentLocation(data.currentLocation);
+          setAvailableLocations(data.availableLocations || []);
+          setIsAdmin(data.isAdmin || false);
+        }
+      } catch (e) {
+        // Silently fail
+      }
+    }
+
+    loadLocation();
+  }, []);
 
   // Fetch unread message count
   useEffect(() => {
@@ -113,6 +142,25 @@ export default function StaffTopbar() {
     const interval = setInterval(loadUnreadCount, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, []);
+
+  const handleLocationChange = async (locationId: string) => {
+    try {
+      const res = await fetch("/staff/api/location/current", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentLocation(data.location);
+        setShowLocationMenu(false);
+        // Reload page to refresh filtered data
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error("Failed to change location:", e);
+    }
+  };
 
   return (
     <header className="border-b border-neutral-200 bg-white no-print">
@@ -182,8 +230,59 @@ export default function StaffTopbar() {
           </button>
         </div>
 
-        {/* Second row: Logout button */}
-        <div className="flex items-center justify-end pb-3 border-t border-neutral-100 pt-2">
+        {/* Second row: Location selector (admin) and Logout button */}
+        <div className="flex items-center justify-between pb-3 border-t border-neutral-100 pt-2">
+          {isAdmin && currentLocation && availableLocations.length > 1 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowLocationMenu(!showLocationMenu)}
+                className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-4 py-2 hover:bg-neutral-100 whitespace-nowrap font-medium flex items-center gap-2"
+              >
+                <span className="text-neutral-600">Location:</span>
+                <span className="font-semibold">{currentLocation.name} ({currentLocation.code})</span>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {showLocationMenu && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-[200px]">
+                  {availableLocations.map((loc) => (
+                    <button
+                      key={loc.id}
+                      onClick={() => handleLocationChange(loc.id)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg ${
+                        loc.id === currentLocation.id
+                          ? "bg-neutral-100 font-medium"
+                          : ""
+                      }`}
+                    >
+                      {loc.name} ({loc.code})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {isAdmin && currentLocation && availableLocations.length === 1 && (
+            <div className="text-sm text-neutral-600">
+              {currentLocation.name} ({currentLocation.code})
+            </div>
+          )}
+          {!isAdmin && currentLocation && (
+            <div className="text-sm text-neutral-600">
+              {currentLocation.name} ({currentLocation.code})
+            </div>
+          )}
           <form action="/staff/api/auth/logout" method="post" className="shrink-0">
             <button 
               type="submit"

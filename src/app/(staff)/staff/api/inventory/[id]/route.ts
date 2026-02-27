@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { requireAdmin } from "@/lib/permissions";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -33,11 +34,17 @@ export async function GET(req: Request, ctx: Ctx) {
 
 /**
  * PATCH /staff/api/inventory/[id]
- * Update an inventory item
+ * Update an inventory item (admin only)
  */
 export async function PATCH(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Admin access required" }, { status: 403 });
+  }
 
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({}));
@@ -73,11 +80,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 /**
  * DELETE /staff/api/inventory/[id]
- * Delete an inventory item
+ * Delete an inventory item (admin only)
  */
 export async function DELETE(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Admin access required" }, { status: 403 });
+  }
 
   const { id } = await ctx.params;
 

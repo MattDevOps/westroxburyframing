@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter, getCurrentLocationId } from "@/lib/location";
 
 type Period = "daily" | "weekly" | "monthly";
 
 /**
  * GET /staff/api/reports/sales
  * Sales report with daily/weekly/monthly breakdown
+ * Query params: period, from, to, locationId (optional - "all" for combined view)
  */
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -16,6 +18,16 @@ export async function GET(req: Request) {
   const period = (searchParams.get("period") || "monthly") as Period;
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const locationParam = searchParams.get("locationId");
+  
+  // Determine location filter
+  let locationFilter: { locationId?: string } = {};
+  if (locationParam && locationParam !== "all") {
+    locationFilter = { locationId: locationParam };
+  } else if (!locationParam) {
+    // Default to current location if not specified
+    locationFilter = await getLocationFilter(req);
+  }
 
   try {
     // Build date range
@@ -50,6 +62,7 @@ export async function GET(req: Request) {
     // Get all orders in date range
     const orders = await prisma.order.findMany({
       where: {
+        ...locationFilter,
         createdAt: { gte: startDate, lte: endDate },
         status: { notIn: ["cancelled"] }, // Exclude cancelled orders
       },

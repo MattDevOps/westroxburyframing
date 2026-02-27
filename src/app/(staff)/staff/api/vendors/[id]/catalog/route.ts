@@ -33,11 +33,17 @@ export async function GET(req: Request, ctx: Ctx) {
 
 /**
  * POST /staff/api/vendors/[id]/catalog
- * Create a new catalog item for a vendor
+ * Create a new catalog item for a vendor (admin only)
  */
 export async function POST(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Admin access required" }, { status: 403 });
+  }
 
   const { id } = await ctx.params;
 

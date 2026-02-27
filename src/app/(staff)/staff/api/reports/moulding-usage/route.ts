@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter, getCurrentLocationId } from "@/lib/location";
 
 /**
  * GET /staff/api/reports/moulding-usage
  * Calculate moulding usage by group (wood, metal, etc.) for a time period
  * Rounds to nearest half foot
+ * Query params: from, to, groupBy, locationId (optional - "all" for combined view)
  */
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -15,9 +17,20 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const groupBy = searchParams.get("groupBy") || "category"; // category, vendor, item
+  const locationParam = searchParams.get("locationId");
+  
+  // Determine location filter
+  let locationFilter: { locationId?: string } = {};
+  if (locationParam && locationParam !== "all") {
+    locationFilter = { locationId: locationParam };
+  } else if (!locationParam) {
+    // Default to current location if not specified
+    locationFilter = await getLocationFilter(req);
+  }
 
   // Build date filter
   const where: any = {
+    ...locationFilter,
     status: {
       notIn: ["cancelled", "estimate"], // Exclude cancelled and estimates
     },

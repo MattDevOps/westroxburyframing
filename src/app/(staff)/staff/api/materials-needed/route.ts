@@ -1,19 +1,56 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter, getCurrentLocationId } from "@/lib/location";
+import { isAdmin } from "@/lib/permissions";
 
 /**
  * GET /staff/api/materials-needed
  * Calculate materials needed for all incomplete orders, grouped by vendor
+ * Query params: locationId (optional - "all" for combined view, or specific location ID)
  */
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const locationParam = searchParams.get("locationId");
+  const admin = await isAdmin(req);
+  
+  // Determine location filter
+  let locationFilter: { locationId?: string } = {};
+  let locationIds: string[] = [];
+  
+  if (locationParam === "all" && admin) {
+    // Admin viewing all locations - get all active locations
+    const locations = await prisma.location.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+    locationIds = locations.map((l) => l.id);
+    // Use empty filter to get all
+  } else if (locationParam && locationParam !== "all") {
+    // Specific location requested
+    locationFilter = { locationId: locationParam };
+    locationIds = [locationParam];
+  } else {
+    // Default to current location
+    const currentLocationId = await getCurrentLocationId(req);
+    if (!currentLocationId) {
+      return NextResponse.json(
+        { error: "Location required. Please select a location." },
+        { status: 400 }
+      );
+    }
+    locationFilter = { locationId: currentLocationId };
+    locationIds = [currentLocationId];
+  }
+
   try {
     // Get all incomplete orders (not completed, cancelled, or picked_up)
     const incompleteOrders = await prisma.order.findMany({
       where: {
+        ...locationFilter,
         status: {
           notIn: ["completed", "cancelled", "picked_up"],
         },
@@ -83,12 +120,25 @@ export async function GET(req: Request) {
 
       if (!item) {
         // Get inventory info if linked
-        // Try to find inventory item by vendorItemId
-        const inventoryItem = await prisma.inventoryItem.findFirst({
-          where: { vendorItemId: component.vendorItemId },
-        });
-
-        const quantityOnHand = inventoryItem ? Number(inventoryItem.quantityOnHand) : 0;
+        // For multi-location, sum inventory across all locations
+        let quantityOnHand = 0;
+        if (locationIds.length > 0) {
+          const inventoryItems = await prisma.inventoryItem.findMany({
+            where: { 
+              vendorItemId: component.vendorItemId,
+              locationId: { in: locationIds },
+            },
+          });
+          quantityOnHand = inventoryItems.reduce((sum, inv) => sum + Number(inv.quantityOnHand), 0);
+        } else if (locationFilter.locationId) {
+          const inventoryItem = await prisma.inventoryItem.findFirst({
+            where: { 
+              vendorItemId: component.vendorItemId,
+              locationId: locationFilter.locationId,
+            },
+          });
+          quantityOnHand = inventoryItem ? Number(inventoryItem.quantityOnHand) : 0;
+        }
 
         item = {
           vendorItemId: component.vendorItemId,

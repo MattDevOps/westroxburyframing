@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getLocationFilter } from "@/lib/location";
 import { nextOrderNumber } from "@/lib/ids";
 import { calculateOrderPrice, type PricingComponent } from "@/lib/pricing";
 import { sendOrderReceivedEmail } from "@/lib/email";
@@ -18,8 +19,11 @@ export async function GET(req: Request) {
   const itemType = (searchParams.get("item_type") || "").trim();
   const customerId = searchParams.get("customerId") || "";
 
+  // Get location filter
+  const locationFilter = await getLocationFilter(req);
+
   // Build WHERE clause
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { ...locationFilter };
   if (statusParams.length === 1) where.status = statusParams[0];
   else if (statusParams.length > 1) where.status = { in: statusParams };
   if (itemType) where.itemType = itemType;
@@ -207,6 +211,7 @@ export async function POST(req: Request) {
     data: {
       orderNumber,
       customerId: body.customer_id,
+      locationId: locationFilter.locationId!,
       status: requestedStatus as any,
       intakeChannel: body.intake_channel || "walk_in",
       dueDate: body.due_date ? new Date(body.due_date) : null,

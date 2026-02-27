@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { requireAdmin } from "@/lib/permissions";
 
 /**
  * GET /staff/api/vendors
@@ -25,11 +26,17 @@ export async function GET(req: Request) {
 
 /**
  * POST /staff/api/vendors
- * Create a new vendor
+ * Create a new vendor (admin only)
  */
 export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Admin access required" }, { status: 403 });
+  }
 
   try {
     const body = await req.json();

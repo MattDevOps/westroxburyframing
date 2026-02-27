@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type Vendor = {
   id: string;
@@ -15,6 +16,7 @@ type Vendor = {
 };
 
 export default function VendorsPage() {
+  const { isAdmin } = useUserRole();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,12 +142,14 @@ export default function VendorsPage() {
           </Link>
           <h1 className="text-2xl font-semibold text-neutral-900 mt-2">Vendors</h1>
         </div>
-        <button
-          onClick={openCreate}
-          className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
-        >
-          + Add Vendor
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openCreate}
+            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+          >
+            + Add Vendor
+          </button>
+        )}
       </div>
 
       {error && (
@@ -157,12 +161,14 @@ export default function VendorsPage() {
       {vendors.length === 0 ? (
         <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center">
           <p className="text-neutral-600 mb-4">No vendors yet</p>
-          <button
-            onClick={openCreate}
-            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
-          >
-            Add your first vendor
-          </button>
+          {isAdmin && (
+            <button
+              onClick={openCreate}
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+            >
+              Add your first vendor
+            </button>
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
@@ -211,18 +217,22 @@ export default function VendorsPage() {
                       >
                         View
                       </Link>
-                      <button
-                        onClick={() => openEdit(vendor)}
-                        className="text-sm text-neutral-600 hover:text-neutral-900 px-2 py-1"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(vendor)}
-                        className="text-sm text-red-600 hover:text-red-800 px-2 py-1"
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => openEdit(vendor)}
+                            className="text-sm text-neutral-600 hover:text-neutral-900 px-2 py-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(vendor)}
+                            className="text-sm text-red-600 hover:text-red-800 px-2 py-1"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

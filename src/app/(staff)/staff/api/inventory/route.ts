@@ -43,11 +43,17 @@ export async function GET(req: Request) {
 
 /**
  * POST /staff/api/inventory
- * Create a new inventory item
+ * Create a new inventory item (admin only)
  */
 export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Admin access required" }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => ({}));
 
@@ -55,13 +61,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing required fields: sku, name, category, unitType" }, { status: 400 });
   }
 
-  // Check if SKU already exists
-  const existing = await prisma.inventoryItem.findUnique({
-    where: { sku: body.sku },
+  const locationFilter = await getLocationFilter(req);
+  if (!locationFilter.locationId) {
+    return NextResponse.json(
+      { error: "Location required. Please select a location." },
+      { status: 400 }
+    );
+  }
+
+  // Check if SKU already exists for this location
+  const existing = await prisma.inventoryItem.findFirst({
+    where: { sku: body.sku, locationId: locationFilter.locationId },
   });
 
   if (existing) {
-    return NextResponse.json({ error: "SKU already exists" }, { status: 400 });
+    return NextResponse.json({ error: "SKU already exists for this location" }, { status: 400 });
   }
 
   const item = await prisma.inventoryItem.create({
@@ -70,6 +84,7 @@ export async function POST(req: Request) {
       name: String(body.name),
       category: String(body.category),
       unitType: String(body.unitType),
+      locationId: locationFilter.locationId,
       vendorItemId: body.vendorItemId || null,
       quantityOnHand: body.quantityOnHand ? Number(body.quantityOnHand) : 0,
       reorderPoint: body.reorderPoint ? Number(body.reorderPoint) : 0,
