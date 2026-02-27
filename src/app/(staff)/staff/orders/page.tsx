@@ -13,6 +13,8 @@ type OrderCard = {
   paid_status?: "unpaid" | "deposit" | "paid";
   item_type: string;
   due_date?: string | null;
+  created_by_user_id?: string | null;
+  location_id?: string | null;
 };
 
 const ACTIVE_COLUMNS: { key: string; title: string }[] = [
@@ -49,6 +51,21 @@ export default function OrdersBoardPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterItemType, setFilterItemType] = useState("");
+  const [filterStaff, setFilterStaff] = useState("");
+  const [filterLocation, setFilterLocation] = useState("");
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  
+  // Load staff and locations for filters
+  const [staffUsers, setStaffUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [locations, setLocations] = useState<Array<{ id: string; name: string }>>([]);
+  
+  useEffect(() => {
+    Promise.all([
+      fetch("/staff/api/users").then(r => r.json()).then(d => setStaffUsers(d.users || [])),
+      fetch("/staff/api/locations").then(r => r.json()).then(d => setLocations(d.locations || [])),
+    ]).catch(console.error);
+  }, []);
 
   async function load() {
     setErr(null);
@@ -57,6 +74,8 @@ export default function OrdersBoardPage() {
     if (dateFrom) params.set("from", dateFrom);
     if (dateTo) params.set("to", dateTo);
     if (filterItemType) params.set("item_type", filterItemType);
+    if (filterStaff) params.set("createdByUserId", filterStaff);
+    if (filterLocation) params.set("locationId", filterLocation);
 
     const res = await fetch(`/staff/api/orders?${params}`, { cache: "no-store" });
     const out = await res.json();
@@ -71,7 +90,7 @@ export default function OrdersBoardPage() {
     load();
     const t = setInterval(load, 8000);
     return () => clearInterval(t);
-  }, [searchQ, dateFrom, dateTo, filterItemType]);
+  }, [searchQ, dateFrom, dateTo, filterItemType, filterStaff, filterLocation]);
 
   const [draggedOrder, setDraggedOrder] = useState<OrderCard | null>(null);
 
@@ -107,6 +126,37 @@ export default function OrdersBoardPage() {
   async function activateEstimate(orderId: string) {
     const success = await updateOrderStatus(orderId, "new_design");
     if (success) await load();
+  }
+
+  async function handleBulkStatusUpdate() {
+    if (!bulkStatus || selectedOrders.size === 0) return;
+    if (!confirm(`Update ${selectedOrders.size} order(s) to "${bulkStatus}"?`)) return;
+
+    const res = await fetch("/staff/api/orders/bulk-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderIds: Array.from(selectedOrders),
+        status: bulkStatus,
+      }),
+    });
+
+    if (res.ok) {
+      setSelectedOrders(new Set());
+      setBulkStatus("");
+      await load();
+    } else {
+      const out = await res.json();
+      alert(out.error || "Failed to update orders");
+    }
+  }
+
+  function isOverdue(order: OrderCard): boolean {
+    if (!order.due_date) return false;
+    const dueDate = new Date(order.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate < today && !["completed", "cancelled", "picked_up"].includes(order.status);
   }
 
   function handleDragStart(e: React.DragEvent, order: OrderCard) {
@@ -245,15 +295,82 @@ export default function OrdersBoardPage() {
             <option value="other">Other</option>
           </select>
         </div>
-        {(searchQ || dateFrom || dateTo || filterItemType) && (
+        <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">Staff</label>
+          <select
+            value={filterStaff}
+            onChange={(e) => setFilterStaff(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          >
+            <option value="">All staff</option>
+            {staffUsers.map(u => (
+              <option key={u.id} value={u.id}>{u.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">Location</label>
+          <select
+            value={filterLocation}
+            onChange={(e) => setFilterLocation(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          >
+            <option value="">All locations</option>
+            {locations.map(l => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+        </div>
+        {(searchQ || dateFrom || dateTo || filterItemType || filterStaff || filterLocation) && (
           <button
-            onClick={() => { setSearchQ(""); setDateFrom(""); setDateTo(""); setFilterItemType(""); }}
+            onClick={() => { 
+              setSearchQ(""); 
+              setDateFrom(""); 
+              setDateTo(""); 
+              setFilterItemType(""); 
+              setFilterStaff(""); 
+              setFilterLocation(""); 
+            }}
             className="rounded-xl border border-neutral-300 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100"
           >
             Clear
           </button>
         )}
       </div>
+
+      {/* Bulk Actions */}
+      {selectedOrders.size > 0 && (
+        <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 flex items-center justify-between">
+          <div className="text-sm font-semibold text-blue-900">
+            {selectedOrders.size} order{selectedOrders.size !== 1 ? "s" : ""} selected
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm"
+            >
+              <option value="">Select status...</option>
+              {ACTIVE_COLUMNS.map(col => (
+                <option key={col.key} value={col.key}>{col.title}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleBulkStatusUpdate}
+              disabled={!bulkStatus}
+              className="rounded-lg bg-blue-600 text-white px-4 py-1.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+            >
+              Update Status
+            </button>
+            <button
+              onClick={() => setSelectedOrders(new Set())}
+              className="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-neutral-300">
@@ -317,7 +434,9 @@ export default function OrdersBoardPage() {
             </div>
 
             <div className="space-y-3 min-h-[100px]">
-              {(grouped.get(col.key) || []).map((o) => (
+              {(grouped.get(col.key) || []).map((o) => {
+                const overdue = isOverdue(o);
+                return (
                 <div
                   key={o.id}
                   draggable
@@ -326,22 +445,48 @@ export default function OrdersBoardPage() {
                   className={`rounded-2xl border p-4 transition-all overflow-hidden cursor-move ${
                     draggedOrder?.id === o.id
                       ? "opacity-50 border-blue-400 bg-blue-50"
-                      : o.status === "estimate"
-                        ? "border-red-200 bg-white hover:bg-red-50 hover:border-red-300 shadow-sm"
-                        : o.status === "on_hold"
-                          ? "border-orange-200 bg-white hover:bg-orange-50 hover:border-orange-300 shadow-sm"
-                          : "border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 shadow-sm"
+                      : overdue
+                        ? "border-red-400 bg-red-50 hover:bg-red-100 hover:border-red-500 shadow-md"
+                        : o.status === "estimate"
+                          ? "border-red-200 bg-white hover:bg-red-50 hover:border-red-300 shadow-sm"
+                          : o.status === "on_hold"
+                            ? "border-orange-200 bg-white hover:bg-orange-50 hover:border-orange-300 shadow-sm"
+                            : "border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 shadow-sm"
                   }`}
                 >
-                  <a
-                    href={`/staff/orders/${o.id}`}
-                    onClick={(e) => {
-                      if (draggedOrder?.id === o.id) e.preventDefault();
-                    }}
-                    className="block"
-                  >
-                    <div className="text-neutral-900 font-semibold">{o.order_number}</div>
-                    <div className="text-neutral-500 text-sm truncate">{o.customer_name}</div>
+                  <div className="flex items-start gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.has(o.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        const newSet = new Set(selectedOrders);
+                        if (e.target.checked) {
+                          newSet.add(o.id);
+                        } else {
+                          newSet.delete(o.id);
+                        }
+                        setSelectedOrders(newSet);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1"
+                    />
+                    <a
+                      href={`/staff/orders/${o.id}`}
+                      onClick={(e) => {
+                        if (draggedOrder?.id === o.id) e.preventDefault();
+                      }}
+                      className="flex-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="text-neutral-900 font-semibold">{o.order_number}</div>
+                        {overdue && (
+                          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                            OVERDUE
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-neutral-500 text-sm truncate">{o.customer_name}</div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
                       <span className="rounded-full border border-neutral-300 px-2 py-1 text-neutral-600 max-w-full truncate">
@@ -377,7 +522,8 @@ export default function OrdersBoardPage() {
                         ${(o.total_cents / 100).toFixed(2)}
                       </span>
                     </div>
-                  </a>
+                    </a>
+                  </div>
                   {/* Activate button for estimates */}
                   {o.status === "estimate" && (
                     <button
@@ -393,7 +539,7 @@ export default function OrdersBoardPage() {
                     </button>
                   )}
                 </div>
-              ))}
+              )})}
 
               {(grouped.get(col.key) || []).length === 0 ? (
                 <div className="text-sm text-neutral-400 py-4 text-center">

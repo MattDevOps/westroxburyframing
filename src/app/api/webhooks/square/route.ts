@@ -143,12 +143,58 @@ export async function POST(req: Request) {
             },
           });
 
-          // If fully paid, mark linked orders
+          // If fully paid, mark linked orders and optionally auto-advance status
           if (newStatus === "paid") {
-            await prisma.order.updateMany({
+            const updatedOrders = await prisma.order.updateMany({
               where: { invoiceId: localInvoice.id },
               data: { paidInFull: true },
             });
+
+            // Webhook Payment Auto-Reconciliation: Auto-advance order status when payment received
+            // Check if auto-advancement is enabled (via environment variable or setting)
+            const autoAdvanceOnPayment = process.env.AUTO_ADVANCE_ORDER_ON_PAYMENT === "true";
+            
+            if (autoAdvanceOnPayment && updatedOrders.count > 0) {
+              // Get the orders to potentially advance
+              const ordersToAdvance = await prisma.order.findMany({
+                where: { invoiceId: localInvoice.id },
+                select: { id: true, status: true, orderNumber: true },
+              });
+
+              // Advance status: new_design → awaiting_materials, or awaiting_materials → in_production
+              for (const order of ordersToAdvance) {
+                let newOrderStatus = order.status;
+                if (order.status === "new_design") {
+                  newOrderStatus = "awaiting_materials";
+                } else if (order.status === "awaiting_materials") {
+                  newOrderStatus = "in_production";
+                }
+
+                if (newOrderStatus !== order.status) {
+                  await prisma.order.update({
+                    where: { id: order.id },
+                    data: { status: newOrderStatus as any },
+                  });
+
+                  // Log the auto-advancement
+                  await prisma.activityLog.create({
+                    data: {
+                      entityType: "order",
+                      entityId: order.id,
+                      orderId: order.id,
+                      action: "status_changed",
+                      actorUserId: null, // System action
+                      metadata: {
+                        from: order.status,
+                        to: newOrderStatus,
+                        autoAdvanced: true,
+                        reason: "Payment received",
+                      },
+                    },
+                  });
+                }
+              }
+            }
           }
 
           console.log("Webhook: InvoicePayment recorded", {
@@ -158,10 +204,21 @@ export async function POST(req: Request) {
           });
         }
 
-        // Send confirmation email to customer
+        // Webhook Payment Auto-Reconciliation: Auto-send confirmation email when payment received
         if (localInvoice.customer.email) {
           const amountFormatted = `$${(paymentAmountCents / 100).toFixed(2)}`;
           const remaining = Math.max(0, localInvoice.totalAmount - (localInvoice.amountPaid + paymentAmountCents));
+          
+          // Get first order ID for receipt URL
+          const firstOrder = await prisma.order.findFirst({
+            where: { invoiceId: localInvoice.id },
+            select: { id: true },
+          });
+          
+          const receiptUrl = firstOrder
+            ? `${process.env.PUBLIC_BASE_URL || ""}/staff/api/orders/${firstOrder.id}/receipt`
+            : undefined;
+          
           try {
             await sendPaymentConfirmationToCustomer({
               to: localInvoice.customer.email,
@@ -169,6 +226,7 @@ export async function POST(req: Request) {
               invoiceNumber: localInvoice.invoiceNumber,
               amountPaid: amountFormatted,
               balanceRemaining: `$${(remaining / 100).toFixed(2)}`,
+              receiptUrl,
             });
           } catch (emailErr) {
             console.error("Failed to send payment confirmation to customer:", emailErr);

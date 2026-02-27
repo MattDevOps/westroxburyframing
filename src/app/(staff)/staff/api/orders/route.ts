@@ -18,6 +18,8 @@ export async function GET(req: Request) {
   const to = searchParams.get("to") || "";
   const itemType = (searchParams.get("item_type") || "").trim();
   const customerId = searchParams.get("customerId") || "";
+  const createdByUserId = searchParams.get("createdByUserId") || "";
+  const locationIdFilter = searchParams.get("locationId") || "";
 
   // Get location filter
   const locationFilter = await getLocationFilter(req);
@@ -28,6 +30,8 @@ export async function GET(req: Request) {
   else if (statusParams.length > 1) where.status = { in: statusParams };
   if (itemType) where.itemType = itemType;
   if (customerId) where.customerId = customerId;
+  if (createdByUserId) where.createdByUserId = createdByUserId;
+  if (locationIdFilter) where.locationId = locationIdFilter;
 
   // Date range filter
   if (from || to) {
@@ -55,7 +59,7 @@ export async function GET(req: Request) {
     where,
     take: limit,
     orderBy: { updatedAt: "desc" },
-    include: { customer: true, payments: true },
+    include: { customer: true, payments: true, createdBy: { select: { name: true } }, location: { select: { name: true } } },
   });
 
   return NextResponse.json({
@@ -83,6 +87,8 @@ export async function GET(req: Request) {
         item_type: o.itemType,
         itemType: o.itemType || "",
         invoiceId: o.invoiceId || null,
+        created_by_user_id: o.createdByUserId || null,
+        location_id: o.locationId || null,
       };
     }),
   });
@@ -275,6 +281,10 @@ export async function POST(req: Request) {
       metadata: { orderNumber },
     },
   });
+
+  // Purchase Order Automation: Materials are automatically tracked via materials-needed endpoint
+  // When order uses vendor items, they'll appear in the materials needed view
+  // No additional action needed here - the materials-needed API calculates requirements dynamically
 
   // Send order received email to customer (if email available and not an estimate)
   if (order.customer.email && requestedStatus !== "estimate") {
