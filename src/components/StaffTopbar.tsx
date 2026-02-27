@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
 const STAFF_NAV = [
   { href: "/staff/dashboard", label: "Dashboard" },
+  { href: "/staff/search", label: "Search", shortcut: "⌘K" },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
   { href: "/staff/orders/new", label: "New order" },
@@ -65,6 +66,20 @@ function NavLink({
 
 export default function StaffTopbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
+
+  // Keyboard shortcut for search (Cmd/Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        router.push("/staff/search");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
 
   return (
     <header className="border-b border-neutral-200 bg-white no-print">
@@ -88,6 +103,11 @@ export default function StaffTopbar() {
               {STAFF_NAV.map((link) => (
                 <NavLink key={link.href} href={link.href}>
                   {link.label}
+                  {link.shortcut && (
+                    <span className="ml-2 text-xs text-neutral-400">
+                      {link.shortcut}
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </nav>

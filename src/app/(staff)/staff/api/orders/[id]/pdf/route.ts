@@ -39,7 +39,7 @@ export async function GET(req: Request, ctx: Ctx) {
         include: {
           priceCode: true,
         },
-        orderBy: { sortOrder: "asc" },
+        orderBy: { position: "asc" },
       },
       createdBy: {
         select: { name: true },
