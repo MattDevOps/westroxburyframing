@@ -13,19 +13,26 @@ export async function GET(req: Request) {
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  startOfToday.setHours(0, 0, 0, 0);
 
   // Run independent queries in parallel for better performance
   const [
     totalOrders,
     ordersThisMonth,
+    ordersToday,
     revenueAgg,
     monthRevenueAgg,
+    todayRevenueAgg,
     statusCounts,
     totalCustomers,
   ] = await Promise.all([
     prisma.order.count(),
     prisma.order.count({
       where: { createdAt: { gte: startOfMonth } },
+    }),
+    prisma.order.count({
+      where: { createdAt: { gte: startOfToday } },
     }),
     prisma.order.aggregate({
       _sum: { totalAmount: true },
@@ -34,6 +41,10 @@ export async function GET(req: Request) {
     prisma.order.aggregate({
       _sum: { totalAmount: true },
       where: { paidInFull: true, createdAt: { gte: startOfMonth } },
+    }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { paidInFull: true, createdAt: { gte: startOfToday } },
     }),
     prisma.order.groupBy({
       by: ["status"],
@@ -44,6 +55,7 @@ export async function GET(req: Request) {
 
   const totalRevenue = revenueAgg._sum.totalAmount || 0;
   const revenueThisMonth = monthRevenueAgg._sum.totalAmount || 0;
+  const revenueToday = todayRevenueAgg._sum.totalAmount || 0;
   const byStatus = statusCounts.map((s) => ({
     status: s.status,
     count: s._count.id,
@@ -138,6 +150,7 @@ export async function GET(req: Request) {
     onHoldCount,
     outstandingInvoicesResult,
     recentActivityResult,
+    topCustomersRaw,
   ] = await Promise.all([
     // Overdue orders
     prisma.order.findMany({
@@ -204,6 +217,20 @@ export async function GET(req: Request) {
         createdBy: { select: { name: true } },
       },
     }).catch(() => []),
+    // Top customers by lifetime value
+    prisma.customer.findMany({
+      include: {
+        orders: {
+          where: {
+            status: { in: ["completed", "picked_up"] },
+          },
+          select: {
+            totalAmount: true,
+          },
+        },
+      },
+      take: 20,
+    }),
   ]);
 
   // Process A/R totals
@@ -217,15 +244,34 @@ export async function GET(req: Request) {
   // Process recent activity
   const recentActivity = Array.isArray(recentActivityResult) ? recentActivityResult : [];
 
+  // Process top customers
+  const topCustomers = Array.isArray(topCustomersRaw) ? topCustomersRaw
+    .map((c: any) => {
+      const lifetimeValue = c.orders.reduce((sum: number, o: any) => sum + o.totalAmount, 0);
+      return {
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        orderCount: c.orders.length,
+        lifetimeValue,
+      };
+    })
+    .sort((a: any, b: any) => b.lifetimeValue - a.lifetimeValue)
+    .slice(0, 5) : [];
+
   return NextResponse.json({
     totalOrders,
     ordersThisMonth,
+    ordersToday,
     totalRevenue,
     revenueThisMonth,
+    revenueToday,
     avgTurnaround,
     totalCustomers,
     byStatus,
     revenueByMonth,
+    topCustomers,
     overdueOrders: overdueOrders.map((o) => ({
       id: o.id,
       orderNumber: o.orderNumber,

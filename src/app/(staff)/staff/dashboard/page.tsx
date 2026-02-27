@@ -35,8 +35,10 @@ interface ActivityItem {
 interface DashboardData {
   totalOrders: number;
   ordersThisMonth: number;
+  ordersToday: number;
   totalRevenue: number;
   revenueThisMonth: number;
+  revenueToday: number;
   avgTurnaround: number;
   totalCustomers: number;
   byStatus: { status: string; count: number }[];
@@ -49,6 +51,14 @@ interface DashboardData {
   arBalance: number;
   invoicesPending: number;
   recentActivity: ActivityItem[];
+  topCustomers: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    orderCount: number;
+    lifetimeValue: number;
+  }>;
   lowStockItems: Array<{
     id: string;
     sku: string;
@@ -162,8 +172,18 @@ export default function DashboardPage() {
 
       {/* KPI Cards - Row 1 */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <KPICard label="Total Orders" value={data.totalOrders.toLocaleString()} />
-        <KPICard label="This Month" value={data.ordersThisMonth.toLocaleString()} />
+        <KPICard label="Today's Revenue" value={`$${(data.revenueToday / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}`} accent="blue" />
+        <KPICard label="Open Orders" value={activeCount.toString()} accent="blue" />
+        <KPICard
+          label="Overdue Orders"
+          value={data.overdueCount.toString()}
+          accent={data.overdueCount > 0 ? "red" : undefined}
+        />
+        <KPICard
+          label="Ready for Pickup"
+          value={data.readyForPickup.length.toString()}
+          accent={data.readyForPickup.length > 0 ? "amber" : undefined}
+        />
         <KPICard
           label="Total Revenue"
           value={`$${(data.totalRevenue / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}`}
@@ -171,14 +191,6 @@ export default function DashboardPage() {
         <KPICard
           label="Revenue (Month)"
           value={`$${(data.revenueThisMonth / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}`}
-        />
-        <KPICard
-          label="Avg Turnaround"
-          value={`${data.avgTurnaround} days`}
-        />
-        <KPICard
-          label="Total Customers"
-          value={data.totalCustomers.toLocaleString()}
         />
       </div>
 
@@ -318,7 +330,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Ready for Pickup */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
@@ -373,6 +385,55 @@ export default function DashboardPage() {
                   </Link>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Top Customers */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Top Customers
+            </h2>
+            <Link
+              href="/staff/reports?reportType=customers"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              View report →
+            </Link>
+          </div>
+          {!data.topCustomers || data.topCustomers.length === 0 ? (
+            <p className="text-sm text-neutral-400">No customer data available.</p>
+          ) : (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {data.topCustomers.map((c, idx) => (
+                <Link
+                  key={c.id}
+                  href={`/staff/customers/${c.id}`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 px-4 py-2.5 hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-neutral-200 flex items-center justify-center text-xs font-semibold text-neutral-600">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-neutral-900">
+                        {c.firstName} {c.lastName}
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {c.orderCount} order{c.orderCount !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-neutral-900">
+                      ${(c.lifetimeValue / 100).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                      })}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
         </div>
