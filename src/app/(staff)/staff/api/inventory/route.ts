@@ -23,11 +23,29 @@ export async function GET(req: Request) {
   // So we fetch all items and filter in memory if lowStock is requested
   const allItems = await prisma.inventoryItem.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      category: true,
+      unitType: true,
+      quantityOnHand: true,
+      reorderPoint: true,
+      reorderQty: true,
+      locationNote: true,
+      costPerUnit: true,
       vendorItem: {
-        include: { vendor: { select: { name: true, code: true } } },
+        select: {
+          id: true,
+          itemNumber: true,
+          vendor: { select: { name: true, code: true } },
+        },
       },
       lots: {
+        select: {
+          quantity: true,
+          costPerUnit: true,
+        },
         orderBy: { receivedAt: "desc" },
         take: 5, // Latest 5 lots
       },
