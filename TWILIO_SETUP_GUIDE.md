@@ -33,12 +33,31 @@ Go to **Vercel Dashboard → Your Project → Settings → Environment Variables
 | `TWILIO_ACCOUNT_SID` | Your Account SID | From Twilio Console dashboard |
 | `TWILIO_AUTH_TOKEN` | Your Auth Token | From Twilio Console (click to reveal) |
 | `TWILIO_PHONE_NUMBER` | Your Twilio number | E.164 format: `+16175551234` |
+| `PUBLIC_BASE_URL` | Your Vercel URL | e.g. `https://westroxburyframing.vercel.app` (no trailing slash) |
 
 **Important:** 
 - Add these to **Production** environment (and Preview if you want to test)
 - After adding, **redeploy** your Vercel app for changes to take effect
 
-### 3. Test SMS Functionality
+### 3. Configure Twilio Phone Number Webhooks
+
+1. Go to **Twilio Console → Phone Numbers → Manage → Active numbers**
+2. Click on your phone number `(855) 359-5007`
+3. Go to the **Configure** tab
+4. Under **Messaging Configuration**:
+   - **A message comes in:** Set to "Webhook"
+   - **URL:** Enter `https://YOUR-VERCEL-URL.vercel.app/api/webhooks/twilio/sms`
+     - Replace `YOUR-VERCEL-URL` with your actual Vercel domain
+     - Example: `https://westroxburyframing.vercel.app/api/webhooks/twilio/sms`
+   - **HTTP:** Select "HTTP POST"
+   - **Primary handler fails:** Leave empty (or set to same URL)
+5. Under **Voice Configuration** (optional - only if you use voice):
+   - You can leave these as-is or set to empty if you're not using voice features
+6. Click **Save configuration**
+
+**Note:** The webhook endpoint handles incoming SMS messages (like "STOP" to unsubscribe). If you only send SMS and don't need to receive replies, you can leave the webhook empty, but it's recommended to set it up for compliance.
+
+### 4. Test SMS Functionality
 
 1. **Test the opt-in page:**
    - Visit `https://your-domain.com/sms-opt-in`

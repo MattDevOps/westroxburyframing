@@ -148,8 +148,8 @@ export async function GET(req: Request) {
         const quantity = Number(component.quantity || 0);
         material.totalQuantity += quantity;
 
-        // Add component revenue (use component price if available, otherwise estimate from order)
-        const componentPrice = component.priceCents || 0;
+        // Add component revenue (use component lineTotal if available, otherwise estimate from order)
+        const componentPrice = component.lineTotal || 0;
         if (componentPrice > 0) {
           material.totalRevenue += componentPrice;
         } else {
