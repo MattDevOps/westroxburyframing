@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const q = (searchParams.get("q") || "").trim();
 
   if (!q || q.length < 2) {
-    return NextResponse.json({ orders: [], customers: [], invoices: [] });
+    return NextResponse.json({ orders: [], customers: [], invoices: [], products: [] });
   }
 
   try {
@@ -116,6 +116,32 @@ export async function GET(req: Request) {
       take: 10,
     });
 
+    // Search products by SKU, name, description, or barcode
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { sku: { contains: q, mode: "insensitive" } },
+          { name: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+          { barcode: { contains: q } },
+        ],
+      },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        description: true,
+        category: true,
+        type: true,
+        retailPrice: true,
+        quantityOnHand: true,
+        imageUrl: true,
+        published: true,
+      },
+      orderBy: { name: "asc" },
+      take: 10,
+    });
+
     return NextResponse.json({
       orders: orders.map((o) => ({
         id: o.id,
@@ -147,6 +173,17 @@ export async function GET(req: Request) {
         amount: i.totalAmount,
         url: `/staff/invoices/${i.id}`,
         createdAt: i.createdAt.toISOString(),
+      })),
+      products: products.map((p) => ({
+        id: p.id,
+        type: "product",
+        title: p.name,
+        subtitle: `SKU: ${p.sku}`,
+        description: p.description || `${p.category.replace(/_/g, " ")} • ${p.type}`,
+        status: p.published ? "published" : "draft",
+        amount: p.retailPrice,
+        url: `/staff/products/${p.id}`,
+        createdAt: null,
       })),
     });
   } catch (error: any) {

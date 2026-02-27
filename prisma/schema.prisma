@@ -75,6 +75,7 @@ model Customer {
   appointments     Appointment[]
   tagAssignments   CustomerTagAssignment[]
   giftCertificates GiftCertificate[]
+  products         Product[]
 }
 
 // ─── Phase 5A: Customer Tags ───────────────────────────────────
@@ -535,4 +536,32 @@ model StaffMessage {
   @@index([toUserId, read])
   @@index([fromUserId])
   @@index([createdAt])
+}
+
+// ─── Phase 7: Art/Retail Products ───────────────────────────────────
+
+model Product {
+  id             String    @id @default(uuid())
+  sku            String    @unique
+  name           String
+  description    String?
+  category       String // readymade_frame, giftware, art_supplies, consignment_art, etc.
+  type           String    @default("retail") // "retail" | "consignment"
+  artistId       String? // For consignment art
+  artist         Customer? @relation(fields: [artistId], references: [id])
+  cost           Int       @default(0) // cents
+  retailPrice    Int       @default(0) // cents
+  quantityOnHand Decimal   @default(0)
+  reorderPoint   Decimal   @default(0)
+  imageUrl       String?
+  barcode        String?
+  notes          String?
+  published      Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([sku])
+  @@index([category])
+  @@index([type])
+  @@index([artistId])
 }

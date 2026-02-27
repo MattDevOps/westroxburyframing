@@ -7,20 +7,21 @@ import { ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 
 interface SearchResult {
   id: string;
-  type: "order" | "customer" | "invoice";
+  type: "order" | "customer" | "invoice" | "product";
   title: string;
   subtitle: string;
   description: string;
   status?: string;
   amount?: number;
   url: string;
-  createdAt: string;
+  createdAt: string | null;
 }
 
 interface SearchData {
   orders: SearchResult[];
   customers: SearchResult[];
   invoices: SearchResult[];
+  products: SearchResult[];
 }
 
 export default function SearchPage() {
@@ -71,7 +72,7 @@ export default function SearchPage() {
   }
 
   const allResults: SearchResult[] = results
-    ? [...results.orders, ...results.customers, ...results.invoices]
+    ? [...results.orders, ...results.customers, ...results.invoices, ...results.products]
     : [];
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -97,6 +98,8 @@ export default function SearchPage() {
         return "👤";
       case "invoice":
         return "💳";
+      case "product":
+        return "🖼️";
       default:
         return "🔍";
     }
@@ -291,6 +294,63 @@ export default function SearchPage() {
                               {result.amount && (
                                 <div className="text-sm font-medium text-neutral-900">
                                   Total: ${(result.amount / 100).toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {results.products && results.products.length > 0 && (
+                <div>
+                  <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+                    Products ({results.products.length})
+                  </h2>
+                  <div className="space-y-2">
+                    {results.products.map((result, idx) => {
+                      const globalIdx = results.orders.length + results.customers.length + results.invoices.length + idx;
+                      return (
+                        <Link
+                          key={result.id}
+                          href={result.url}
+                          className={`block rounded-xl border p-4 transition-colors ${
+                            selectedIndex === globalIdx
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-neutral-200 bg-white hover:bg-neutral-50"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-2xl">{getTypeIcon(result.type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-neutral-900">
+                                  {result.title}
+                                </span>
+                                {result.status && (
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    result.status === "published"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-neutral-100 text-neutral-600"
+                                  }`}>
+                                    {result.status}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-neutral-600 mb-1">
+                                {result.subtitle}
+                              </div>
+                              {result.description && (
+                                <div className="text-xs text-neutral-500 mb-1">
+                                  {result.description}
+                                </div>
+                              )}
+                              {result.amount && (
+                                <div className="text-sm font-medium text-neutral-900">
+                                  ${(result.amount / 100).toFixed(2)}
                                 </div>
                               )}
                             </div>
