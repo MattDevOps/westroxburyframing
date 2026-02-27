@@ -35,13 +35,39 @@ export async function GET(req: Request) {
     locationIds = [locationParam];
   } else {
     // Default to current location
-    const currentLocationId = await getCurrentLocationId(req);
+    let currentLocationId = await getCurrentLocationId(req);
+    
+    // If admin has no location selected, try to auto-select if only one location exists
+    if (!currentLocationId && admin) {
+      const locations = await prisma.location.findMany({
+        where: { active: true },
+        select: { id: true },
+      });
+      
+      if (locations.length === 1) {
+        // Only one location - use it automatically
+        currentLocationId = locations[0].id;
+      } else if (locations.length === 0) {
+        return NextResponse.json(
+          { error: "No active locations found. Please create a location first." },
+          { status: 400 }
+        );
+      } else {
+        // Multiple locations but none selected - return error
+        return NextResponse.json(
+          { error: "Location required. Please select a location." },
+          { status: 400 }
+        );
+      }
+    }
+    
     if (!currentLocationId) {
       return NextResponse.json(
         { error: "Location required. Please select a location." },
         { status: 400 }
       );
     }
+    
     locationFilter = { locationId: currentLocationId };
     locationIds = [currentLocationId];
   }
