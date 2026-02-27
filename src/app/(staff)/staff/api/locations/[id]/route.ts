@@ -8,7 +8,7 @@ import { prisma } from "@/lib/db";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = getStaffUserIdFromRequest(req);
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const location = await prisma.location.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!location) {
@@ -40,7 +41,7 @@ export async function GET(
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = getStaffUserIdFromRequest(req);
@@ -56,11 +57,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const { name, code, address, phone, email, active } = body;
 
     const location = await prisma.location.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name !== undefined && { name }),
         ...(code !== undefined && { code }),
