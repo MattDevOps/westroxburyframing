@@ -108,111 +108,111 @@ export async function GET(req: Request, ctx: Ctx) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-size: 14px;
+      font-size: 12px;
       color: #1a1a1a;
-      padding: 40px;
+      padding: 20px;
       background: #f5f5f5;
-      line-height: 1.5;
+      line-height: 1.4;
     }
     .receipt {
       max-width: 500px;
       margin: 0 auto;
       background: white;
-      padding: 40px;
+      padding: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .header {
       text-align: center;
-      border-bottom: 3px solid #1a1a1a;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
     }
     .header h1 {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       color: #1a1a1a;
     }
     .header .tagline {
-      font-size: 13px;
+      font-size: 11px;
       color: #666;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
     .header .business-info {
-      font-size: 12px;
+      font-size: 10px;
       color: #666;
-      line-height: 1.8;
+      line-height: 1.5;
     }
     .receipt-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 1px solid #e5e5e5;
     }
     .receipt-info .label {
-      font-size: 11px;
+      font-size: 9px;
       color: #999;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .receipt-info .value {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: #1a1a1a;
     }
     .customer-info {
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 1px solid #e5e5e5;
     }
     .customer-info h2 {
-      font-size: 12px;
+      font-size: 10px;
       color: #999;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
     }
     .customer-info p {
-      font-size: 14px;
+      font-size: 12px;
       color: #1a1a1a;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .order-details {
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 1px solid #e5e5e5;
     }
     .order-details h2 {
-      font-size: 12px;
+      font-size: 10px;
       color: #999;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-    .order-details p {
-      font-size: 14px;
-      color: #1a1a1a;
       margin-bottom: 6px;
     }
+    .order-details p {
+      font-size: 12px;
+      color: #1a1a1a;
+      margin-bottom: 3px;
+    }
     .items {
-      margin-bottom: 30px;
+      margin-bottom: 12px;
     }
     .items h2 {
-      font-size: 12px;
+      font-size: 10px;
       color: #999;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
     .item {
       display: flex;
       justify-content: space-between;
-      padding: 12px 0;
+      padding: 6px 0;
       border-bottom: 1px solid #f0f0f0;
     }
     .item:last-child {
@@ -220,33 +220,33 @@ export async function GET(req: Request, ctx: Ctx) {
     }
     .item-description {
       flex: 1;
-      font-size: 14px;
+      font-size: 12px;
       color: #1a1a1a;
     }
     .item-quantity {
-      font-size: 13px;
+      font-size: 11px;
       color: #666;
-      margin-right: 12px;
-      min-width: 40px;
+      margin-right: 8px;
+      min-width: 35px;
       text-align: right;
     }
     .item-price {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: #1a1a1a;
-      min-width: 80px;
+      min-width: 70px;
       text-align: right;
     }
     .totals {
-      margin-bottom: 30px;
-      padding-top: 20px;
+      margin-bottom: 12px;
+      padding-top: 10px;
       border-top: 2px solid #1a1a1a;
     }
     .total-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      font-size: 14px;
+      padding: 4px 0;
+      font-size: 12px;
     }
     .total-row.subtotal {
       color: #666;
@@ -258,64 +258,64 @@ export async function GET(req: Request, ctx: Ctx) {
       color: #666;
     }
     .total-row.total {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 700;
-      padding-top: 12px;
+      padding-top: 6px;
       border-top: 1px solid #e5e5e5;
-      margin-top: 8px;
+      margin-top: 4px;
     }
     .total-label {
       flex: 1;
     }
     .total-value {
-      min-width: 100px;
+      min-width: 80px;
       text-align: right;
     }
     .payment-info {
-      margin-bottom: 30px;
-      padding: 16px;
+      margin-bottom: 12px;
+      padding: 10px;
       background: #f9f9f9;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 4px;
+      font-size: 11px;
       color: #666;
     }
     .payment-info strong {
       color: #1a1a1a;
     }
     .notes {
-      margin-bottom: 30px;
-      padding-top: 20px;
+      margin-bottom: 12px;
+      padding-top: 10px;
       border-top: 1px solid #e5e5e5;
     }
     .notes h2 {
-      font-size: 12px;
+      font-size: 10px;
       color: #999;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .notes p {
-      font-size: 13px;
+      font-size: 11px;
       color: #666;
-      line-height: 1.6;
+      line-height: 1.5;
     }
     .footer {
       text-align: center;
-      padding-top: 30px;
+      padding-top: 12px;
       border-top: 1px solid #e5e5e5;
-      font-size: 11px;
+      font-size: 10px;
       color: #999;
-      line-height: 1.8;
+      line-height: 1.6;
     }
     .thank-you {
       text-align: center;
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 600;
       color: #1a1a1a;
-      margin-bottom: 20px;
-      padding: 20px;
+      margin-bottom: 12px;
+      padding: 10px;
       background: #f9f9f9;
-      border-radius: 8px;
+      border-radius: 4px;
     }
     @media print {
       body {
@@ -325,11 +325,17 @@ export async function GET(req: Request, ctx: Ctx) {
       .receipt {
         max-width: 100%;
         box-shadow: none;
-        padding: 20px;
+        padding: 15px;
       }
       @page {
-        margin: 0.5in;
+        margin: 0.4in;
         size: letter;
+      }
+      .header h1 {
+        font-size: 22px;
+      }
+      .total-row.total {
+        font-size: 15px;
       }
     }
   </style>
