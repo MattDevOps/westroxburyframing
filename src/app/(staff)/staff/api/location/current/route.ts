@@ -44,6 +44,22 @@ export async function GET(req: Request) {
       // Default to first location if no override
       if (!currentLocation && availableLocations.length > 0) {
         currentLocation = availableLocations[0];
+        // If there's only one location, automatically set it in the cookie
+        if (availableLocations.length === 1) {
+          const response = NextResponse.json({
+            currentLocation,
+            availableLocations,
+            isAdmin: user.role === "admin",
+          });
+          response.cookies.set("wrx_location", currentLocation.id, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30, // 30 days
+          });
+          return response;
+        }
       }
     } else {
       // Staff can only see their assigned location

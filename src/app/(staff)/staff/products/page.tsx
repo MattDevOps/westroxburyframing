@@ -29,6 +29,7 @@ interface Product {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -40,6 +41,7 @@ export default function ProductsPage() {
 
   async function loadProducts() {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (searchQuery) params.set("q", searchQuery);
@@ -48,11 +50,15 @@ export default function ProductsPage() {
       if (showLowStock) params.set("lowStock", "true");
 
       const res = await fetch(`/staff/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load products");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load products");
+      }
       const data = await res.json();
       setProducts(data.products || []);
     } catch (e: any) {
       console.error("Error loading products:", e);
+      setError(e.message || "Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -148,10 +154,18 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+          <p className="font-semibold mb-1">Error loading products</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Product Grid */}
       {loading ? (
         <div className="text-center py-10 text-neutral-500">Loading...</div>
-      ) : products.length === 0 ? (
+      ) : error ? null : products.length === 0 ? (
         <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-neutral-500">
           <p className="text-lg mb-2">No products found</p>
           <p className="text-sm">Add your first product to get started</p>
