@@ -40,6 +40,16 @@ Add these in **Vercel Dashboard → Project → Settings → Environment Variabl
 | `STAFF_NOTIFICATIONS_EMAIL` | Where invoice-paid emails go (e.g. `jake@westroxburyframing.com`) |
 | `CONTACT_FORM_EMAIL` | Where contact form submissions go (optional, defaults to jake@) |
 
+### Twilio SMS (optional - for pickup reminders and status updates)
+
+| Variable | Description |
+|----------|-------------|
+| `TWILIO_ACCOUNT_SID` | Your Twilio Account SID (from Twilio Console) |
+| `TWILIO_AUTH_TOKEN` | Your Twilio Auth Token (from Twilio Console) |
+| `TWILIO_PHONE_NUMBER` | Your Twilio phone number in E.164 format (e.g. `+16175551234`) |
+
+**Note:** SMS will only be sent to customers who have opted in via the SMS opt-in page (`/sms-opt-in`). Customers must explicitly opt in before receiving SMS notifications.
+
 ### Optional
 
 | Variable | Description |

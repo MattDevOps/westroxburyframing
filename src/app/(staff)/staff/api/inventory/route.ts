@@ -33,7 +33,6 @@ export async function GET(req: Request) {
       reorderPoint: true,
       reorderQty: true,
       locationNote: true,
-      costPerUnit: true,
       vendorItem: {
         select: {
           id: true,
@@ -78,10 +77,8 @@ export async function GET(req: Request) {
       }
     }
 
-    // Use costPerUnit from item if no lots, or if it's explicitly set
-    if (averageCost === 0 && item.costPerUnit) {
-      averageCost = Number(item.costPerUnit);
-    }
+    // Note: costPerUnit is not stored on InventoryItem itself,
+    // it's only tracked in InventoryLot records
 
     return {
       ...item,
