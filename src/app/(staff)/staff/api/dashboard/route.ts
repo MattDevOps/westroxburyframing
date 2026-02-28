@@ -233,7 +233,6 @@ export async function GET(req: Request) {
         where: {
           ...locationFilter,
           status: { in: ["completed", "picked_up"] },
-          customerId: { not: null },
         },
         _sum: { totalAmount: true },
         _count: { id: true },
