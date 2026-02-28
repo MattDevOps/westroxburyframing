@@ -315,8 +315,23 @@ export default function OrderIntakePage() {
 
       // Upload photos if any
       if (data.photos.length > 0) {
-        // TODO: Implement photo upload
-        console.log("Photos to upload:", data.photos);
+        for (const photoDataUrl of data.photos) {
+          if (photoDataUrl.startsWith("data:image/")) {
+            try {
+              await fetch(`/staff/api/orders/${orderId}/photos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  url: photoDataUrl,
+                  caption: "Uploaded during intake",
+                }),
+              });
+            } catch (photoErr) {
+              console.error("Failed to upload photo:", photoErr);
+              // Don't fail the order creation if photo upload fails
+            }
+          }
+        }
       }
 
       // Create deposit invoice if deposit percent > 0
@@ -361,9 +376,9 @@ export default function OrderIntakePage() {
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 md:px-8 py-6 md:py-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-neutral-900">New Order Intake</h1>
-          <p className="text-base md:text-lg text-neutral-600 mt-2">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900">New Order Intake</h1>
+          <p className="text-sm sm:text-base md:text-lg text-neutral-600 mt-2">
             Walk your customer through the framing process step by step
           </p>
         </div>
@@ -371,8 +386,8 @@ export default function OrderIntakePage() {
 
       {/* Step Progress */}
       <div className="bg-white border-b border-neutral-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 md:px-8">
-          <div className="flex items-center justify-between py-6 md:py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="flex items-center justify-between py-4 sm:py-6 md:py-8">
             {[1, 2, 3, 4, 5, 6].map((step) => {
               // Hide step 6 if payment not needed
               if (step === 6 && !showPayment && currentStep < 6) return null;
@@ -380,7 +395,7 @@ export default function OrderIntakePage() {
               return (
                 <div key={step} className="flex items-center flex-1">
                   <div
-                    className={`flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border-2 font-bold text-base md:text-lg transition-all ${
+                    className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 font-bold text-sm sm:text-base md:text-lg transition-all touch-manipulation ${
                       currentStep === step
                         ? "bg-black text-white border-black shadow-lg scale-110"
                         : currentStep > step
@@ -392,7 +407,7 @@ export default function OrderIntakePage() {
                   </div>
                   {step < 6 && (
                     <div
-                      className={`flex-1 h-1 mx-3 md:mx-4 transition-colors ${
+                      className={`flex-1 h-1 mx-2 sm:mx-3 md:mx-4 transition-colors ${
                         currentStep > step ? "bg-neutral-900" : "bg-neutral-200"
                       }`}
                     />
@@ -401,19 +416,19 @@ export default function OrderIntakePage() {
               );
             })}
           </div>
-          <div className="flex items-center justify-between pb-6 text-sm md:text-base text-neutral-600 font-medium">
-            <span className="text-center flex-1">Customer & Artwork</span>
-            <span className="text-center flex-1">Frame</span>
-            <span className="text-center flex-1">Mats & Glass</span>
-            <span className="text-center flex-1">Preview</span>
-            <span className="text-center flex-1">Confirm</span>
-            {showPayment && <span className="text-center flex-1">Payment</span>}
+          <div className="flex items-center justify-between pb-4 sm:pb-6 text-xs sm:text-sm md:text-base text-neutral-600 font-medium">
+            <span className="text-center flex-1 px-1">Customer & Artwork</span>
+            <span className="text-center flex-1 px-1">Frame</span>
+            <span className="text-center flex-1 px-1">Mats & Glass</span>
+            <span className="text-center flex-1 px-1">Preview</span>
+            <span className="text-center flex-1 px-1">Confirm</span>
+            {showPayment && <span className="text-center flex-1 px-1">Payment</span>}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 md:px-8 py-8 md:py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
         {createdOrderId && (
           <div className="mb-6 rounded-2xl border-2 border-green-200 bg-green-50 p-6 md:p-8 text-green-800 shadow-lg">
             <div className="flex items-start justify-between">
@@ -480,7 +495,7 @@ export default function OrderIntakePage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg p-6 md:p-8 lg:p-10">
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg p-4 sm:p-6 md:p-8 lg:p-10">
           {currentStep === 1 && (
             <Step1CustomerArtwork
               data={data}

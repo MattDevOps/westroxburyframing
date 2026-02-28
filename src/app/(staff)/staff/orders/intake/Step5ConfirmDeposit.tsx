@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle, DollarSign, Calendar, FileText, Percent, CreditCard, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle, DollarSign, Calendar, FileText, Percent, CreditCard, User, AlertTriangle } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface Step5Props {
@@ -20,6 +20,116 @@ export default function Step5ConfirmDeposit({
   loading,
 }: Step5Props) {
   const [showDiscount, setShowDiscount] = useState(false);
+  const [costData, setCostData] = useState<{ totalCost: number; profitMargin: number } | null>(null);
+  const [loadingCost, setLoadingCost] = useState(false);
+
+  // Calculate cost and profit margin
+  useEffect(() => {
+    if (data.pricing && data.width > 0 && data.height > 0) {
+      calculateCost();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.pricing, data.frames, data.mats, data.glassType, data.mountingType, data.addOns, data.width, data.height, data.units]);
+
+  const calculateCost = async () => {
+    if (!data.pricing) return;
+    
+    setLoadingCost(true);
+    try {
+      // Build components array with vendor items
+      const components: any[] = [];
+      
+      data.frames.forEach((frame) => {
+        if (frame.vendorItemId) {
+          components.push({
+            category: "frame",
+            vendorItemId: frame.vendorItemId,
+            quantity: 1,
+          });
+        }
+      });
+      
+      data.mats.forEach((mat) => {
+        if (mat.vendorItemId) {
+          components.push({
+            category: "mat",
+            vendorItemId: mat.vendorItemId,
+            quantity: 1,
+          });
+        }
+      });
+      
+      if (components.length === 0) {
+        // No vendor items, can't calculate cost
+        setCostData(null);
+        return;
+      }
+      
+      // Fetch vendor items to get costs
+      const vendorItemIds = components.map(c => c.vendorItemId).filter(Boolean) as string[];
+      const res = await fetch(`/staff/api/vendor-items?ids=${vendorItemIds.join(",")}`);
+      if (!res.ok) {
+        setCostData(null);
+        return;
+      }
+      
+      const { items } = await res.json() as { items: Array<{ id: string; costPerUnit: number | string; unitType: string }> };
+      const vendorItemMap = new Map(items.map((item) => [item.id, item]));
+      
+      // Calculate cost
+      const widthInches = data.units === "cm" ? data.width / 2.54 : data.width;
+      const heightInches = data.units === "cm" ? data.height / 2.54 : data.height;
+      
+      let totalCost = 0;
+      for (const component of components) {
+        const vendorItem = vendorItemMap.get(component.vendorItemId || "");
+        if (!vendorItem || !vendorItem.costPerUnit) continue;
+        
+        const costPerUnit = Number(vendorItem.costPerUnit);
+        const quantity = component.quantity || 1;
+        const unitType = vendorItem.unitType;
+        
+        if (unitType === "foot" && widthInches && heightInches) {
+          const perimeterInches = (widthInches + heightInches) * 2;
+          const perimeterFeet = perimeterInches / 12;
+          totalCost += perimeterFeet * quantity * costPerUnit;
+        } else if ((unitType === "sqft" || unitType === "sheet") && widthInches && heightInches) {
+          const areaSqInches = widthInches * heightInches;
+          const areaSqFeet = areaSqInches / 144;
+          if (unitType === "sheet") {
+            const sheetArea = 32 * 40;
+            const sheetsNeeded = Math.ceil((areaSqInches * quantity) / sheetArea);
+            totalCost += sheetsNeeded * costPerUnit;
+          } else {
+            totalCost += areaSqFeet * quantity * costPerUnit;
+          }
+        } else {
+          totalCost += quantity * costPerUnit;
+        }
+      }
+      
+      // Convert to cents
+      const totalCostCents = Math.round(totalCost * 100);
+      const finalSubtotal =
+        data.discountType === "percent"
+          ? Math.round(data.pricing.subtotal * (1 - data.discountValue / 100))
+          : data.discountType === "fixed"
+          ? Math.max(0, data.pricing.subtotal - Math.round(data.discountValue * 100))
+          : data.pricing.subtotal;
+      const finalTax = Math.round(finalSubtotal * 0.0625);
+      const finalTotal = finalSubtotal + finalTax;
+      
+      const profit = finalTotal - totalCostCents;
+      const profitMargin = finalTotal > 0 ? (profit / finalTotal) * 100 : 0;
+      
+      setCostData({ totalCost: totalCostCents, profitMargin });
+    } catch (error) {
+      console.error("Failed to calculate cost:", error);
+      setCostData(null);
+    } finally {
+      setLoadingCost(false);
+    }
+  };
 
   if (!data.pricing) {
     return (
@@ -151,6 +261,46 @@ export default function Step5ConfirmDeposit({
             <span className="text-green-600">${(finalTotal / 100).toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Cost & Profit Margin */}
+        {loadingCost ? (
+          <div className="text-sm text-neutral-500 mt-4">Calculating cost...</div>
+        ) : costData ? (
+          <div className="mt-6 space-y-3 border-t-2 border-neutral-200 pt-4">
+            <div className="flex justify-between text-base">
+              <span className="text-neutral-600">Estimated Cost:</span>
+              <span className="font-semibold">${(costData.totalCost / 100).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-base">
+              <span className="text-neutral-600">Estimated Profit:</span>
+              <span className="font-semibold text-green-600">
+                ${((finalTotal - costData.totalCost) / 100).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between text-lg font-bold">
+              <span className="text-neutral-700">Profit Margin:</span>
+              <span className={costData.profitMargin < 60 ? "text-red-600" : "text-green-600"}>
+                {costData.profitMargin.toFixed(1)}%
+              </span>
+            </div>
+            {costData.profitMargin < 60 && (
+              <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-4 flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-bold text-red-800 mb-1">⚠️ Low Profit Margin Warning</div>
+                  <div className="text-sm text-red-700">
+                    Profit margin is below 60% ({costData.profitMargin.toFixed(1)}%). 
+                    Consider adjusting pricing or reviewing costs before submitting this order.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 text-sm text-neutral-500">
+            Cost calculation unavailable (vendor items not selected for all components)
+          </div>
+        )}
 
         {/* Discount Toggle */}
         <div className="border-t-2 border-neutral-200 pt-6">
@@ -311,18 +461,18 @@ export default function Step5ConfirmDeposit({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t-2 border-neutral-200">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onBack}
           disabled={loading}
-          className="rounded-2xl border-2 border-neutral-300 px-8 py-4 text-neutral-700 text-base font-bold hover:bg-neutral-50 disabled:opacity-50 transition-all min-w-[150px]"
+          className="rounded-2xl border-2 border-neutral-300 px-6 sm:px-8 py-3 sm:py-4 text-neutral-700 text-sm sm:text-base font-bold hover:bg-neutral-50 disabled:opacity-50 transition-all min-w-[120px] sm:min-w-[150px] touch-manipulation active:scale-95"
         >
           ← Back
         </button>
         <button
           onClick={onSubmit}
           disabled={loading}
-          className="rounded-2xl bg-green-600 px-10 py-5 text-white text-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl hover:shadow-2xl flex items-center gap-2 min-w-[250px] justify-center"
+          className="rounded-2xl bg-green-600 px-6 sm:px-10 py-4 sm:py-5 text-white text-base sm:text-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl hover:shadow-2xl flex items-center gap-2 min-w-full sm:min-w-[250px] justify-center touch-manipulation active:scale-95"
         >
           {loading ? (
             <>
@@ -331,7 +481,7 @@ export default function Step5ConfirmDeposit({
             </>
           ) : (
             <>
-              <CheckCircle className="w-6 h-6" />
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
               Submit Order
             </>
           )}

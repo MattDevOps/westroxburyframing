@@ -180,7 +180,7 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, phone, or email..."
-                className="w-full rounded-2xl border-2 border-neutral-300 px-12 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full rounded-2xl border-2 border-neutral-300 px-12 py-4 sm:py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all touch-manipulation"
                 autoFocus
               />
               {searching && (
@@ -411,12 +411,88 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
         />
       </div>
 
+      {/* Photo Upload */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-base md:text-lg font-semibold text-neutral-900">
+          <Image className="w-5 h-5 text-blue-600" />
+          Artwork Photos (Optional)
+        </label>
+        <div className="space-y-4">
+          <label className="flex flex-col items-center justify-center w-full h-32 sm:h-36 md:h-40 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 cursor-pointer transition-colors touch-manipulation active:bg-neutral-200">
+            <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+              <Image className="w-8 h-8 sm:w-10 sm:h-10 text-neutral-400 mb-2" />
+              <p className="text-xs sm:text-sm md:text-base font-semibold text-neutral-700 mb-1 text-center">
+                Tap to upload photos
+              </p>
+              <p className="text-xs text-neutral-500 text-center">
+                PNG, JPG, WebP up to 10MB (max 6)
+              </p>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={async (e) => {
+                const files = e.target.files;
+                if (!files) return;
+                
+                const newPhotos: string[] = [...data.photos];
+                const maxPhotos = 6;
+                
+                for (const file of Array.from(files).slice(0, maxPhotos - newPhotos.length)) {
+                  if (file.size > 10 * 1024 * 1024) {
+                    alert(`File ${file.name} is too large (max 10MB)`);
+                    continue;
+                  }
+                  
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const dataUrl = reader.result as string;
+                    if (newPhotos.length < maxPhotos) {
+                      updateData({ photos: [...newPhotos, dataUrl] });
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+                
+                e.target.value = "";
+              }}
+            />
+          </label>
+
+          {data.photos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {data.photos.map((photo, idx) => (
+                <div key={idx} className="relative group">
+                  <img
+                    src={photo}
+                    alt={`Artwork ${idx + 1}`}
+                    className="w-full h-32 md:h-40 object-cover rounded-xl border-2 border-neutral-200"
+                  />
+                  <button
+                    onClick={() => {
+                      const newPhotos = data.photos.filter((_, i) => i !== idx);
+                      updateData({ photos: newPhotos });
+                    }}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    type="button"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Next Button */}
       <div className="flex justify-end pt-6 border-t-2 border-neutral-200">
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="rounded-2xl bg-black px-8 py-4 text-white text-base font-bold hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl min-w-[200px]"
+          className="rounded-2xl bg-black px-6 sm:px-8 py-3 sm:py-4 text-white text-sm sm:text-base font-bold hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl min-w-[160px] sm:min-w-[200px] touch-manipulation active:scale-95"
         >
           Next: Frame Selection →
         </button>
