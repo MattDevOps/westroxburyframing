@@ -135,13 +135,24 @@ export async function DELETE(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Purchase order not found" }, { status: 404 });
   }
 
-  if (existing.status !== "draft") {
+  // Allow deleting draft or cancelled POs (safe to delete)
+  if (existing.status !== "draft" && existing.status !== "cancelled") {
     return NextResponse.json(
-      { error: "Can only delete draft purchase orders" },
+      { error: "Can only delete draft or cancelled purchase orders" },
       { status: 400 }
     );
   }
 
+  // Delete related records first
+  // Note: PurchaseOrderLine has onDelete: Cascade, but we'll be explicit
+  await prisma.purchaseOrderLine.deleteMany({ where: { purchaseOrderId: id } });
+  
+  // Remove purchase order reference from inventory lots (set to null)
+  await prisma.inventoryLot.updateMany({
+    where: { purchaseOrderId: id },
+    data: { purchaseOrderId: null },
+  });
+  
   await prisma.purchaseOrder.delete({ where: { id } });
 
   return NextResponse.json({ ok: true });

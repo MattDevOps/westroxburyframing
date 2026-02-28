@@ -119,6 +119,28 @@ export default function PurchaseOrderDetailPage({
     }
   }
 
+  async function handleDelete() {
+    if (!id) return;
+    if (!confirm(`Are you sure you want to delete purchase order ${order?.poNumber}? This action cannot be undone.`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/staff/api/purchase-orders/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete purchase order");
+      }
+      router.push("/staff/purchase-orders");
+    } catch (e: any) {
+      alert(e.message || "Failed to delete purchase order");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-6">
@@ -160,7 +182,7 @@ export default function PurchaseOrderDetailPage({
               {new Date(order.createdAt).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <span
               className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${
                 STATUS_COLORS[order.status] || STATUS_COLORS.draft
@@ -168,6 +190,15 @@ export default function PurchaseOrderDetailPage({
             >
               {order.status}
             </span>
+            {(order.status === "draft" || order.status === "cancelled") && (
+              <button
+                onClick={handleDelete}
+                disabled={saving}
+                className="rounded-lg border border-red-300 bg-red-50 text-red-700 px-4 py-2 text-sm font-medium hover:bg-red-100 disabled:opacity-50"
+              >
+                {saving ? "Deleting..." : "Delete"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -368,11 +399,28 @@ function ReceiveModal({
   onReceive: (receivedLines: Array<{ lineId: string; quantityReceived: number; costPerUnit?: number }>) => void;
   loading: boolean;
 }) {
-  const [received, setReceived] = useState<Record<string, { qty: number; cost?: number }>>({});
-
   const pendingLines = lines.filter(
     (line) => Number(line.quantityReceived) < Number(line.quantityOrdered)
   );
+
+  // Initialize received state with default values (remaining quantity for each line)
+  // This ensures the state is populated even if user doesn't modify the pre-filled values
+  const [received, setReceived] = useState<Record<string, { qty: number; cost?: number }>>(() => {
+    const initial: Record<string, { qty: number; cost?: number }> = {};
+    const pending = lines.filter(
+      (line) => Number(line.quantityReceived) < Number(line.quantityOrdered)
+    );
+    for (const line of pending) {
+      const ordered = Number(line.quantityOrdered);
+      const alreadyReceived = Number(line.quantityReceived);
+      const remaining = ordered - alreadyReceived;
+      initial[line.id] = {
+        qty: remaining,
+        cost: line.unitCost ? Number(line.unitCost) : undefined,
+      };
+    }
+    return initial;
+  });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -402,7 +450,11 @@ function ReceiveModal({
             const ordered = Number(line.quantityOrdered);
             const alreadyReceived = Number(line.quantityReceived);
             const remaining = ordered - alreadyReceived;
-            const current = received[line.id] || { qty: remaining, cost: Number(line.unitCost) };
+            // Use state value if it exists, otherwise use default (remaining quantity)
+            const current = received[line.id] || { 
+              qty: remaining, 
+              cost: line.unitCost ? Number(line.unitCost) : undefined 
+            };
             return (
               <div key={line.id} className="border border-neutral-200 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">

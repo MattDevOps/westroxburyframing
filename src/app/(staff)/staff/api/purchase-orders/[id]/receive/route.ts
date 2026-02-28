@@ -15,10 +15,11 @@ export async function POST(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const body = await req.json();
 
-  // Get the PO with lines
+  // Get the PO with lines and vendor info
   const po = await prisma.purchaseOrder.findUnique({
     where: { id },
     include: {
+      vendor: true,
       lines: {
         include: {
           inventoryItem: true,
@@ -56,8 +57,41 @@ export async function POST(req: Request, ctx: Ctx) {
       data: { quantityReceived: newQtyReceived },
     });
 
-    // Update inventory if line has an inventory item
-    if (line.inventoryItemId) {
+    // Try to find or link inventory item if not already linked
+    let inventoryItemId = line.inventoryItemId;
+    
+    if (!inventoryItemId && line.vendorItemNumber) {
+      // Try to find inventory item by vendor item number
+      // First, try to find via vendor catalog item
+      const vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
+        where: {
+          vendorId: po.vendorId,
+          itemNumber: line.vendorItemNumber,
+        },
+      });
+
+      if (vendorCatalogItem) {
+        // Find inventory item linked to this vendor catalog item
+        const inventoryItem = await prisma.inventoryItem.findFirst({
+          where: {
+            vendorItemId: vendorCatalogItem.id,
+            locationId: po.locationId,
+          },
+        });
+
+        if (inventoryItem) {
+          inventoryItemId = inventoryItem.id;
+          // Update the PO line to link it
+          await prisma.purchaseOrderLine.update({
+            where: { id: line.id },
+            data: { inventoryItemId },
+          });
+        }
+      }
+    }
+
+    // Update inventory if we have an inventory item (either existing or newly linked)
+    if (inventoryItemId) {
       const costPerUnit = received.costPerUnit
         ? Number(received.costPerUnit)
         : line.unitCost
@@ -66,7 +100,7 @@ export async function POST(req: Request, ctx: Ctx) {
 
       // Add to inventory
       await prisma.inventoryItem.update({
-        where: { id: line.inventoryItemId },
+        where: { id: inventoryItemId },
         data: {
           quantityOnHand: {
             increment: qtyReceived,
@@ -77,7 +111,7 @@ export async function POST(req: Request, ctx: Ctx) {
       // Create inventory lot
       await prisma.inventoryLot.create({
         data: {
-          inventoryItemId: line.inventoryItemId,
+          inventoryItemId: inventoryItemId,
           quantity: qtyReceived,
           costPerUnit: costPerUnit,
           purchaseOrderId: id,
