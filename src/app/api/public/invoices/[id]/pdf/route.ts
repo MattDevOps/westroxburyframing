@@ -26,6 +26,7 @@ export async function GET(req: Request, ctx: Ctx) {
       customerId: true,
       orders: {
         select: {
+          id: true,
           customerId: true,
         },
       },
