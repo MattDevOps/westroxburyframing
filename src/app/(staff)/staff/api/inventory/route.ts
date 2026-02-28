@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
-import { getLocationFilter } from "@/lib/location";
+import { getLocationFilter, getCurrentLocationId } from "@/lib/location";
 import { requireAdmin } from "@/lib/permissions";
 
 /**
  * GET /staff/api/inventory
- * List all inventory items
+ * List all inventory items (filtered by location if specified)
  */
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -15,9 +15,27 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category") || "";
   const lowStock = searchParams.get("lowStock") === "true";
+  const locationParam = searchParams.get("locationId");
+
+  // Get location filter (default to current location)
+  const locationFilter = await getLocationFilter(req);
+  const currentLocationId = await getCurrentLocationId(req);
 
   const where: any = {};
   if (category) where.category = category;
+  
+  // Filter by location if specified, otherwise use current location
+  if (locationParam === "all") {
+    // Show all locations (admin only)
+    // Don't filter by location
+  } else if (locationParam) {
+    where.locationId = locationParam;
+  } else if (locationFilter.locationId) {
+    where.locationId = locationFilter.locationId;
+  } else if (currentLocationId) {
+    where.locationId = currentLocationId;
+  }
+  // If no location specified and no current location, show all (for backward compatibility)
 
   // Note: Prisma doesn't support comparing fields directly (quantityOnHand <= reorderPoint)
   // So we fetch all items and filter in memory if lowStock is requested

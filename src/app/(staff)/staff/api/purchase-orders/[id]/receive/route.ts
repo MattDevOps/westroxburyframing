@@ -57,27 +57,84 @@ export async function POST(req: Request, ctx: Ctx) {
       data: { quantityReceived: newQtyReceived },
     });
 
-    // Try to find or link inventory item if not already linked
+    // Try to find or create inventory item if not already linked
     let inventoryItemId = line.inventoryItemId;
     
     if (!inventoryItemId && line.vendorItemNumber) {
       // Try to find inventory item by vendor item number
-      // First, try to find via vendor catalog item
-      const vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
+      // First, try to find or create vendor catalog item
+      let vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
         where: {
           vendorId: po.vendorId,
           itemNumber: line.vendorItemNumber,
         },
       });
 
+      // If vendor catalog item doesn't exist, create it
+      if (!vendorCatalogItem) {
+        vendorCatalogItem = await prisma.vendorCatalogItem.create({
+          data: {
+            vendorId: po.vendorId,
+            itemNumber: line.vendorItemNumber,
+            description: line.description || null,
+            category: "frame", // Default, can be updated later
+            unitType: "foot", // Default, can be updated later
+            costPerUnit: line.unitCost ? Number(line.unitCost) : 0,
+            retailPerUnit: null,
+          },
+        });
+      }
+
       if (vendorCatalogItem) {
         // Find inventory item linked to this vendor catalog item
-        const inventoryItem = await prisma.inventoryItem.findFirst({
+        let inventoryItem = await prisma.inventoryItem.findFirst({
           where: {
             vendorItemId: vendorCatalogItem.id,
             locationId: po.locationId,
           },
         });
+
+        // If inventory item doesn't exist, create it
+        if (!inventoryItem) {
+          // Generate SKU from vendor code and item number
+          let baseSku = `${po.vendor.code}-${line.vendorItemNumber}`.toUpperCase().replace(/[^A-Z0-9-]/g, '-');
+          
+          // Ensure SKU is unique (check if exists, if so append location code)
+          let finalSku = baseSku;
+          let existingSku = await prisma.inventoryItem.findFirst({
+            where: { sku: finalSku },
+          });
+          
+          if (existingSku && po.locationId) {
+            // Append location identifier to make unique
+            const locationCode = po.locationId.slice(0, 8).toUpperCase();
+            finalSku = `${baseSku}-${locationCode}`;
+            // Check again
+            existingSku = await prisma.inventoryItem.findFirst({
+              where: { sku: finalSku },
+            });
+          }
+          
+          // If still exists, append timestamp
+          if (existingSku) {
+            finalSku = `${baseSku}-${Date.now().toString().slice(-6)}`;
+          }
+          
+          inventoryItem = await prisma.inventoryItem.create({
+            data: {
+              sku: finalSku,
+              name: line.description || line.vendorItemNumber || vendorCatalogItem.description || `Item ${line.vendorItemNumber}`,
+              category: vendorCatalogItem.category,
+              unitType: vendorCatalogItem.unitType,
+              vendorItemId: vendorCatalogItem.id,
+              vendorId: po.vendorId,
+              locationId: po.locationId,
+              quantityOnHand: 0, // Will be incremented below
+              reorderPoint: 0,
+              reorderQty: 0,
+            },
+          });
+        }
 
         if (inventoryItem) {
           inventoryItemId = inventoryItem.id;
@@ -90,7 +147,7 @@ export async function POST(req: Request, ctx: Ctx) {
       }
     }
 
-    // Update inventory if we have an inventory item (either existing or newly linked)
+    // Update inventory if we have an inventory item (either existing or newly created)
     if (inventoryItemId) {
       const costPerUnit = received.costPerUnit
         ? Number(received.costPerUnit)
