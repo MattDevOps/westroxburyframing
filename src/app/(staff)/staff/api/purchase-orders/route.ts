@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   });
   const poNumber = `PO-${dateStr}-${String(count + 1).padStart(3, "0")}`;
 
-  // Calculate total from lines
+  // Calculate total from lines and try to link vendor catalog items
   let totalAmount = 0;
   if (lines && Array.isArray(lines)) {
     for (const line of lines) {
@@ -114,6 +114,48 @@ export async function POST(req: Request) {
         Number(line.quantityOrdered || 0) * Number(line.unitCost || 0) * 100
       );
       totalAmount += lineTotal;
+
+      // If line has vendorItemNumber but no inventoryItemId, try to find/create vendor catalog item
+      // and link to inventory item if it exists
+      if (line.vendorItemNumber && !line.inventoryItemId) {
+        // Try to find vendor catalog item
+        let vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
+          where: {
+            vendorId: vendorId,
+            itemNumber: line.vendorItemNumber,
+          },
+        });
+
+        // If vendor catalog item doesn't exist, create it
+        if (!vendorCatalogItem) {
+          vendorCatalogItem = await prisma.vendorCatalogItem.create({
+            data: {
+              vendorId: vendorId,
+              itemNumber: line.vendorItemNumber,
+              description: line.description || null,
+              category: "frame", // Default, can be updated later
+              unitType: "foot", // Default, can be updated later
+              costPerUnit: line.unitCost ? Number(line.unitCost) : 0,
+              retailPerUnit: null,
+            },
+          });
+        }
+
+        // If we have a vendor catalog item, try to find an existing inventory item
+        if (vendorCatalogItem) {
+          const inventoryItem = await prisma.inventoryItem.findFirst({
+            where: {
+              vendorItemId: vendorCatalogItem.id,
+              ...(targetLocationId ? { locationId: targetLocationId } : {}),
+            },
+          });
+
+          if (inventoryItem) {
+            // Link the inventory item to the line
+            line.inventoryItemId = inventoryItem.id;
+          }
+        }
+      }
     }
   }
 

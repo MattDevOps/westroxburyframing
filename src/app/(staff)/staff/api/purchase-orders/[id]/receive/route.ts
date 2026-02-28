@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
-import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -61,6 +60,7 @@ export async function POST(req: Request, ctx: Ctx) {
     // Try to find or create inventory item if not already linked
     let inventoryItemId = line.inventoryItemId;
     
+    // If no inventory item linked, try to find by vendor item number
     if (!inventoryItemId && line.vendorItemNumber) {
       // Try to find inventory item by vendor item number
       // First, try to find or create vendor catalog item
@@ -88,17 +88,36 @@ export async function POST(req: Request, ctx: Ctx) {
 
       if (vendorCatalogItem) {
         // Find inventory item linked to this vendor catalog item
-        // Match by locationId if PO has one, otherwise find any with matching vendorItemId
-        let inventoryItem = await prisma.inventoryItem.findFirst({
-          where: po.locationId
-            ? {
+        // First try to match by locationId if PO has one, otherwise find any with matching vendorItemId
+        // Also check for items with null locationId (legacy items)
+        let inventoryItem: any = null;
+        
+        if (po.locationId) {
+          // First try to find item with matching locationId
+          inventoryItem = await prisma.inventoryItem.findFirst({
+            where: {
+              vendorItemId: vendorCatalogItem.id,
+              locationId: po.locationId,
+            },
+          });
+          
+          // If not found, try to find item with null locationId (legacy)
+          if (!inventoryItem) {
+            inventoryItem = await prisma.inventoryItem.findFirst({
+              where: {
                 vendorItemId: vendorCatalogItem.id,
-                locationId: po.locationId,
-              }
-            : {
-                vendorItemId: vendorCatalogItem.id,
+                locationId: null,
               },
-        });
+            });
+          }
+        } else {
+          // No locationId on PO, find any matching item
+          inventoryItem = await prisma.inventoryItem.findFirst({
+            where: {
+              vendorItemId: vendorCatalogItem.id,
+            },
+          });
+        }
 
         // If inventory item doesn't exist, create it
         if (!inventoryItem) {
