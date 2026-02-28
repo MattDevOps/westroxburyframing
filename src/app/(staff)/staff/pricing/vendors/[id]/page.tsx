@@ -188,15 +188,23 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-semibold text-neutral-900">Catalog Items</h2>
         {isAdmin && (
-          <button
-            onClick={openCreate}
-            className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
-          >
-            + Add Item
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="rounded-xl border-2 border-blue-600 text-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-50"
+            >
+              📥 Import Prices
+            </button>
+            <button
+              onClick={openCreate}
+              className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800"
+            >
+              + Add Item
+            </button>
+          </div>
         )}
       </div>
 

@@ -5,6 +5,9 @@ import { getLocationFilter } from "@/lib/location";
 import { nextOrderNumber } from "@/lib/ids";
 import { calculateOrderPrice, type PricingComponent } from "@/lib/pricing";
 import { sendOrderReceivedEmail } from "@/lib/email";
+import { handleApiError, AppError, validateRequired } from "@/lib/apiErrorHandler";
+import { validateDimensions, validatePricing, validateDiscount, validateComponents } from "@/lib/validation";
+import { logOrderCreated } from "@/lib/activityLogger";
 
 export async function GET(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
@@ -98,16 +101,25 @@ export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Get current location for new orders
-  const locationFilter = await getLocationFilter(req);
-  if (!locationFilter.locationId) {
-    return NextResponse.json(
-      { error: "Location required. Please select a location." },
-      { status: 400 }
-    );
-  }
+  try {
+    // Get current location for new orders
+    const locationFilter = await getLocationFilter(req);
+    if (!locationFilter.locationId) {
+      throw new AppError("Location required. Please select a location.", 400, "LOCATION_REQUIRED");
+    }
 
-  const body = await req.json();
+    const body = await req.json();
+
+    // Validate required fields
+    validateRequired(body, ["customer_id", "item_type"]);
+
+    // Validate dimensions if provided
+    if (body.width !== undefined || body.height !== undefined) {
+      const dimValidation = validateDimensions(body.width, body.height, body.units || "in");
+      if (!dimValidation.valid) {
+        throw new AppError(dimValidation.errors.join(", "), 400, "VALIDATION_ERROR");
+      }
+    }
 
   const last = await prisma.order.findFirst({
     orderBy: { createdAt: "desc" },
@@ -124,14 +136,20 @@ export async function POST(req: Request) {
   let total = 0;
   let componentsData: any[] = [];
 
-  if (body.components && Array.isArray(body.components) && body.components.length > 0) {
-    // New: Use OrderComponent with pricing calculation
-    const width = Number(body.width) || 0;
-    const height = Number(body.height) || 0;
+    if (body.components && Array.isArray(body.components) && body.components.length > 0) {
+      // Validate components
+      const compValidation = validateComponents(body.components);
+      if (!compValidation.valid) {
+        throw new AppError(compValidation.errors.join(", "), 400, "VALIDATION_ERROR");
+      }
 
-    if (width <= 0 || height <= 0) {
-      return NextResponse.json({ error: "Width and height are required when using components" }, { status: 400 });
-    }
+      // New: Use OrderComponent with pricing calculation
+      const width = Number(body.width) || 0;
+      const height = Number(body.height) || 0;
+
+      if (width <= 0 || height <= 0) {
+        throw new AppError("Width and height are required when using components", 400, "VALIDATION_ERROR");
+      }
 
     // Fetch price codes
     const priceCodeIds = body.components
@@ -220,9 +238,23 @@ export async function POST(req: Request) {
   }
   const afterDiscount = Math.max(0, subtotal - discountAmount);
   const finalTax = body.tax_rate ? Math.round(afterDiscount * Number(body.tax_rate)) : tax;
-  const finalTotal = afterDiscount + finalTax;
+    const finalTotal = afterDiscount + finalTax;
 
-  const order = await prisma.order.create({
+    // Validate pricing
+    const pricingValidation = validatePricing(afterDiscount, finalTax, finalTotal);
+    if (!pricingValidation.valid) {
+      throw new AppError(pricingValidation.errors.join(", "), 400, "VALIDATION_ERROR");
+    }
+
+    // Validate discount if provided
+    if (discountType !== "none") {
+      const discountValidation = validateDiscount(discountType, discountValue, subtotal);
+      if (!discountValidation.valid) {
+        throw new AppError(discountValidation.errors.join(", "), 400, "VALIDATION_ERROR");
+      }
+    }
+
+    const order = await prisma.order.create({
     data: {
       orderNumber,
       customerId: body.customer_id,
@@ -271,16 +303,20 @@ export async function POST(req: Request) {
     include: { customer: true },
   });
 
-  await prisma.activityLog.create({
-    data: {
-      entityType: "order",
-      entityId: order.id,
+    // Enhanced activity logging
+    await logOrderCreated({
       orderId: order.id,
-      action: "order_created",
-      actorUserId: userId,
-      metadata: { orderNumber },
-    },
-  });
+      orderNumber,
+      userId,
+      customerId: body.customer_id,
+      totalAmount: finalTotal,
+      status: requestedStatus,
+      metadata: {
+        intakeChannel: body.intake_channel || "walk_in",
+        componentsCount: componentsData.length,
+        hasDiscount: discountType !== "none",
+      },
+    });
 
   // Purchase Order Automation: Materials are automatically tracked via materials-needed endpoint
   // When order uses vendor items, they'll appear in the materials needed view

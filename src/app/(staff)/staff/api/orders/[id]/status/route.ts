@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { handleApiError, AppError } from "@/lib/apiErrorHandler";
+import { logStatusChange } from "@/lib/activityLogger";
 import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import { sendReadyForPickupEmail } from "@/lib/email";
 import { sendPickupReminderSMS, sendOrderStatusUpdateSMS, hasSMSOptIn } from "@/lib/sms";
@@ -15,18 +17,19 @@ export async function POST(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await ctx.params;
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  try {
+    const { id } = await ctx.params;
+    if (!id) throw new AppError("Missing order ID", 400, "VALIDATION_ERROR");
 
-  const body = await req.json();
-  const status = String(body.status || "");
+    const body = await req.json();
+    const status = String(body.status || "");
 
-  if (!isValidOrderStatus(status)) {
-    return NextResponse.json({ error: `Invalid status: ${status}` }, { status: 400 });
-  }
+    if (!isValidOrderStatus(status)) {
+      throw new AppError(`Invalid status: ${status}`, 400, "VALIDATION_ERROR");
+    }
 
-  const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
-  if (!prev) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+    if (!prev) throw new AppError("Order not found", 404, "NOT_FOUND");
 
   const order = await prisma.order.update({
     where: { id },
@@ -34,29 +37,17 @@ export async function POST(req: Request, ctx: Ctx) {
     include: { customer: true },
   });
 
-  const fromLabel = ORDER_STATUS_LABEL[prev.status as keyof typeof ORDER_STATUS_LABEL] || prev.status;
-  const toLabel = ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] || status;
+    const fromLabel = ORDER_STATUS_LABEL[prev.status as keyof typeof ORDER_STATUS_LABEL] || prev.status;
+    const toLabel = ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] || status;
 
-  // Write to both ActivityLog (legacy) and OrderActivity (timeline)
-  await prisma.activityLog.create({
-    data: {
-      entityType: "order",
-      entityId: order.id,
+    // Enhanced activity logging
+    await logStatusChange({
       orderId: order.id,
-      action: "status_changed",
-      actorUserId: userId,
-      metadata: { from: prev.status, to: status },
-    },
-  });
-
-  await prismaWithActivity.orderActivity.create({
-    data: {
-      orderId: order.id,
-      type: "status_change",
-      message: `Status changed: ${fromLabel} → ${toLabel}`,
-      createdByUserId: userId,
-    },
-  });
+      fromStatus: prev.status,
+      toStatus: status,
+      userId,
+      reason: body.reason,
+    });
 
   // Phase 4A: Auto-deduct inventory when order moves to in_production
   if (status === "in_production" && prev.status !== "in_production") {
