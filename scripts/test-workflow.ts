@@ -269,12 +269,18 @@ async function runTests() {
     });
 
     // Test status transitions
-    const statuses = ["new_design", "awaiting_materials", "in_production", "quality_check", "ready_for_pickup"] as const;
+    const statuses: Array<"new_design" | "awaiting_materials" | "in_production" | "quality_check" | "ready_for_pickup"> = [
+      "new_design",
+      "awaiting_materials",
+      "in_production",
+      "quality_check",
+      "ready_for_pickup",
+    ];
 
     for (const status of statuses) {
       await prisma.order.update({
         where: { id: order.id },
-        data: { status: status as any },
+        data: { status },
       });
 
       const updated = await prisma.order.findUnique({
