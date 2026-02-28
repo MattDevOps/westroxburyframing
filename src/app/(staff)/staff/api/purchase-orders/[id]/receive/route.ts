@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -153,34 +154,38 @@ export async function POST(req: Request, ctx: Ctx) {
     }
 
     // Update inventory if we have an inventory item (either existing or newly created)
-    if (inventoryItemId) {
-      const costPerUnit = received.costPerUnit
-        ? Number(received.costPerUnit)
-        : line.unitCost
-          ? Number(line.unitCost)
-          : null;
-
-      // Add to inventory
-      await prisma.inventoryItem.update({
-        where: { id: inventoryItemId },
-        data: {
-          quantityOnHand: {
-            increment: qtyReceived,
-          },
-        },
-      });
-
-      // Create inventory lot
-      await prisma.inventoryLot.create({
-        data: {
-          inventoryItemId: inventoryItemId,
-          quantity: qtyReceived,
-          costPerUnit: costPerUnit,
-          purchaseOrderId: id,
-          notes: `Received from PO ${po.poNumber}`,
-        },
-      });
+    if (!inventoryItemId) {
+      console.error(`[PO Receive] No inventory item found or created for line ${line.id}, vendorItemNumber: ${line.vendorItemNumber}`);
+      // Continue to next line - don't fail the entire receive operation
+      continue;
     }
+
+    const costPerUnit = received.costPerUnit
+      ? Number(received.costPerUnit)
+      : line.unitCost
+        ? Number(line.unitCost)
+        : null;
+
+    // Add to inventory
+    await prisma.inventoryItem.update({
+      where: { id: inventoryItemId },
+      data: {
+        quantityOnHand: {
+          increment: qtyReceived,
+        },
+      },
+    });
+
+    // Create inventory lot
+    await prisma.inventoryLot.create({
+      data: {
+        inventoryItemId: inventoryItemId,
+        quantity: qtyReceived,
+        costPerUnit: costPerUnit,
+        purchaseOrderId: id,
+        notes: `Received from PO ${po.poNumber}`,
+      },
+    });
   }
 
   // Check if all lines are fully received

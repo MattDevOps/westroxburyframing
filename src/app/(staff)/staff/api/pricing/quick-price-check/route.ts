@@ -15,8 +15,23 @@ export async function GET(req: Request) {
   const category = searchParams.get("category") || "";
 
   try {
+    // Only show items from Omega and Decor vendors
+    const allowedVendors = await prisma.vendor.findMany({
+      where: {
+        code: { in: ["OMEGA", "DECOR", "omega", "decor", "Omega", "Decor"] },
+      },
+      select: { id: true },
+    });
+    
+    const allowedVendorIds = allowedVendors.map((v) => v.id);
+    
+    if (allowedVendorIds.length === 0) {
+      return NextResponse.json({ items: [] });
+    }
+
     const where: any = {
       discontinued: false,
+      vendorId: { in: allowedVendorIds },
     };
 
     // Search by item number or description

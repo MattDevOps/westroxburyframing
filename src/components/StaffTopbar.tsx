@@ -14,7 +14,6 @@ const STAFF_NAV: Array<{
 }> = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
-  { href: "/staff/messages", label: "Messages", badge: true },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
   { href: "/staff/orders/intake", label: "New Order", highlight: true },
@@ -94,7 +93,6 @@ interface Location {
 
 export default function StaffTopbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -133,24 +131,6 @@ export default function StaffTopbar() {
     loadLocation();
   }, []);
 
-  // Fetch unread message count
-  useEffect(() => {
-    async function loadUnreadCount() {
-      try {
-        const res = await fetch("/staff/api/messages/unread-count");
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count || 0);
-        }
-      } catch (e) {
-        // Silently fail
-      }
-    }
-
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLocationChange = async (locationId: string) => {
     try {
@@ -318,8 +298,6 @@ export default function StaffTopbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                badge={link.badge}
-                badgeCount={link.badge ? unreadCount : undefined}
                 highlight={link.highlight}
               >
                 {link.label}
