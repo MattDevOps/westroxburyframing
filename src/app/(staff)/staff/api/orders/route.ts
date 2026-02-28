@@ -280,6 +280,69 @@ export async function POST(req: Request) {
       }
     }
 
+    // Calculate estimated material cost from vendor catalog costs
+    // This is an estimate until inventory is actually deducted (when order moves to in_production)
+    let estimatedMaterialCost = 0;
+    if (componentsData.length > 0 && body.width && body.height) {
+      const width = Number(body.width);
+      const height = Number(body.height);
+      
+      // Fetch vendor items for cost lookup
+      const vendorItemIds = componentsData
+        .map((c: any) => c.vendorItemId)
+        .filter(Boolean) as string[];
+      
+      if (vendorItemIds.length > 0) {
+        const vendorItems = await prisma.vendorCatalogItem.findMany({
+          where: { id: { in: vendorItemIds } },
+          select: { id: true, costPerUnit: true, unitType: true },
+        });
+        
+        const vendorItemMap = new Map(
+          vendorItems.map((vi) => [vi.id, vi])
+        );
+        
+        for (const component of componentsData) {
+          if (!component.vendorItemId) continue;
+          
+          const vendorItem = vendorItemMap.get(component.vendorItemId);
+          if (!vendorItem || !vendorItem.costPerUnit) continue;
+          
+          const costPerUnit = Number(vendorItem.costPerUnit);
+          const quantity = Number(component.quantity || 1);
+          const unitType = vendorItem.unitType;
+          
+          let componentCost = 0;
+          if (unitType === "foot") {
+            // For moulding: calculate perimeter in feet
+            const perimeterInches = (width + height) * 2;
+            const perimeterFeet = perimeterInches / 12;
+            componentCost = perimeterFeet * quantity * costPerUnit;
+          } else if ((unitType === "sqft" || unitType === "sheet") && width && height) {
+            // For mats/glass: calculate area in sqft
+            const areaSqInches = width * height;
+            const areaSqFeet = areaSqInches / 144;
+            if (unitType === "sheet") {
+              // For sheets: calculate how many sheets needed (standard 32x40 = 1280 sq inches)
+              const sheetArea = 32 * 40;
+              const sheetsNeeded = Math.ceil((areaSqInches * quantity) / sheetArea);
+              componentCost = sheetsNeeded * costPerUnit;
+            } else {
+              componentCost = areaSqFeet * quantity * costPerUnit;
+            }
+          } else {
+            // For fixed items: multiply quantity by cost
+            componentCost = quantity * costPerUnit;
+          }
+          
+          estimatedMaterialCost += componentCost;
+        }
+      }
+    }
+    
+    // Convert to cents
+    estimatedMaterialCost = Math.round(estimatedMaterialCost * 100);
+
     const order = await prisma.order.create({
     data: {
       orderNumber,
@@ -300,6 +363,7 @@ export async function POST(req: Request) {
       discountValue,
       taxAmount: finalTax,
       totalAmount: finalTotal,
+      materialCost: estimatedMaterialCost, // Estimated cost from vendor catalog (will be updated to actual cost when inventory is deducted)
       currency: "USD",
       paidInFull: true,
       createdByUserId: userId,

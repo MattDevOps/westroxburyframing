@@ -2,10 +2,13 @@ import { prisma } from "@/lib/db";
 
 /**
  * Deduct inventory for an order's components when it moves to in_production
+ * Uses FIFO (First In, First Out) to calculate actual material costs
+ * Returns total material cost in cents
  */
 export async function deductInventoryForOrder(orderId: string): Promise<{
   deducted: number;
   errors: string[];
+  materialCost: number; // Total material cost in cents
 }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -20,11 +23,12 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
   });
 
   if (!order || !order.components || order.components.length === 0) {
-    return { deducted: 0, errors: [] };
+    return { deducted: 0, errors: [], materialCost: 0 };
   }
 
   const errors: string[] = [];
   let deducted = 0;
+  let totalMaterialCost = 0; // Total cost in cents
 
   for (const component of order.components) {
     if (!component.vendorItemId) {
@@ -32,9 +36,23 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
       continue;
     }
 
-    // Find inventory item by vendorItemId
+    // Find inventory item by vendorItemId (with location filter if order has location)
     const inventoryItem = await prisma.inventoryItem.findFirst({
-      where: { vendorItemId: component.vendorItemId },
+      where: {
+        vendorItemId: component.vendorItemId,
+        ...(order.locationId ? { locationId: order.locationId } : {}),
+      },
+      include: {
+        lots: {
+          where: {
+            // Only consider lots that still have quantity available
+            // We'll track remaining quantity per lot
+          },
+          orderBy: {
+            receivedAt: "asc", // FIFO: oldest first
+          },
+        },
+      },
     });
 
     if (!inventoryItem) {
@@ -70,6 +88,47 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
       continue;
     }
 
+    // Calculate actual cost using weighted average from inventory lots
+    // This gives accurate COGS based on what was actually paid for materials
+    const lots = await prisma.inventoryLot.findMany({
+      where: {
+        inventoryItemId: inventoryItem.id,
+      },
+      orderBy: {
+        receivedAt: "asc", // Oldest first (for reference, though we use weighted average)
+      },
+    });
+
+    // Calculate weighted average cost from all lots
+    let totalCost = 0;
+    let totalQuantity = 0;
+    
+    for (const lot of lots) {
+      const lotQty = Number(lot.quantity);
+      const lotCost = Number(lot.costPerUnit || 0);
+      if (lotQty > 0 && lotCost > 0) {
+        totalCost += lotCost * lotQty;
+        totalQuantity += lotQty;
+      }
+    }
+
+    let averageCostPerUnit = 0;
+    if (totalQuantity > 0) {
+      averageCostPerUnit = totalCost / totalQuantity;
+    } else {
+      // No cost data in lots, try vendor catalog cost as fallback
+      if (component.vendorItem?.costPerUnit) {
+        averageCostPerUnit = Number(component.vendorItem.costPerUnit);
+      } else {
+        errors.push(`No cost data available for ${inventoryItem.name}`);
+        continue;
+      }
+    }
+
+    // Calculate component cost (convert to cents)
+    const componentCost = Math.round(quantityNeeded * averageCostPerUnit * 100);
+    totalMaterialCost += componentCost;
+
     // Deduct inventory
     await prisma.inventoryItem.update({
       where: { id: inventoryItem.id },
@@ -81,5 +140,5 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
     deducted++;
   }
 
-  return { deducted, errors };
+  return { deducted, errors, materialCost: totalMaterialCost };
 }

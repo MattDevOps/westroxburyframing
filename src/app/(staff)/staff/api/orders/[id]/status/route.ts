@@ -63,11 +63,19 @@ export async function POST(req: Request, ctx: Ctx) {
           },
         });
       } else if (inventoryResult.deducted > 0) {
+        // Update order with actual material cost (COGS)
+        await prisma.order.update({
+          where: { id },
+          data: {
+            materialCost: inventoryResult.materialCost,
+          },
+        });
+
         await prismaWithActivity.orderActivity.create({
           data: {
             orderId: order.id,
             type: "note",
-            message: `Inventory deducted: ${inventoryResult.deducted} item(s)`,
+            message: `Inventory deducted: ${inventoryResult.deducted} item(s). Material cost: $${(inventoryResult.materialCost / 100).toFixed(2)}`,
             createdByUserId: userId,
           },
         });

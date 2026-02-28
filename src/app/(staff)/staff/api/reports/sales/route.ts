@@ -70,6 +70,7 @@ export async function GET(req: Request) {
         id: true,
         createdAt: true,
         totalAmount: true,
+        materialCost: true, // Actual material cost (COGS) from inventory
         paidInFull: true,
         width: true,
         height: true,
@@ -138,17 +139,25 @@ export async function GET(req: Request) {
     }>();
 
     for (const order of orders) {
-      // Calculate order cost from components
+      // Use actual material cost if available (from inventory deduction), otherwise calculate from components
       let orderCost = 0;
-      for (const component of order.components) {
-        orderCost += calculateComponentCost(
-          component,
-          order.width ? Number(order.width) : null,
-          order.height ? Number(order.height) : null
-        );
+      
+      if (order.materialCost && order.materialCost > 0) {
+        // Use actual cost from inventory (most accurate)
+        orderCost = order.materialCost;
+      } else {
+        // Fallback: calculate from vendor catalog costs (estimated)
+        for (const component of order.components) {
+          orderCost += calculateComponentCost(
+            component,
+            order.width ? Number(order.width) : null,
+            order.height ? Number(order.height) : null
+          );
+        }
+        // Convert to cents
+        orderCost = Math.round(orderCost * 100);
       }
-      // Convert to cents
-      orderCost = Math.round(orderCost * 100);
+      
       const orderProfit = order.totalAmount - orderCost;
       const orderProfitMargin = order.totalAmount > 0 ? (orderProfit / order.totalAmount) * 100 : 0;
 
