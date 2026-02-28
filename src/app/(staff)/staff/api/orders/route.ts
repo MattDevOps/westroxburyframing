@@ -121,20 +121,20 @@ export async function POST(req: Request) {
       }
     }
 
-  const last = await prisma.order.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: { orderNumber: true },
-  });
-  const orderNumber = nextOrderNumber(last?.orderNumber);
+    const last = await prisma.order.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { orderNumber: true },
+    });
+    const orderNumber = nextOrderNumber(last?.orderNumber);
 
-  // Determine initial status (default: new_design, or "estimate" if requested)
-  const requestedStatus = body.status === "estimate" ? "estimate" : "new_design";
+    // Determine initial status (default: new_design, or "estimate" if requested)
+    const requestedStatus = body.status === "estimate" ? "estimate" : "new_design";
 
-  // Phase 2C: Support OrderComponent (new) or OrderSpecs (legacy)
-  let subtotal = 0;
-  let tax = 0;
-  let total = 0;
-  let componentsData: any[] = [];
+    // Phase 2C: Support OrderComponent (new) or OrderSpecs (legacy)
+    let subtotal = 0;
+    let tax = 0;
+    let total = 0;
+    let componentsData: any[] = [];
 
     if (body.components && Array.isArray(body.components) && body.components.length > 0) {
       // Validate components
@@ -151,93 +151,89 @@ export async function POST(req: Request) {
         throw new AppError("Width and height are required when using components", 400, "VALIDATION_ERROR");
       }
 
-    // Fetch price codes
-    const priceCodeIds = body.components
-      .map((c: any) => c.priceCodeId)
-      .filter(Boolean) as string[];
+      // Fetch price codes
+      const priceCodeIds = body.components
+        .map((c: any) => c.priceCodeId)
+        .filter(Boolean) as string[];
 
-    const priceCodes = await prisma.priceCode.findMany({
-      where: { id: { in: priceCodeIds }, active: true },
-    });
+      const priceCodes = await prisma.priceCode.findMany({
+        where: { id: { in: priceCodeIds }, active: true },
+      });
 
-    const priceCodeMap = new Map(
-      priceCodes.map((pc) => [
-        pc.id,
-        {
-          id: pc.id,
-          code: pc.code,
-          category: pc.category,
-          formula: pc.formula,
-          baseRate: Number(pc.baseRate),
-          minCharge: Number(pc.minCharge),
-          wastePercent: Number(pc.wastePercent),
-          multiplier: Number(pc.multiplier),
-        },
-      ])
-    );
+      const priceCodeMap = new Map(
+        priceCodes.map((pc) => [
+          pc.id,
+          {
+            id: pc.id,
+            code: pc.code,
+            category: pc.category,
+            formula: pc.formula,
+            baseRate: Number(pc.baseRate),
+            minCharge: Number(pc.minCharge),
+            wastePercent: Number(pc.wastePercent),
+            multiplier: Number(pc.multiplier),
+          },
+        ])
+      );
 
-    // Calculate pricing
-    const pricingResult = calculateOrderPrice(
-      width,
-      height,
-      body.components.map((c: any) => ({
-        category: String(c.category),
-        priceCodeId: c.priceCodeId || undefined,
-        vendorItemId: c.vendorItemId || undefined,
-        description: c.description || undefined,
-        quantity: c.quantity ? Number(c.quantity) : 1,
-        unitType: c.unitType || undefined,
-      })),
-      priceCodeMap
-    );
+      // Calculate pricing
+      const pricingResult = calculateOrderPrice(
+        width,
+        height,
+        body.components.map((c: any) => ({
+          category: String(c.category),
+          priceCodeId: c.priceCodeId || undefined,
+          vendorItemId: c.vendorItemId || undefined,
+          description: c.description || undefined,
+          quantity: c.quantity ? Number(c.quantity) : 1,
+          unitType: c.unitType || undefined,
+        })),
+        priceCodeMap
+      );
 
-    subtotal = pricingResult.subtotal;
-    tax = body.tax_rate ? Math.round(subtotal * Number(body.tax_rate)) : 0;
-    total = subtotal + tax;
+      subtotal = pricingResult.subtotal;
+      tax = body.tax_rate ? Math.round(subtotal * Number(body.tax_rate)) : 0;
+      total = subtotal + tax;
 
-    // Prepare components data
-    componentsData = body.components.map((c: any, idx: number) => {
-      const lineItem = pricingResult.lineItems[idx];
-      return {
-        category: String(c.category),
-        position: c.position !== undefined ? Number(c.position) : idx,
-        priceCodeId: c.priceCodeId || null,
-        vendorItemId: c.vendorItemId || null,
-        description: c.description || lineItem?.description || null,
-        quantity: c.quantity ? Number(c.quantity) : 1,
-        unitPrice: lineItem?.unitPrice || 0,
-        discount: c.discount ? Math.round(Number(c.discount) * 100) : 0,
-        lineTotal: (lineItem?.lineTotal || 0) - (c.discount ? Math.round(Number(c.discount) * 100) : 0),
-        notes: c.notes || null,
-      };
-    });
-  } else {
-    // Legacy: Use OrderSpecs with manual pricing
-    const pricing = body.pricing || {};
-    subtotal = Number(pricing.subtotal_cents ?? -1);
-    tax = Number(pricing.tax_cents ?? -1);
-    total = Number(pricing.total_cents ?? -1);
+      // Prepare components data
+      componentsData = body.components.map((c: any, idx: number) => {
+        const lineItem = pricingResult.lineItems[idx];
+        return {
+          category: String(c.category),
+          position: c.position !== undefined ? Number(c.position) : idx,
+          priceCodeId: c.priceCodeId || null,
+          vendorItemId: c.vendorItemId || null,
+          description: c.description || lineItem?.description || null,
+          quantity: c.quantity ? Number(c.quantity) : 1,
+          unitPrice: lineItem?.unitPrice || 0,
+          discount: c.discount ? Math.round(Number(c.discount) * 100) : 0,
+          lineTotal: (lineItem?.lineTotal || 0) - (c.discount ? Math.round(Number(c.discount) * 100) : 0),
+          notes: c.notes || null,
+        };
+      });
+    } else {
+      // Legacy: Use OrderSpecs with manual pricing
+      const pricing = body.pricing || {};
+      subtotal = Number(pricing.subtotal_cents ?? -1);
+      tax = Number(pricing.tax_cents ?? -1);
+      total = Number(pricing.total_cents ?? -1);
 
-    if (subtotal < 0 || tax < 0 || total < 0) {
-      return NextResponse.json({ error: "Invalid payload: pricing required" }, { status: 400 });
+      if (subtotal < 0 || tax < 0 || total < 0) {
+        throw new AppError("Invalid payload: pricing required", 400, "VALIDATION_ERROR");
+      }
     }
-  }
 
-  if (!body.customer_id || !body.item_type) {
-    return NextResponse.json({ error: "Invalid payload: customer_id and item_type required" }, { status: 400 });
-  }
-
-  // Apply order-level discount
-  const discountType = body.discount_type || "none";
-  const discountValue = body.discount_value != null ? Number(body.discount_value) : 0;
-  let discountAmount = 0;
-  if (discountType === "percent") {
-    discountAmount = Math.round(subtotal * discountValue / 100);
-  } else if (discountType === "fixed") {
-    discountAmount = Math.round(discountValue * 100);
-  }
-  const afterDiscount = Math.max(0, subtotal - discountAmount);
-  const finalTax = body.tax_rate ? Math.round(afterDiscount * Number(body.tax_rate)) : tax;
+    // Apply order-level discount
+    const discountType = body.discount_type || "none";
+    const discountValue = body.discount_value != null ? Number(body.discount_value) : 0;
+    let discountAmount = 0;
+    if (discountType === "percent") {
+      discountAmount = Math.round(subtotal * discountValue / 100);
+    } else if (discountType === "fixed") {
+      discountAmount = Math.round(discountValue * 100);
+    }
+    const afterDiscount = Math.max(0, subtotal - discountAmount);
+    const finalTax = body.tax_rate ? Math.round(afterDiscount * Number(body.tax_rate)) : tax;
     const finalTotal = afterDiscount + finalTax;
 
     // Validate pricing
@@ -318,27 +314,30 @@ export async function POST(req: Request) {
       },
     });
 
-  // Purchase Order Automation: Materials are automatically tracked via materials-needed endpoint
-  // When order uses vendor items, they'll appear in the materials needed view
-  // No additional action needed here - the materials-needed API calculates requirements dynamically
+    // Purchase Order Automation: Materials are automatically tracked via materials-needed endpoint
+    // When order uses vendor items, they'll appear in the materials needed view
+    // No additional action needed here - the materials-needed API calculates requirements dynamically
 
-  // Send order received email to customer (if email available and not an estimate)
-  if (order.customer.email && requestedStatus !== "estimate") {
-    const estimatedTotal = finalTotal > 0 ? `$${(finalTotal / 100).toFixed(2)}` : undefined;
-    sendOrderReceivedEmail({
-      to: order.customer.email,
-      orderNumber: order.orderNumber,
-      customerName: `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer",
-      itemType: order.itemType || undefined,
-      itemDescription: order.itemDescription || undefined,
-      estimatedTotal,
-      dueDate: order.dueDate || undefined,
-    }).catch((err) => {
-      console.error("Failed to send order received email:", err);
+    // Send order received email to customer (if email available and not an estimate)
+    if (order.customer.email && requestedStatus !== "estimate") {
+      const estimatedTotal = finalTotal > 0 ? `$${(finalTotal / 100).toFixed(2)}` : undefined;
+      sendOrderReceivedEmail({
+        to: order.customer.email,
+        orderNumber: order.orderNumber,
+        customerName: `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer",
+        itemType: order.itemType || undefined,
+        itemDescription: order.itemDescription || undefined,
+        estimatedTotal,
+        dueDate: order.dueDate || undefined,
+      }).catch((err) => {
+        console.error("Failed to send order received email:", err);
+      });
+    }
+
+    return NextResponse.json({
+      order: { id: order.id, order_number: order.orderNumber, status: order.status },
     });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return NextResponse.json({
-    order: { id: order.id, order_number: order.orderNumber, status: order.status },
-  });
 }

@@ -51,33 +51,33 @@ export async function POST(req: Request, ctx: Ctx) {
 
     // Phase 4A: Auto-deduct inventory when order moves to in_production
     if (status === "in_production" && prev.status !== "in_production") {
-    const inventoryResult = await deductInventoryForOrder(id);
-    if (inventoryResult.errors.length > 0) {
-      // Log errors but don't fail the status change
-      await prismaWithActivity.orderActivity.create({
-        data: {
-          orderId: order.id,
-          type: "note",
-          message: `Inventory deduction warnings: ${inventoryResult.errors.join("; ")}`,
-          createdByUserId: userId,
-        },
-      });
-    } else if (inventoryResult.deducted > 0) {
-      await prismaWithActivity.orderActivity.create({
-        data: {
-          orderId: order.id,
-          type: "note",
-          message: `Inventory deducted: ${inventoryResult.deducted} item(s)`,
-          createdByUserId: userId,
-        },
-      });
+      const inventoryResult = await deductInventoryForOrder(id);
+      if (inventoryResult.errors.length > 0) {
+        // Log errors but don't fail the status change
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `Inventory deduction warnings: ${inventoryResult.errors.join("; ")}`,
+            createdByUserId: userId,
+          },
+        });
+      } else if (inventoryResult.deducted > 0) {
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `Inventory deducted: ${inventoryResult.deducted} item(s)`,
+            createdByUserId: userId,
+          },
+        });
+      }
     }
-  }
 
-  const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
-  
-  // Send notifications for status changes
-  if (status === "ready_for_pickup") {
+    const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
+    
+    // Send notifications for status changes
+    if (status === "ready_for_pickup") {
     // Send email if available
     if (order.customer.email) {
       const emailResult = await sendReadyForPickupEmail({
@@ -163,5 +163,8 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
