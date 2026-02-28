@@ -43,7 +43,7 @@ export default function Step4PreviewScenarios({
       alert("Please enter a template name");
       return;
     }
-    saveTemplate(templateName.trim(), templateDescription.trim() || undefined, data);
+    saveTemplate(templateName.trim(), templateDescription.trim() || undefined, data as Partial<IntakeData>);
     setTemplates(loadTemplates());
     setShowSaveTemplate(false);
     setTemplateName("");
