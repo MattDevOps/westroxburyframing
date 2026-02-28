@@ -195,12 +195,8 @@ async function runTests() {
 
     const invoice = await prisma.invoice.create({
       data: {
-        customer: {
-          connect: { id: customer.id },
-        },
-        createdBy: {
-          connect: { id: invStaffUser.id },
-        },
+        customerId: customer.id,
+        createdByUserId: invStaffUser.id,
         invoiceNumber: `INV-TEST-${Date.now()}`,
         status: "pending",
         totalAmount: 10625,
@@ -211,28 +207,25 @@ async function runTests() {
     });
 
     // Link order to invoice
-    await prisma.invoiceOrder.create({
-      data: {
-        invoiceId: invoice.id,
-        orderId: order.id,
-      },
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { invoiceId: invoice.id },
     });
 
     // Verify
-    const invoiceOrders = await prisma.invoiceOrder.findMany({
-      where: { invoiceId: invoice.id },
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: order.id },
+      select: { invoiceId: true },
     });
 
-    if (invoiceOrders.length === 0) {
-      await prisma.invoiceOrder.deleteMany({ where: { invoiceId: invoice.id } });
+    if (!updatedOrder || updatedOrder.invoiceId !== invoice.id) {
       await prisma.invoice.delete({ where: { id: invoice.id } });
       await prisma.order.delete({ where: { id: order.id } });
       await prisma.customer.delete({ where: { id: customer.id } });
-      throw new Error("Invoice order not created");
+      throw new Error("Order not linked to invoice");
     }
 
     // Cleanup
-    await prisma.invoiceOrder.deleteMany({ where: { invoiceId: invoice.id } });
     await prisma.invoice.delete({ where: { id: invoice.id } });
     await prisma.order.delete({ where: { id: order.id } });
     await prisma.customer.delete({ where: { id: customer.id } });
