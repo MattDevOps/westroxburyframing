@@ -24,45 +24,46 @@ export async function GET(req: Request, ctx: Ctx) {
 
   if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 });
 
-  const orders = await prisma.order.findMany({
-    where: { customerId: id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      totalAmount: true,
-      currency: true,
-      orderNumber: true,
-      itemType: true,
-    },
-  });
-
-  // Compute lifetime stats
-  const allOrders = await prisma.order.aggregate({
-    where: { customerId: id, status: { notIn: ["cancelled"] } },
-    _sum: { totalAmount: true },
-    _count: true,
-  });
-
-  // Fetch invoices for A/R
-  const invoices = await prisma.invoice.findMany({
-    where: { customerId: id },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      invoiceNumber: true,
-      status: true,
-      totalAmount: true,
-      amountPaid: true,
-      balanceDue: true,
-      depositPercent: true,
-      depositAmount: true,
-      createdAt: true,
-      orders: { select: { id: true, orderNumber: true } },
-    },
-  });
+  // Run queries in parallel for better performance
+  const [orders, allOrders, invoices] = await Promise.all([
+    prisma.order.findMany({
+      where: { customerId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        totalAmount: true,
+        currency: true,
+        orderNumber: true,
+        itemType: true,
+      },
+    }),
+    // Compute lifetime stats
+    prisma.order.aggregate({
+      where: { customerId: id, status: { notIn: ["cancelled"] } },
+      _sum: { totalAmount: true },
+      _count: true,
+    }),
+    // Fetch invoices for A/R
+    prisma.invoice.findMany({
+      where: { customerId: id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        status: true,
+        totalAmount: true,
+        amountPaid: true,
+        balanceDue: true,
+        depositPercent: true,
+        depositAmount: true,
+        createdAt: true,
+        orders: { select: { id: true, orderNumber: true } },
+      },
+    }),
+  ]);
 
   // Calculate A/R balance (outstanding across all non-void/cancelled invoices)
   const arBalance = invoices

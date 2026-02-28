@@ -5,7 +5,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* Theme 1: Warm Gold (Default) */
+  :root,
+  [data-theme="warm-gold"] {
     --background: 30 10% 8%;
     --foreground: 40 20% 90%;
     --card: 30 8% 12%;
@@ -38,6 +40,87 @@
     --gold-light: 38 70% 70%;
     --gold-dark: 38 50% 40%;
     --warm-bg: 30 10% 6%;
+    --theme-primary: 38 60% 55%;
+    --theme-primary-light: 38 70% 70%;
+    --theme-primary-dark: 38 50% 40%;
+  }
+
+  /* Theme 2: Cool Blue */
+  [data-theme="cool-blue"] {
+    --background: 220 20% 8%;
+    --foreground: 220 10% 95%;
+    --card: 220 15% 12%;
+    --card-foreground: 220 10% 95%;
+    --popover: 220 15% 12%;
+    --popover-foreground: 220 10% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 220 20% 8%;
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 220 10% 90%;
+    --muted: 220 12% 16%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 220 20% 8%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 217 91% 60%;
+    --radius: 0.25rem;
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 220 10% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 220 10% 95%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 217 91% 60%;
+    --gold: 217 91% 60%;
+    --gold-light: 217 91% 70%;
+    --gold-dark: 217 91% 50%;
+    --warm-bg: 220 20% 6%;
+    --theme-primary: 217 91% 60%;
+    --theme-primary-light: 217 91% 70%;
+    --theme-primary-dark: 217 91% 50%;
+  }
+
+  /* Theme 3: Forest Green */
+  [data-theme="forest-green"] {
+    --background: 142 20% 8%;
+    --foreground: 142 10% 95%;
+    --card: 142 15% 12%;
+    --card-foreground: 142 10% 95%;
+    --popover: 142 15% 12%;
+    --popover-foreground: 142 10% 95%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 142 20% 8%;
+    --secondary: 142 15% 18%;
+    --secondary-foreground: 142 10% 90%;
+    --muted: 142 12% 16%;
+    --muted-foreground: 142 10% 60%;
+    --accent: 142 76% 36%;
+    --accent-foreground: 142 20% 8%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 142 15% 20%;
+    --input: 142 15% 20%;
+    --ring: 142 76% 36%;
+    --radius: 0.25rem;
+    --sidebar-background: 142 20% 10%;
+    --sidebar-foreground: 142 10% 95%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 142 20% 8%;
+    --sidebar-accent: 142 15% 15%;
+    --sidebar-accent-foreground: 142 10% 95%;
+    --sidebar-border: 142 15% 20%;
+    --sidebar-ring: 142 76% 36%;
+    --gold: 142 76% 36%;
+    --gold-light: 142 76% 46%;
+    --gold-dark: 142 76% 26%;
+    --warm-bg: 142 20% 6%;
+    --theme-primary: 142 76% 36%;
+    --theme-primary-light: 142 76% 46%;
+    --theme-primary-dark: 142 76% 26%;
   }
 }
 

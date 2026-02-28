@@ -337,13 +337,13 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
                         </div>
                       )}
                     </div>
+                    <button
+                      onClick={() => removeFrame(index)}
+                      className="w-10 h-10 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => removeFrame(index)}
-                    className="w-10 h-10 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
                 </div>
               );
             })}

@@ -24,10 +24,36 @@ export async function GET(req: Request) {
         orderNumber: true,
         status: true,
         itemType: true,
+        itemDescription: true,
         totalAmount: true,
         paidInFull: true,
         dueDate: true,
+        width: true,
+        height: true,
+        units: true,
         createdAt: true,
+        components: {
+          select: {
+            id: true,
+            category: true,
+            description: true,
+            quantity: true,
+            vendorItem: {
+              select: {
+                itemNumber: true,
+                description: true,
+              },
+            },
+          },
+        },
+        photos: {
+          select: {
+            id: true,
+            url: true,
+            caption: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
         customer: {
           select: {
             firstName: true,

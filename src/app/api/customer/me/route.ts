@@ -71,7 +71,10 @@ export async function PATCH(req: Request) {
   if ("firstName" in body) data.firstName = String(body.firstName || "").trim();
   if ("lastName" in body) data.lastName = String(body.lastName || "").trim();
   if ("phone" in body) data.phone = String(body.phone || "").replace(/[^\d+]/g, "") || null;
-  if ("preferredContact" in body) data.preferredContact = body.preferredContact === "call" ? "call" : "email";
+  if ("preferredContact" in body) {
+    const validContacts = ["email", "phone", "sms"];
+    data.preferredContact = validContacts.includes(body.preferredContact) ? body.preferredContact : "email";
+  }
   if ("marketingOptIn" in body) {
     data.marketingOptIn = Boolean(body.marketingOptIn);
     if (body.marketingOptIn) data.marketingOptInAt = new Date();
@@ -91,6 +94,9 @@ export async function PATCH(req: Request) {
       lastName: updated.lastName,
       email: updated.email,
       phone: updated.phone,
+      preferredContact: updated.preferredContact,
+      marketingOptIn: updated.marketingOptIn,
+      createdAt: updated.createdAt.toISOString(),
     },
   });
 }
