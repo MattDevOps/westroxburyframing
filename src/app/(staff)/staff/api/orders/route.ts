@@ -62,7 +62,37 @@ export async function GET(req: Request) {
     where,
     take: limit,
     orderBy: { updatedAt: "desc" },
-    include: { customer: true, payments: true, createdBy: { select: { name: true } }, location: { select: { name: true } } },
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      dueDate: true,
+      totalAmount: true,
+      itemType: true,
+      invoiceId: true,
+      createdByUserId: true,
+      locationId: true,
+      squareInvoiceStatus: true,
+      customer: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      payments: {
+        select: {
+          id: true,
+        },
+        take: 1, // Just check if any payments exist
+      },
+      createdBy: {
+        select: { name: true },
+      },
+      location: {
+        select: { name: true },
+      },
+    },
   });
 
   return NextResponse.json({

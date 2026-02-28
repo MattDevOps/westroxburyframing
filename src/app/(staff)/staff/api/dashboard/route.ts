@@ -226,21 +226,47 @@ export async function GET(req: Request) {
         createdBy: { select: { name: true } },
       },
     }).catch(() => []),
-    // Top customers by lifetime value
-    prisma.customer.findMany({
-      include: {
-        orders: {
-          where: {
-            ...locationFilter,
-            status: { in: ["completed", "picked_up"] },
-          },
-          select: {
-            totalAmount: true,
-          },
+    // Top customers by lifetime value - optimized query using aggregation
+    (async () => {
+      const grouped = await prisma.order.groupBy({
+        by: ["customerId"],
+        where: {
+          ...locationFilter,
+          status: { in: ["completed", "picked_up"] },
+          customerId: { not: null },
         },
-      },
-      take: 20,
-    }),
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      });
+      
+      // Sort and take top 20
+      const sorted = grouped
+        .sort((a, b) => (b._sum.totalAmount || 0) - (a._sum.totalAmount || 0))
+        .slice(0, 20);
+      
+      // Fetch customer details for top customers
+      const customerIds = sorted.map((g) => g.customerId).filter(Boolean) as string[];
+      if (customerIds.length === 0) return [];
+      
+      const customers = await prisma.customer.findMany({
+        where: { id: { in: customerIds } },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      });
+      const customerMap = new Map(customers.map((c) => [c.id, c]));
+      return sorted.map((g) => ({
+        id: g.customerId,
+        firstName: customerMap.get(g.customerId || "")?.firstName || "",
+        lastName: customerMap.get(g.customerId || "")?.lastName || "",
+        email: customerMap.get(g.customerId || "")?.email || "",
+        orderCount: g._count.id,
+        lifetimeValue: g._sum.totalAmount || 0,
+      }));
+    })(),
   ]);
 
   // Process A/R totals
