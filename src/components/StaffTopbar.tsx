@@ -18,7 +18,7 @@ const STAFF_NAV: Array<{
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
   { href: "/staff/orders/intake", label: "New Order", highlight: true },
-  { href: "/staff/orders/new", label: "Advanced" },
+  { href: "/staff/orders/new", label: "Quick Order" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
