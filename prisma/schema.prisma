@@ -185,8 +185,12 @@ model Order {
   @@index([customerId])
   @@index([locationId])
   @@index([createdAt])
+  @@index([updatedAt])
+  @@index([dueDate])
   @@index([status, locationId])
   @@index([status, createdAt])
+  @@index([locationId, status, createdAt])
+  @@index([customerId, status])
 }
 
 model OrderSpecs {
@@ -287,6 +291,8 @@ model OrderActivity {
 
   order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdBy User? @relation(fields: [createdByUserId], references: [id])
+
+  @@index([orderId, createdAt])
 }
 
 // ─── Phase 2A: Invoice Model ───────────────────────────────────
