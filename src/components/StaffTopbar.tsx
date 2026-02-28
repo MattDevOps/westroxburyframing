@@ -174,8 +174,6 @@ export default function StaffTopbar() {
                 <NavLink
                   key={link.href}
                   href={link.href}
-                  badge={link.badge}
-                  badgeCount={link.badge ? unreadCount : undefined}
                   highlight={link.highlight}
                 >
                   {link.label}
