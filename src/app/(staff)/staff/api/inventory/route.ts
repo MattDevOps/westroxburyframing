@@ -22,20 +22,46 @@ export async function GET(req: Request) {
   const currentLocationId = await getCurrentLocationId(req);
 
   const where: any = {};
-  if (category) where.category = category;
   
-  // Filter by location if specified, otherwise use current location
+  // Build location filter - include items with null locationId for backward compatibility
+  let locationWhere: any = {};
   if (locationParam === "all") {
-    // Show all locations (admin only)
-    // Don't filter by location
+    // Show all locations (admin only) - no location filter
   } else if (locationParam) {
-    where.locationId = locationParam;
+    // Specific location requested - show items for that location OR null
+    locationWhere = {
+      OR: [
+        { locationId: locationParam },
+        { locationId: null },
+      ],
+    };
   } else if (locationFilter.locationId) {
-    where.locationId = locationFilter.locationId;
+    // Show items for current location OR items with no location (null)
+    locationWhere = {
+      OR: [
+        { locationId: locationFilter.locationId },
+        { locationId: null },
+      ],
+    };
   } else if (currentLocationId) {
-    where.locationId = currentLocationId;
+    // Show items for current location OR items with no location (null)
+    locationWhere = {
+      OR: [
+        { locationId: currentLocationId },
+        { locationId: null },
+      ],
+    };
   }
   // If no location specified and no current location, show all (for backward compatibility)
+  
+  // Combine category and location filters
+  const filters: any[] = [];
+  if (category) filters.push({ category });
+  if (Object.keys(locationWhere).length > 0) filters.push(locationWhere);
+  
+  if (filters.length > 0) {
+    where.AND = filters;
+  }
 
   // Note: Prisma doesn't support comparing fields directly (quantityOnHand <= reorderPoint)
   // So we fetch all items and filter in memory if lowStock is requested

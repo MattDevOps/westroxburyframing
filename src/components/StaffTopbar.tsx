@@ -23,7 +23,6 @@ const STAFF_NAV: Array<{
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
   { href: "/staff/gift-certificates", label: "Gift Certs" },
-  { href: "/staff/products", label: "Products" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/pricing", label: "Pricing" },
   { href: "/staff/materials-needed", label: "Materials" },
@@ -31,7 +30,6 @@ const STAFF_NAV: Array<{
   { href: "/staff/inventory", label: "Inventory" },
   { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/reports", label: "Reports" },
-  { href: "/staff/shopify", label: "Shopify" },
   { href: "/staff/users", label: "Users" },
 ];
 

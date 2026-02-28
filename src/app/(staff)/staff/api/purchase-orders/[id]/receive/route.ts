@@ -87,11 +87,16 @@ export async function POST(req: Request, ctx: Ctx) {
 
       if (vendorCatalogItem) {
         // Find inventory item linked to this vendor catalog item
+        // Match by locationId if PO has one, otherwise find any with matching vendorItemId
         let inventoryItem = await prisma.inventoryItem.findFirst({
-          where: {
-            vendorItemId: vendorCatalogItem.id,
-            locationId: po.locationId,
-          },
+          where: po.locationId
+            ? {
+                vendorItemId: vendorCatalogItem.id,
+                locationId: po.locationId,
+              }
+            : {
+                vendorItemId: vendorCatalogItem.id,
+              },
         });
 
         // If inventory item doesn't exist, create it
