@@ -74,10 +74,10 @@ function NavLink({
       className={[
         "text-sm px-3 py-2 rounded-md transition block relative",
         active
-          ? "bg-primary text-primary-foreground"
+          ? "bg-neutral-900 text-white"
           : highlight
           ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
-          : "text-foreground/80 hover:text-foreground hover:bg-secondary/50",
+          : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
       ].join(" ")}
     >
       {children}
@@ -178,7 +178,7 @@ export default function StaffTopbar() {
   };
 
   return (
-    <header className="border-b border-border bg-card no-print">
+    <header className="border-b border-neutral-200 bg-white no-print">
       <div className="mx-auto max-w-7xl px-4">
         {/* First row: Logo and Navigation */}
         <div className="flex items-center justify-between py-3">
@@ -218,7 +218,7 @@ export default function StaffTopbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 rounded-md hover:bg-secondary shrink-0"
+                className="lg:hidden p-2 rounded-md hover:bg-neutral-100 shrink-0"
             aria-label="Toggle navigation"
           >
             <svg
@@ -256,7 +256,7 @@ export default function StaffTopbar() {
                     setShowLocationMenu(!showLocationMenu);
                     setShowThemeMenu(false);
                   }}
-                  className="text-sm rounded-xl border border-border text-foreground px-4 py-2 hover:bg-secondary whitespace-nowrap font-medium flex items-center gap-2"
+                  className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-4 py-2 hover:bg-neutral-100 whitespace-nowrap font-medium flex items-center gap-2"
                 >
                   <span className="text-neutral-600">Location:</span>
                   <span className="font-semibold">{currentLocation.name} ({currentLocation.code})</span>
@@ -275,14 +275,14 @@ export default function StaffTopbar() {
                   </svg>
                 </button>
                 {showLocationMenu && (
-                  <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 min-w-[200px]">
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-[200px]">
                     {availableLocations.map((loc) => (
                       <button
                         key={loc.id}
                         onClick={() => handleLocationChange(loc.id)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-secondary first:rounded-t-lg last:rounded-b-lg ${
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg ${
                         loc.id === currentLocation.id
-                          ? "bg-secondary font-medium"
+                          ? "bg-neutral-100 font-medium"
                           : ""
                       }`}
                       >
@@ -294,12 +294,12 @@ export default function StaffTopbar() {
               </div>
             )}
             {isAdmin && currentLocation && availableLocations.length === 1 && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-neutral-600">
                 {currentLocation.name} ({currentLocation.code})
               </div>
             )}
             {!isAdmin && currentLocation && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-neutral-600">
                 {currentLocation.name} ({currentLocation.code})
               </div>
             )}
@@ -311,7 +311,7 @@ export default function StaffTopbar() {
                   setShowThemeMenu(!showThemeMenu);
                   setShowLocationMenu(false);
                 }}
-                className="text-sm rounded-xl border border-border text-foreground px-4 py-2 hover:bg-secondary whitespace-nowrap font-medium flex items-center gap-2"
+                className="text-sm rounded-xl border border-neutral-300 text-neutral-800 px-4 py-2 hover:bg-neutral-100 whitespace-nowrap font-medium flex items-center gap-2"
                 title="Change theme"
               >
                 <Palette size={16} />
@@ -331,14 +331,27 @@ export default function StaffTopbar() {
                 </svg>
               </button>
               {showThemeMenu && (
-                <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 min-w-[180px]">
+                <div className="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={() => {
+                      setTheme("light");
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 first:rounded-t-lg flex items-center gap-3 ${
+                      theme === "light" ? "bg-neutral-100 font-medium" : ""
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-300 border border-neutral-300"></div>
+                    <span>Light (Default)</span>
+                    {theme === "light" && <span className="ml-auto text-xs">✓</span>}
+                  </button>
                   <button
                     onClick={() => {
                       setTheme("warm-gold");
                       setShowThemeMenu(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-secondary first:rounded-t-lg flex items-center gap-3 ${
-                      theme === "warm-gold" ? "bg-secondary font-medium" : ""
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 flex items-center gap-3 ${
+                      theme === "warm-gold" ? "bg-neutral-100 font-medium" : ""
                     }`}
                   >
                     <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border border-neutral-300"></div>
@@ -350,8 +363,8 @@ export default function StaffTopbar() {
                       setTheme("cool-blue");
                       setShowThemeMenu(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-secondary flex items-center gap-3 ${
-                      theme === "cool-blue" ? "bg-secondary font-medium" : ""
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 flex items-center gap-3 ${
+                      theme === "cool-blue" ? "bg-neutral-100 font-medium" : ""
                     }`}
                   >
                     <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border border-neutral-300"></div>
@@ -363,8 +376,8 @@ export default function StaffTopbar() {
                       setTheme("forest-green");
                       setShowThemeMenu(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-secondary last:rounded-b-lg flex items-center gap-3 ${
-                      theme === "forest-green" ? "bg-secondary font-medium" : ""
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 last:rounded-b-lg flex items-center gap-3 ${
+                      theme === "forest-green" ? "bg-neutral-100 font-medium" : ""
                     }`}
                   >
                     <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-500 to-green-700 border border-neutral-300"></div>
@@ -389,7 +402,7 @@ export default function StaffTopbar() {
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-border bg-card px-4 py-3">
+        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3">
           <nav className="flex flex-col gap-1">
             {STAFF_NAV.map((link) => (
               <NavLink

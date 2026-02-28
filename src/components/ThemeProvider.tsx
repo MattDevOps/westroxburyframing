@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-type Theme = "warm-gold" | "cool-blue" | "forest-green";
+type Theme = "light" | "warm-gold" | "cool-blue" | "forest-green";
 
 interface ThemeContextType {
   theme: Theme;
@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = "staff-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("warm-gold");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Load theme from localStorage
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (savedTheme && ["warm-gold", "cool-blue", "forest-green"].includes(savedTheme)) {
+      if (savedTheme && ["light", "warm-gold", "cool-blue", "forest-green"].includes(savedTheme)) {
         setThemeState(savedTheme);
       }
     }

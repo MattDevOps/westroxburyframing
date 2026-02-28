@@ -5,8 +5,47 @@
 @tailwind utilities;
 
 @layer base {
-  /* Theme 1: Warm Gold (Default) */
+  /* Theme 1: Light/White (Default) - Original clean white theme */
   :root,
+  [data-theme="light"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
+    --radius: 0.25rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 9%;
+    --gold: 38 60% 55%;
+    --gold-light: 38 70% 70%;
+    --gold-dark: 38 50% 40%;
+    --warm-bg: 0 0% 100%;
+    --theme-primary: 0 0% 9%;
+    --theme-primary-light: 0 0% 20%;
+    --theme-primary-dark: 0 0% 0%;
+  }
+
+  /* Theme 2: Warm Gold */
   [data-theme="warm-gold"] {
     --background: 30 10% 8%;
     --foreground: 40 20% 90%;
@@ -45,7 +84,7 @@
     --theme-primary-dark: 38 50% 40%;
   }
 
-  /* Theme 2: Cool Blue */
+  /* Theme 3: Cool Blue */
   [data-theme="cool-blue"] {
     --background: 220 20% 8%;
     --foreground: 220 10% 95%;
@@ -84,7 +123,7 @@
     --theme-primary-dark: 217 91% 50%;
   }
 
-  /* Theme 3: Forest Green */
+  /* Theme 4: Forest Green */
   [data-theme="forest-green"] {
     --background: 142 20% 8%;
     --foreground: 142 10% 95%;
