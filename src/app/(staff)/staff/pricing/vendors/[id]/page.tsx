@@ -35,6 +35,7 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
   const [itemNumber, setItemNumber] = useState("");
   const [description, setDescription] = useState("");
@@ -45,6 +46,9 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
   const [discontinued, setDiscontinued] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [importCsv, setImportCsv] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: string[] } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -422,6 +426,101 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Import Prices Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-lg font-bold text-neutral-900">Import Prices from CSV</h2>
+              <p className="text-sm text-neutral-600 mt-1">
+                Upload a CSV file with columns: itemNumber, costPerUnit, retailPerUnit (optional), description (optional)
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {importResult && (
+                <div className={`rounded-xl border p-4 ${
+                  importResult.errors.length > 0 
+                    ? "border-amber-200 bg-amber-50" 
+                    : "border-green-200 bg-green-50"
+                }`}>
+                  <div className="font-semibold mb-2">
+                    Import Complete: {importResult.imported} imported, {importResult.updated} updated, {importResult.skipped} skipped
+                  </div>
+                  {importResult.errors.length > 0 && (
+                    <div className="mt-2 text-sm">
+                      <div className="font-medium mb-1">Errors:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {importResult.errors.slice(0, 10).map((err, i) => (
+                          <li key={i} className="text-xs">{err}</li>
+                        ))}
+                        {importResult.errors.length > 10 && (
+                          <li className="text-xs">... and {importResult.errors.length - 10} more</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-700">CSV Content</label>
+                <textarea
+                  className="w-full rounded-xl border p-3 text-sm font-mono h-48"
+                  value={importCsv}
+                  onChange={(e) => setImportCsv(e.target.value)}
+                  placeholder="itemNumber,costPerUnit,retailPerUnit&#10;ABC123,5.50,12.00&#10;DEF456,3.25,8.00"
+                />
+                <p className="text-xs text-neutral-500">
+                  First row should be headers. Include: itemNumber, costPerUnit, retailPerUnit (optional), description (optional)
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportCsv("");
+                    setImportResult(null);
+                  }}
+                  className="flex-1 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                  disabled={importing}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setImporting(true);
+                    setImportResult(null);
+                    try {
+                      const res = await fetch(`/staff/api/vendors/${id}/import-prices`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ csv: importCsv }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || "Import failed");
+                      setImportResult(data.results);
+                      load(); // Refresh the list
+                    } catch (e: any) {
+                      setImportResult({ imported: 0, updated: 0, skipped: 0, errors: [e.message || "Import failed"] });
+                    } finally {
+                      setImporting(false);
+                    }
+                  }}
+                  className="flex-1 rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  disabled={importing || !importCsv.trim()}
+                >
+                  {importing ? "Importing..." : "Import Prices"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -31,11 +31,11 @@ export async function POST(req: Request, ctx: Ctx) {
     const prev = await prisma.order.findUnique({ where: { id }, select: { status: true } });
     if (!prev) throw new AppError("Order not found", 404, "NOT_FOUND");
 
-  const order = await prisma.order.update({
-    where: { id },
-    data: { status: status as any },
-    include: { customer: true },
-  });
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status: status as any },
+      include: { customer: true },
+    });
 
     const fromLabel = ORDER_STATUS_LABEL[prev.status as keyof typeof ORDER_STATUS_LABEL] || prev.status;
     const toLabel = ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] || status;
@@ -49,8 +49,8 @@ export async function POST(req: Request, ctx: Ctx) {
       reason: body.reason,
     });
 
-  // Phase 4A: Auto-deduct inventory when order moves to in_production
-  if (status === "in_production" && prev.status !== "in_production") {
+    // Phase 4A: Auto-deduct inventory when order moves to in_production
+    if (status === "in_production" && prev.status !== "in_production") {
     const inventoryResult = await deductInventoryForOrder(id);
     if (inventoryResult.errors.length > 0) {
       // Log errors but don't fail the status change
