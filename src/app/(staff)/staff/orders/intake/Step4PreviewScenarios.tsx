@@ -19,6 +19,11 @@ export default function Step4PreviewScenarios({
   onBack,
 }: Step4Props) {
   const [calculating, setCalculating] = useState(false);
+  const [templates, setTemplates] = useState<OrderTemplate[]>([]);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
 
   // Load templates on mount
   useEffect(() => {
