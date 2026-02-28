@@ -45,6 +45,7 @@ export default function OrdersBoardPage() {
   const [err, setErr] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("active");
   const [syncing, setSyncing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Search & filter state
   const [searchQ, setSearchQ] = useState("");
@@ -69,6 +70,7 @@ export default function OrdersBoardPage() {
 
   async function load() {
     setErr(null);
+    setLoading(true);
     const params = new URLSearchParams({ limit: "200" });
     if (searchQ.trim()) params.set("q", searchQ.trim());
     if (dateFrom) params.set("from", dateFrom);
@@ -77,13 +79,17 @@ export default function OrdersBoardPage() {
     if (filterStaff) params.set("createdByUserId", filterStaff);
     if (filterLocation) params.set("locationId", filterLocation);
 
-    const res = await fetch(`/staff/api/orders?${params}`, { cache: "no-store" });
-    const out = await res.json();
-    if (!res.ok) {
-      setErr(out.error || "Failed to load orders");
-      return;
+    try {
+      const res = await fetch(`/staff/api/orders?${params}`, { cache: "no-store" });
+      const out = await res.json();
+      if (!res.ok) {
+        setErr(out.error || "Failed to load orders");
+        return;
+      }
+      setOrders(out.orders || []);
+    } finally {
+      setLoading(false);
     }
-    setOrders(out.orders || []);
   }
 
   useEffect(() => {
@@ -246,6 +252,13 @@ export default function OrdersBoardPage() {
       </div>
 
       {err ? <div className="text-sm text-red-400">{err}</div> : null}
+      
+      {loading && orders.length === 0 ? (
+        <div className="text-center py-12 text-neutral-500">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mb-2"></div>
+          <div>Loading orders...</div>
+        </div>
+      ) : null}
 
       {/* Search & Filters */}
       <div className="flex flex-wrap gap-3 items-end">

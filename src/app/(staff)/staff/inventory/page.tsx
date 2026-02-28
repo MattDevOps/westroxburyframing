@@ -63,6 +63,17 @@ export default function InventoryPage() {
     (item) => Number(item.quantityOnHand) <= Number(item.reorderPoint)
   );
 
+  if (loading && items.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12 text-neutral-500">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mb-2"></div>
+          <div>Loading inventory...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">

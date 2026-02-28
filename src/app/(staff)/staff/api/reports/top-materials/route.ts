@@ -45,8 +45,13 @@ export async function GET(req: Request) {
         createdAt: { gte: startDate, lte: endDate },
         status: { notIn: ["cancelled", "estimate"] },
       },
-      include: {
+      select: {
+        id: true,
+        width: true,
+        height: true,
+        totalAmount: true,
         components: {
+          where: { scenarioId: null }, // Only active design components
           include: {
             priceCode: {
               select: {
@@ -57,7 +62,13 @@ export async function GET(req: Request) {
               },
             },
             vendorItem: {
-              include: {
+              select: {
+                id: true,
+                itemNumber: true,
+                description: true,
+                category: true,
+                costPerUnit: true,
+                unitType: true,
                 vendor: {
                   select: {
                     id: true,
@@ -72,6 +83,40 @@ export async function GET(req: Request) {
       },
     });
 
+    // Helper function to calculate component cost
+    function calculateComponentCost(
+      component: any,
+      orderWidth: number | null,
+      orderHeight: number | null
+    ): number {
+      if (!component.vendorItem?.costPerUnit) return 0;
+      
+      const costPerUnit = Number(component.vendorItem.costPerUnit);
+      const quantity = Number(component.quantity || 1);
+      const unitType = component.vendorItem.unitType || "each";
+
+      if (unitType === "foot" && orderWidth && orderHeight) {
+        // For moulding: calculate perimeter in feet
+        const perimeterInches = (orderWidth + orderHeight) * 2;
+        const perimeterFeet = perimeterInches / 12;
+        return perimeterFeet * quantity * costPerUnit;
+      } else if ((unitType === "sqft" || unitType === "sheet") && orderWidth && orderHeight) {
+        // For mats/glass: calculate area in sqft
+        const areaSqInches = orderWidth * orderHeight;
+        const areaSqFeet = areaSqInches / 144;
+        if (unitType === "sheet") {
+          // For sheets: calculate how many sheets needed (standard 32x40 = 1280 sq inches)
+          const sheetArea = 32 * 40;
+          const sheetsNeeded = Math.ceil((areaSqInches * quantity) / sheetArea);
+          return sheetsNeeded * costPerUnit;
+        }
+        return areaSqFeet * quantity * costPerUnit;
+      } else {
+        // For fixed items: multiply quantity by cost
+        return quantity * costPerUnit;
+      }
+    }
+
     // Aggregate by material
     const materialMap = new Map<string, {
       id: string;
@@ -84,6 +129,9 @@ export async function GET(req: Request) {
       usageCount: number;
       totalQuantity: number;
       totalRevenue: number;
+      totalCost: number;
+      totalProfit: number;
+      profitMargin: number;
       avgOrderValue: number;
     }>();
 
@@ -137,6 +185,9 @@ export async function GET(req: Request) {
             usageCount: 0,
             totalQuantity: 0,
             totalRevenue: 0,
+            totalCost: 0,
+            totalProfit: 0,
+            profitMargin: 0,
             avgOrderValue: 0,
           });
         }
@@ -157,23 +208,45 @@ export async function GET(req: Request) {
           const componentCount = order.components.length;
           material.totalRevenue += Math.round(order.totalAmount / componentCount);
         }
+
+        // Calculate component cost
+        const componentCost = calculateComponentCost(
+          component,
+          order.width ? Number(order.width) : null,
+          order.height ? Number(order.height) : null
+        );
+        material.totalCost += Math.round(componentCost * 100); // Convert to cents
       }
     }
 
-    // Calculate averages and convert to array
+    // Calculate averages, profit, and convert to array
     const materials = Array.from(materialMap.values())
-      .map((m) => ({
-        ...m,
-        avgOrderValue: m.usageCount > 0 ? m.totalRevenue / m.usageCount : 0,
-      }))
+      .map((m) => {
+        const profit = m.totalRevenue - m.totalCost;
+        const profitMargin = m.totalRevenue > 0 ? (profit / m.totalRevenue) * 100 : 0;
+        return {
+          ...m,
+          totalProfit: profit,
+          profitMargin,
+          avgOrderValue: m.usageCount > 0 ? m.totalRevenue / m.usageCount : 0,
+        };
+      })
       .sort((a, b) => b.usageCount - a.usageCount) // Sort by usage count
       .slice(0, 50); // Top 50
 
     // Summary stats
+    const totalRevenue = materials.reduce((sum, m) => sum + m.totalRevenue, 0);
+    const totalCost = materials.reduce((sum, m) => sum + m.totalCost, 0);
+    const totalProfit = totalRevenue - totalCost;
+    const totalProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
     const summary = {
       totalMaterials: materials.length,
       totalUsage: materials.reduce((sum, m) => sum + m.usageCount, 0),
-      totalRevenue: materials.reduce((sum, m) => sum + m.totalRevenue, 0),
+      totalRevenue,
+      totalCost,
+      totalProfit,
+      totalProfitMargin,
       categoryBreakdown: materials.reduce((acc, m) => {
         acc[m.category] = (acc[m.category] || 0) + m.usageCount;
         return acc;

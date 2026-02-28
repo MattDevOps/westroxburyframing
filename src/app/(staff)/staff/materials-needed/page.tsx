@@ -82,7 +82,9 @@ export default function MaterialsNeededPage() {
       const poData = await res.json();
       router.push(`/staff/purchase-orders/${poData.order.id}`);
     } catch (e: any) {
-      alert(e.message || "Failed to generate purchase order");
+      const errorMsg = e.message || "Failed to generate purchase order";
+      alert(errorMsg);
+      console.error("PO generation error:", e);
     } finally {
       setGenerating(null);
     }
@@ -91,7 +93,10 @@ export default function MaterialsNeededPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="text-center py-12 text-neutral-600">Loading...</div>
+        <div className="text-center py-12 text-neutral-500">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mb-2"></div>
+          <div>Loading materials needed...</div>
+        </div>
       </div>
     );
   }

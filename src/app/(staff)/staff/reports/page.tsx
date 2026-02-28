@@ -883,6 +883,38 @@ export default function ReportsPage() {
                     ${(salesData.totals.avgOrderValue / 100).toFixed(2)}
                   </div>
                 </div>
+                {salesData.totals.totalCost !== undefined && (
+                  <>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Total Cost
+                      </div>
+                      <div className="text-2xl font-bold text-neutral-900">
+                        ${(salesData.totals.totalCost / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Total Profit
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(salesData.totals.totalProfit / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Profit Margin
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {salesData.totals.totalProfitMargin.toFixed(1)}%
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Period breakdown table */}
@@ -905,6 +937,19 @@ export default function ReportsPage() {
                       <th className="text-right py-2 text-neutral-500 font-medium">
                         Avg Order
                       </th>
+                      {salesData.periods[0]?.cost !== undefined && (
+                        <>
+                          <th className="text-right py-2 text-neutral-500 font-medium">
+                            Cost
+                          </th>
+                          <th className="text-right py-2 text-neutral-500 font-medium">
+                            Profit
+                          </th>
+                          <th className="text-right py-2 text-neutral-500 font-medium">
+                            Margin
+                          </th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -946,6 +991,23 @@ export default function ReportsPage() {
                         <td className="py-2 text-right text-neutral-600">
                           ${(p.avgOrderValue / 100).toFixed(2)}
                         </td>
+                        {p.cost !== undefined && (
+                          <>
+                            <td className="py-2 text-right text-neutral-600">
+                              ${(p.cost / 100).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-2 text-right text-green-600 font-medium">
+                              ${(p.profit / 100).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-2 text-right text-green-600 font-medium">
+                              {p.profitMargin.toFixed(1)}%
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -1690,6 +1752,38 @@ export default function ReportsPage() {
                       : "0.00"}
                   </div>
                 </div>
+                {topMaterialsData.summary.totalCost !== undefined && (
+                  <>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Total Cost
+                      </div>
+                      <div className="text-2xl font-bold text-neutral-900">
+                        ${(topMaterialsData.summary.totalCost / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Total Profit
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(topMaterialsData.summary.totalProfit / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 p-4">
+                      <div className="text-xs text-neutral-500 uppercase tracking-wide">
+                        Profit Margin
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {topMaterialsData.summary.totalProfitMargin.toFixed(1)}%
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Category Breakdown */}
@@ -1725,6 +1819,13 @@ export default function ReportsPage() {
                       <th className="text-right py-2 text-neutral-500 font-medium">Total Qty</th>
                       <th className="text-right py-2 text-neutral-500 font-medium">Total Revenue</th>
                       <th className="text-right py-2 text-neutral-500 font-medium">Avg Order Value</th>
+                      {topMaterialsData.materials[0]?.totalCost !== undefined && (
+                        <>
+                          <th className="text-right py-2 text-neutral-500 font-medium">Cost</th>
+                          <th className="text-right py-2 text-neutral-500 font-medium">Profit</th>
+                          <th className="text-right py-2 text-neutral-500 font-medium">Margin</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -1755,6 +1856,23 @@ export default function ReportsPage() {
                         <td className="py-2 text-right text-neutral-600">
                           ${(material.avgOrderValue / 100).toFixed(2)}
                         </td>
+                        {material.totalCost !== undefined && (
+                          <>
+                            <td className="py-2 text-right text-neutral-600">
+                              ${(material.totalCost / 100).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-2 text-right text-green-600 font-medium">
+                              ${(material.totalProfit / 100).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-2 text-right text-green-600 font-medium">
+                              {material.profitMargin.toFixed(1)}%
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
