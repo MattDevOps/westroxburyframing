@@ -24,6 +24,7 @@ export async function GET(req: Request) {
   const where: any = {};
   
   // Build location filter - include items with null locationId for backward compatibility
+  // Always show items with null locationId (legacy items or items from POs without location)
   let locationWhere: any = {};
   if (locationParam === "all") {
     // Show all locations (admin only) - no location filter
@@ -35,19 +36,13 @@ export async function GET(req: Request) {
         { locationId: null },
       ],
     };
-  } else if (locationFilter.locationId) {
+  } else if (locationFilter.locationId || currentLocationId) {
     // Show items for current location OR items with no location (null)
+    // This ensures PO items without location always show up
+    const targetLocationId = locationFilter.locationId || currentLocationId;
     locationWhere = {
       OR: [
-        { locationId: locationFilter.locationId },
-        { locationId: null },
-      ],
-    };
-  } else if (currentLocationId) {
-    // Show items for current location OR items with no location (null)
-    locationWhere = {
-      OR: [
-        { locationId: currentLocationId },
+        { locationId: targetLocationId },
         { locationId: null },
       ],
     };
