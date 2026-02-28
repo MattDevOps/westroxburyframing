@@ -66,6 +66,7 @@ export default function OrderDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [blindPrint, setBlindPrint] = useState(false);
+  const [printFormat, setPrintFormat] = useState<"standard" | "no-lines" | "two-per-page">("standard");
   const [error, setError] = useState<string | null>(null);
 
   const [note, setNote] = useState("");
@@ -310,6 +311,17 @@ export default function OrderDetailPage() {
   }
 
   function handlePrint() {
+    // Apply print format class to body
+    const formatClass = `print-format-${printFormat}`;
+    document.body.classList.add(formatClass);
+    
+    // Remove class after printing
+    const removeClass = () => {
+      document.body.classList.remove(formatClass);
+      window.removeEventListener("afterprint", removeClass);
+    };
+    window.addEventListener("afterprint", removeClass);
+    
     window.print();
   }
 
@@ -726,9 +738,21 @@ export default function OrderDetailPage() {
       )}
 
       {/* Print options — only visible on screen */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4 print:hidden">
         <div className="text-neutral-900 font-semibold">Print Options</div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-neutral-700 font-medium">Format:</label>
+            <select
+              value={printFormat}
+              onChange={(e) => setPrintFormat(e.target.value as "standard" | "no-lines" | "two-per-page")}
+              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="standard">Standard (with lines)</option>
+              <option value="no-lines">No lines</option>
+              <option value="two-per-page">2 per page</option>
+            </select>
+          </div>
           <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
             <input
               type="checkbox"
@@ -736,10 +760,10 @@ export default function OrderDetailPage() {
               onChange={(e) => setBlindPrint(e.target.checked)}
               className="rounded"
             />
-            Blind estimate (hide item codes & vendor info on print)
+            Blind estimate (hide item codes & vendor info)
           </label>
           <button
-            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 font-medium"
             onClick={handlePrint}
           >
             🖨️ Print Work Order

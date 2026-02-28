@@ -284,6 +284,48 @@
     size: letter;
   }
 
+  /* Print format: Standard (with lines) - default */
+  .print-format-standard .grid > div {
+    border-bottom: 1px solid #ddd;
+  }
+  .print-format-standard table {
+    border-collapse: collapse;
+  }
+  .print-format-standard table td,
+  .print-format-standard table th {
+    border: 1px solid #ddd;
+  }
+
+  /* Print format: No lines */
+  .print-format-no-lines .grid > div {
+    border-bottom: none;
+  }
+  .print-format-no-lines table {
+    border-collapse: collapse;
+  }
+  .print-format-no-lines table td,
+  .print-format-no-lines table th {
+    border: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  /* Print format: 2 per page */
+  .print-format-two-per-page {
+    break-inside: avoid;
+  }
+  .print-format-two-per-page .order-content {
+    width: 48%;
+    display: inline-block;
+    vertical-align: top;
+    margin-bottom: 1in;
+  }
+  .print-format-two-per-page .order-content:nth-child(odd) {
+    margin-right: 4%;
+  }
+  @page {
+    margin: 0.5in;
+  }
+
   /* Add business header for work order prints */
   .p-6::before {
     content: "WEST ROXBURY FRAMING — WORK ORDER";
