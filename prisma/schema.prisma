@@ -98,6 +98,10 @@ model Customer {
   tagAssignments   CustomerTagAssignment[]
   giftCertificates GiftCertificate[]
   products         Product[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([smsOptIn])
 }
 
 // ─── Phase 5A: Customer Tags ───────────────────────────────────
@@ -176,6 +180,13 @@ model Order {
   /// New dedicated order timeline entries (status changes, edits, invoice sent, etc.)
   activity         OrderActivity[]
   giftCertificates GiftCertificate[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([locationId])
+  @@index([createdAt])
+  @@index([status, locationId])
+  @@index([status, createdAt])
 }
 
 model OrderSpecs {
@@ -316,6 +327,11 @@ model Invoice {
 
   orders   Order[]
   payments InvoicePayment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
 }
 
 model InvoicePayment {
@@ -418,6 +434,8 @@ model OrderComponent {
 
   @@index([orderId])
   @@index([scenarioId])
+  @@index([vendorItemId])
+  @@index([priceCodeId])
 }
 
 // ─── Phase 3: OrderScenario (Design Options) ───────────────────────────────────

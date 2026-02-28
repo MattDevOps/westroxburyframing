@@ -68,6 +68,11 @@ interface DashboardData {
     unitType: string;
   }>;
   lowStockCount: number;
+  revenueByDay: Array<{ date: string; revenue: number }>;
+  topMaterials: Array<{ name: string; category: string; count: number }>;
+  depositCollectionRate: number;
+  totalDepositsDue: number;
+  totalDepositsCollected: number;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -226,6 +231,15 @@ export default function DashboardPage() {
           value={data.invoicesPending.toString()}
           accent={data.invoicesPending > 0 ? "blue" : undefined}
         />
+        <KPICard
+          label="Deposit Collection"
+          value={`${data.depositCollectionRate}%`}
+          accent={data.depositCollectionRate < 80 ? "amber" : "blue"}
+        />
+        <KPICard
+          label="Avg Ticket"
+          value={`$${data.ordersThisMonth > 0 ? ((data.revenueThisMonth / data.ordersThisMonth) / 100).toFixed(0) : "0"}`}
+        />
       </div>
 
       {/* Overdue alert */}
@@ -327,6 +341,70 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Revenue Trends & Top Materials */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue by Day (Last 7 Days) */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+            Revenue Trends (Last 7 Days)
+          </h2>
+          {data.revenueByDay && data.revenueByDay.length > 0 ? (
+            <div className="flex items-end gap-2 h-40">
+              {data.revenueByDay.map((d) => {
+                const dayMax = Math.max(...data.revenueByDay.map((r) => r.revenue), 1);
+                return (
+                  <div
+                    key={d.date}
+                    className="flex-1 flex flex-col items-center justify-end h-full"
+                  >
+                    <div className="text-xs font-semibold text-neutral-700 mb-1">
+                      {d.revenue > 0
+                        ? `$${((d.revenue / 100).toFixed(0))}`
+                        : "$0"}
+                    </div>
+                    <div
+                      className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t transition-all min-h-[4px]"
+                      style={{
+                        height: `${Math.max((d.revenue / dayMax) * 100, 2)}%`,
+                      }}
+                    />
+                    <div className="text-[10px] text-neutral-500 mt-2 text-center">
+                      {new Date(d.date).toLocaleDateString("en-US", { weekday: "short" })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-400">No revenue data available.</p>
+          )}
+        </div>
+
+        {/* Top Materials */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+            Top Materials (Last 30 Days)
+          </h2>
+          {data.topMaterials && data.topMaterials.length > 0 ? (
+            <div className="space-y-3">
+              {data.topMaterials.map((m, idx) => (
+                <div key={idx} className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-neutral-900">{m.name}</div>
+                    <div className="text-xs text-neutral-500">{m.category}</div>
+                  </div>
+                  <div className="text-sm font-semibold text-neutral-700">
+                    {m.count} {m.count === 1 ? "use" : "uses"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-400">No material usage data available.</p>
+          )}
         </div>
       </div>
 

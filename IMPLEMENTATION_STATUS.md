@@ -241,58 +241,89 @@ This is the next critical feature to transform the system from "database correct
 ## 📋 Strategic Next Moves (Beyond Wizard)
 
 ### 1️⃣ Production Board Enhancements
-**Status:** ⚠️ **PARTIAL** (Kanban board exists, needs drag-and-drop)
+**Status:** ✅ **COMPLETE**
 
-**Enhancements needed:**
-- Drag and drop between stages
-- Better filtering (by staff, location)
-- Bulk status updates
-- Visual indicators for overdue orders
-
-**Estimated Effort:** 1-2 days
+**Implemented:**
+- ✅ Drag and drop between stages
+- ✅ Better filtering (by staff, location)
+- ✅ Bulk status updates
+- ✅ Visual indicators for overdue orders
 
 ### 2️⃣ Purchase Order Automation
-**Status:** ⚠️ **PARTIAL** (PO models exist, automation needed)
+**Status:** ✅ **COMPLETE**
 
-**Enhancements needed:**
-- Auto-add materials to "Materials to Order" when order created
-- One-click PO generation from materials needed
-- Auto-update inventory when PO received
-- PO status tracking improvements
-
-**Estimated Effort:** 2-3 days
+**Implemented:**
+- ✅ Auto-add materials to "Materials to Order" when order created (automatic via materials-needed API)
+- ✅ One-click PO generation from materials needed
+- ✅ Auto-update inventory when PO received
+- ✅ PO status tracking improvements
 
 ### 3️⃣ SMS Pickup Notifications
-**Status:** ⚠️ **PARTIAL** (Twilio infrastructure exists, auto-notifications needed)
+**Status:** ✅ **COMPLETE**
 
-**Enhancements needed:**
-- Auto-send SMS when order status → `ready_for_pickup`
-- Template: "Hi [Name], your framing order #[OrderNumber] is ready for pickup at West Roxbury Framing. See you soon!"
-- High ROI: increases pickup speed and customer satisfaction
-
-**Estimated Effort:** 1 day
+**Implemented:**
+- ✅ Auto-send SMS when order status → `ready_for_pickup`
+- ✅ SMS template with order number and customer name
+- ✅ Opt-in/opt-out handling via Twilio webhook
+- ✅ SMS status updates for key status changes (in_production, quality_check, completed)
 
 ### 4️⃣ Reporting Dashboard Enhancements
-**Status:** ✅ **COMPLETE** (dashboard exists with KPIs)
+**Status:** ✅ **COMPLETE**
 
-**Additional metrics to consider:**
-- Revenue this week
-- Avg ticket size
-- Top frame styles
-- Deposit % collected vs outstanding
-
-**Estimated Effort:** 1-2 days
+**Implemented:**
+- ✅ Revenue trends (last 7 days)
+- ✅ Avg ticket size
+- ✅ Top materials (last 30 days)
+- ✅ Deposit collection rate
+- ✅ All KPIs and charts
 
 ### 5️⃣ Webhook Payment Auto-Reconciliation
-**Status:** ⚠️ **PARTIAL** (Square webhook exists, auto-advancement needed)
+**Status:** ✅ **COMPLETE**
 
-**Enhancements needed:**
-- Auto-advance order status when payment received (optional setting)
-- Auto-update invoice balance due
-- Auto-send confirmation email when payment received
-
-**Estimated Effort:** 1 day
+**Implemented:**
+- ✅ Auto-advance order status when payment received (configurable via `AUTO_ADVANCE_ORDER_ON_PAYMENT` env var)
+- ✅ Auto-update invoice balance due
+- ✅ Auto-send confirmation email when payment received (with receipt link)
 
 ---
 
-*Last updated: After adding Phase 8 (Guided Order Wizard) and strategic next moves*
+## ✅ Recent Enhancements (Completed)
+
+### Profit Margin Analysis
+- ✅ Added cost calculation to sales reports (revenue - costs = profit)
+- ✅ Added profit margin % to all period breakdowns
+- ✅ Added profit margins to top materials report
+- ✅ CSV exports now include cost, profit, and margin columns
+
+### Performance Optimizations
+- ✅ Added database indexes for common queries (orders, customers, invoices, components)
+- ✅ Improved query performance with composite indexes
+- ✅ Migration applied successfully
+
+### UI/UX Improvements
+- ✅ Added loading states to slow-loading pages (orders, materials, inventory)
+- ✅ Improved error messages with better formatting
+- ✅ Enhanced mobile responsiveness
+
+### Dashboard Enhancements
+- ✅ Added revenue trends chart (last 7 days)
+- ✅ Added top materials widget (last 30 days)
+- ✅ Added deposit collection rate KPI
+- ✅ Added average ticket size KPI
+
+### Export Improvements
+- ✅ Sales report CSV now includes profit margins
+- ✅ Top materials CSV now includes profit margins
+- ✅ Period summaries and totals in exports
+
+### Global Search Improvements
+- ✅ Increased result limits from 10 to 20 per category
+- ✅ Enhanced search across orders, customers, invoices, products
+
+### Twilio Webhook Enhancements
+- ✅ Auto-update customer smsOptIn when they text STOP/START
+- ✅ Proper phone number normalization and matching
+
+---
+
+*Last updated: After completing all strategic enhancements and profit margin analysis*

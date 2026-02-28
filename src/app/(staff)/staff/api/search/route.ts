@@ -55,7 +55,7 @@ export async function GET(req: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 20,
     });
 
     // Search customers by name, email, or phone
@@ -77,7 +77,7 @@ export async function GET(req: Request) {
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 20,
     });
 
     // Search invoices by invoice number or customer
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 20,
     });
 
     // Search products by SKU, name, description, or barcode
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
         published: true,
       },
       orderBy: { name: "asc" },
-      take: 10,
+      take: 20,
     });
 
     return NextResponse.json({

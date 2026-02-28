@@ -270,6 +270,106 @@ export async function GET(req: Request) {
     .sort((a: any, b: any) => b.lifetimeValue - a.lifetimeValue)
     .slice(0, 5) : [];
 
+  // Revenue trends (last 7 days)
+  const revenueByDayPromises = [];
+  for (let i = 6; i >= 0; i--) {
+    const dStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    dStart.setHours(0, 0, 0, 0);
+    const dEnd = new Date(dStart);
+    dEnd.setHours(23, 59, 59, 999);
+    revenueByDayPromises.push(
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          ...locationFilter,
+          paidInFull: true,
+          createdAt: { gte: dStart, lte: dEnd },
+        },
+      }).then((agg) => ({
+        date: dStart.toISOString().split("T")[0],
+        revenue: agg._sum.totalAmount || 0,
+      }))
+    );
+  }
+  const revenueByDay = await Promise.all(revenueByDayPromises);
+
+  // Top materials (last 30 days) - simplified version
+  const startOfLast30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const topMaterialsOrders = await prisma.order.findMany({
+    where: {
+      ...locationFilter,
+      createdAt: { gte: startOfLast30Days },
+      status: { notIn: ["cancelled", "estimate"] },
+    },
+    select: {
+      components: {
+        where: { scenarioId: null },
+        select: {
+          vendorItem: {
+            select: {
+              id: true,
+              description: true,
+              itemNumber: true,
+              category: true,
+            },
+          },
+          priceCode: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+            },
+          },
+        },
+      },
+    },
+    take: 100, // Limit for performance
+  });
+
+  const materialCounts = new Map<string, { name: string; category: string; count: number }>();
+  for (const order of topMaterialsOrders) {
+    for (const component of order.components) {
+      const material = component.vendorItem || component.priceCode;
+      if (material) {
+        const key = material.id;
+        const existing = materialCounts.get(key) || {
+          name: component.vendorItem?.description || component.vendorItem?.itemNumber || component.priceCode?.name || "Unknown",
+          category: component.vendorItem?.category || component.priceCode?.category || "other",
+          count: 0,
+        };
+        existing.count++;
+        materialCounts.set(key, existing);
+      }
+    }
+  }
+  const topMaterials = Array.from(materialCounts.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Deposit collection rate (invoices with deposits)
+  const invoicesWithDeposits = await prisma.invoice.findMany({
+    where: {
+      depositAmount: { gt: 0 },
+      createdAt: { gte: startOfMonth },
+    },
+    select: {
+      depositAmount: true,
+      amountPaid: true,
+      totalAmount: true,
+    },
+  });
+
+  let totalDepositsDue = 0;
+  let totalDepositsCollected = 0;
+  for (const inv of invoicesWithDeposits) {
+    totalDepositsDue += inv.depositAmount;
+    // If amount paid is >= deposit amount, deposit is collected
+    totalDepositsCollected += Math.min(inv.amountPaid, inv.depositAmount);
+  }
+  const depositCollectionRate = totalDepositsDue > 0
+    ? Math.round((totalDepositsCollected / totalDepositsDue) * 100)
+    : 100;
+
   return NextResponse.json({
     totalOrders,
     ordersThisMonth,
@@ -315,5 +415,10 @@ export async function GET(req: Request) {
     })),
     lowStockItems,
     lowStockCount,
+    revenueByDay,
+    topMaterials,
+    depositCollectionRate,
+    totalDepositsDue,
+    totalDepositsCollected,
   });
 }
