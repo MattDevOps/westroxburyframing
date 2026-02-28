@@ -10,40 +10,23 @@ const prisma = new PrismaClient();
 async function cleanupTestData() {
   console.log("🔍 Searching for test customers and orders...\n");
 
-  // Find test customers by email patterns
-  const testEmailPatterns = [
-    /test.*@.*\.(com|test|example)/i,
-    /.*@.*\.test$/i,
-    /.*@example\.com$/i,
-    /test\d+@/i,
-    /e2e\.test/i,
-  ];
-
-  // Find test customers by name patterns
-  const testNamePatterns = [
-    /^Test/i,
-    /TestCustomer/i,
-    /TestFirst/i,
-    /TestLast/i,
-    /^Dummy/i,
-    /^Fake/i,
-  ];
-
-  // Find customers with test emails
+  // Find test customers by email patterns (using Prisma string matching)
   const customersWithTestEmails = await prisma.customer.findMany({
     where: {
       OR: [
-        ...testEmailPatterns.map((pattern) => ({
-          email: {
-            contains: pattern.source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-            mode: "insensitive" as const,
-          },
-        })),
+        { email: { contains: "@test.example.com", mode: "insensitive" } },
+        { email: { contains: "@example.com", mode: "insensitive" } },
+        { email: { contains: "test@", mode: "insensitive" } },
+        { email: { startsWith: "test", mode: "insensitive" } },
+        { email: { contains: ".test", mode: "insensitive" } },
       ],
     },
     include: {
       orders: {
         select: { id: true, orderNumber: true },
+      },
+      invoices: {
+        select: { id: true, invoiceNumber: true },
       },
     },
   });
@@ -52,23 +35,20 @@ async function cleanupTestData() {
   const customersWithTestNames = await prisma.customer.findMany({
     where: {
       OR: [
-        ...testNamePatterns.map((pattern) => ({
-          firstName: {
-            contains: pattern.source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-            mode: "insensitive" as const,
-          },
-        })),
-        ...testNamePatterns.map((pattern) => ({
-          lastName: {
-            contains: pattern.source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-            mode: "insensitive" as const,
-          },
-        })),
+        { firstName: { startsWith: "Test", mode: "insensitive" } },
+        { lastName: { startsWith: "Test", mode: "insensitive" } },
+        { firstName: { contains: "TestCustomer", mode: "insensitive" } },
+        { lastName: { contains: "TestCustomer", mode: "insensitive" } },
+        { firstName: { startsWith: "Dummy", mode: "insensitive" } },
+        { firstName: { startsWith: "Fake", mode: "insensitive" } },
       ],
     },
     include: {
       orders: {
         select: { id: true, orderNumber: true },
+      },
+      invoices: {
+        select: { id: true, invoiceNumber: true },
       },
     },
   });
@@ -95,18 +75,53 @@ async function cleanupTestData() {
     if (customer.orders.length > 0) {
       console.log(`    Order Numbers: ${customer.orders.map((o) => o.orderNumber).join(", ")}`);
     }
+    console.log(`    Invoices: ${customer.invoices.length}`);
+    if (customer.invoices.length > 0) {
+      console.log(`    Invoice Numbers: ${customer.invoices.map((i) => i.invoiceNumber).join(", ")}`);
+    }
     console.log("");
   }
 
-  // Count total orders to delete
+  // Count total orders and invoices to delete
   const totalOrders = testCustomers.reduce((sum, c) => sum + c.orders.length, 0);
+  const totalInvoices = testCustomers.reduce((sum, c) => sum + c.invoices.length, 0);
 
   console.log(`\n⚠️  This will delete:`);
   console.log(`  - ${testCustomers.length} customer(s)`);
   console.log(`  - ${totalOrders} order(s)`);
+  console.log(`  - ${totalInvoices} invoice(s)`);
   console.log(`\nProceeding with deletion...\n`);
 
-  // Delete orders first (to avoid foreign key constraints)
+  // Delete invoices first (they may reference orders)
+  let deletedInvoices = 0;
+  for (const customer of testCustomers) {
+    for (const invoice of customer.invoices) {
+      try {
+        // Delete invoice payments first
+        await prisma.invoicePayment.deleteMany({
+          where: { invoiceId: invoice.id },
+        });
+
+        // Update orders to remove invoice reference (set invoiceId to null)
+        await prisma.order.updateMany({
+          where: { invoiceId: invoice.id },
+          data: { invoiceId: null },
+        });
+
+        // Delete the invoice
+        await prisma.invoice.delete({
+          where: { id: invoice.id },
+        });
+
+        deletedInvoices++;
+        console.log(`  ✅ Deleted invoice ${invoice.invoiceNumber}`);
+      } catch (error: any) {
+        console.error(`  ❌ Failed to delete invoice ${invoice.invoiceNumber}: ${error.message}`);
+      }
+    }
+  }
+
+  // Delete orders (to avoid foreign key constraints)
   let deletedOrders = 0;
   for (const customer of testCustomers) {
     for (const order of customer.orders) {
@@ -131,6 +146,21 @@ async function cleanupTestData() {
           where: { orderId: order.id },
         });
 
+        // Delete order specs
+        await prisma.orderSpecs.deleteMany({
+          where: { orderId: order.id },
+        });
+
+        // Delete order payments
+        await prisma.payment.deleteMany({
+          where: { orderId: order.id },
+        });
+
+        // Delete activity logs
+        await prisma.activityLog.deleteMany({
+          where: { orderId: order.id },
+        });
+
         // Delete the order
         await prisma.order.delete({
           where: { id: order.id },
@@ -144,13 +174,36 @@ async function cleanupTestData() {
     }
   }
 
-  // Delete customers
+  // Delete customers (only if they have no remaining orders/invoices)
   let deletedCustomers = 0;
   for (const customer of testCustomers) {
     try {
+      // Check if customer still has orders or invoices (shouldn't after cleanup above, but double-check)
+      const remainingOrders = await prisma.order.count({
+        where: { customerId: customer.id },
+      });
+      const remainingInvoices = await prisma.invoice.count({
+        where: { customerId: customer.id },
+      });
+
+      if (remainingOrders > 0 || remainingInvoices > 0) {
+        console.log(`  ⚠️  Skipping customer ${customer.firstName} ${customer.lastName} - still has ${remainingOrders} orders and ${remainingInvoices} invoices`);
+        continue;
+      }
+
       // Delete customer tag assignments
       await prisma.customerTagAssignment.deleteMany({
         where: { customerId: customer.id },
+      });
+
+      // Delete appointments
+      await prisma.appointment.deleteMany({
+        where: { customerId: customer.id },
+      });
+
+      // Delete gift certificates
+      await prisma.giftCertificate.deleteMany({
+        where: { issuedToCustomerId: customer.id },
       });
 
       // Delete the customer
@@ -168,6 +221,7 @@ async function cleanupTestData() {
   console.log(`\n✅ Cleanup complete:`);
   console.log(`  - Deleted ${deletedCustomers} customer(s)`);
   console.log(`  - Deleted ${deletedOrders} order(s)`);
+  console.log(`  - Deleted ${deletedInvoices} invoice(s)`);
 }
 
 cleanupTestData()
