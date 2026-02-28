@@ -317,25 +317,26 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
                             <span>Price Code: {priceCode.code}</span>
                             <span>•</span>
                             <span className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            {(priceCode.baseRate / 100).toFixed(2)}/ft
-                          </span>
-                        </div>
-                      )}
-                      {vendorItem && (
-                        <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
-                          <span>{vendorItem.vendor.code} {vendorItem.itemNumber}</span>
-                          {vendorItem.retailPerUnit && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" />
-                                {(Number(vendorItem.retailPerUnit) * 100 / 100).toFixed(2)}/{vendorItem.unitType}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )}
+                              <DollarSign className="w-4 h-4" />
+                              {(priceCode.baseRate / 100).toFixed(2)}/ft
+                            </span>
+                          </div>
+                        )}
+                        {vendorItem && (
+                          <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
+                            <span>{vendorItem.vendor.code} {vendorItem.itemNumber}</span>
+                            {vendorItem.retailPerUnit && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <DollarSign className="w-4 h-4" />
+                                  {(Number(vendorItem.retailPerUnit) * 100 / 100).toFixed(2)}/{vendorItem.unitType}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={() => removeFrame(index)}
