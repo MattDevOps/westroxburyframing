@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Search, Plus, Image, Ruler, FileText } from "lucide-react";
+import { User, Search, Plus, Image, Ruler, FileText, History, ChevronDown, ChevronUp } from "lucide-react";
 import type { IntakeData } from "./page";
 
 interface Customer {
@@ -12,10 +12,20 @@ interface Customer {
   email: string | null;
 }
 
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  itemType: string | null;
+}
+
 interface Step1Props {
   data: IntakeData;
   updateData: (updates: Partial<IntakeData>) => void;
   onNext: () => void;
+  onQuickOrder?: (orderId: string) => void;
 }
 
 const ARTWORK_TYPES = [
@@ -27,12 +37,145 @@ const ARTWORK_TYPES = [
   { value: "custom", label: "Custom" },
 ];
 
-export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1Props) {
+interface CustomerSelectedCardProps {
+  customer: NonNullable<IntakeData["customer"]>;
+  onChange: () => void;
+  onQuickOrder?: (orderId: string) => void;
+}
+
+function CustomerSelectedCard({ customer, onChange, onQuickOrder }: CustomerSelectedCardProps) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    if (showHistory && customer.id) {
+      loadOrderHistory();
+    }
+  }, [showHistory, customer.id]);
+
+  const loadOrderHistory = async () => {
+    setLoadingOrders(true);
+    try {
+      const res = await fetch(`/staff/api/orders?customerId=${customer.id}&limit=10`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data.orders || []);
+      }
+    } catch (e) {
+      console.error("Failed to load order history:", e);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const statusColors: Record<string, string> = {
+    estimate: "bg-yellow-100 text-yellow-800",
+    new_design: "bg-blue-100 text-blue-800",
+    in_production: "bg-purple-100 text-purple-800",
+    quality_check: "bg-orange-100 text-orange-800",
+    ready_for_pickup: "bg-green-100 text-green-800",
+    completed: "bg-neutral-100 text-neutral-800",
+    cancelled: "bg-red-100 text-red-800",
+  };
+
+  return (
+    <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
+            <User className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <div className="font-bold text-lg text-neutral-900">
+              {customer.firstName} {customer.lastName}
+            </div>
+            <div className="text-sm text-neutral-600">
+              {customer.phone && `📞 ${customer.phone}`}
+              {customer.phone && customer.email && " • "}
+              {customer.email && `✉️ ${customer.email}`}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onChange}
+          className="text-base text-blue-600 hover:text-blue-700 font-semibold px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
+        >
+          Change
+        </button>
+      </div>
+      
+      <button
+        onClick={() => setShowHistory(!showHistory)}
+        className="w-full flex items-center justify-between text-sm text-neutral-700 hover:text-neutral-900 font-medium py-2 px-3 rounded-lg hover:bg-green-100 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <History className="w-4 h-4" />
+          Order History ({orders.length > 0 ? orders.length : "..."})
+        </span>
+        {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+
+      {showHistory && (
+        <div className="mt-3 border-t border-green-200 pt-3">
+          {loadingOrders ? (
+            <div className="text-sm text-neutral-500 py-4 text-center">Loading...</div>
+          ) : orders.length === 0 ? (
+            <div className="text-sm text-neutral-500 py-4 text-center">No previous orders</div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="block p-3 bg-white rounded-lg border border-green-200 hover:border-green-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-neutral-900">
+                        Order #{order.orderNumber}
+                      </div>
+                      <div className="text-xs text-neutral-600 mt-1">
+                        {order.itemType || "Custom framing"} • ${(order.totalAmount / 100).toFixed(2)}
+                      </div>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[order.status] || "bg-neutral-100 text-neutral-800"}`}>
+                      {order.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {onQuickOrder && (
+                      <button
+                        onClick={() => onQuickOrder(order.id)}
+                        className="flex-1 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700 transition-all"
+                      >
+                        Quick Order
+                      </button>
+                    )}
+                    <a
+                      href={`/staff/orders/${order.id}`}
+                      target="_blank"
+                      className="flex-1 rounded-lg border border-green-300 text-green-700 px-3 py-1.5 text-xs font-semibold hover:bg-green-50 transition-all text-center"
+                    >
+                      View
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Step1CustomerArtwork({ data, updateData, onNext, onQuickOrder }: Step1Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
   const [searching, setSearching] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   
   // New customer form
   const [newFirstName, setNewFirstName] = useState("");
@@ -91,13 +234,21 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
   };
 
   const handleCreateCustomer = async () => {
+    setCreateError(null);
+    
     if (!newFirstName.trim() || !newLastName.trim()) {
-      alert("First and last name are required");
+      setCreateError("First and last name are required");
       return;
     }
 
     if (!newPhone.trim() && !newEmail.trim()) {
-      alert("Phone or email is required");
+      setCreateError("Phone or email is required");
+      return;
+    }
+
+    // Basic email validation
+    if (newEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
+      setCreateError("Please enter a valid email address");
       return;
     }
 
@@ -138,8 +289,9 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
       setNewLastName("");
       setNewPhone("");
       setNewEmail("");
+      setCreateError(null);
     } catch (e: any) {
-      alert(e.message || "Failed to create customer");
+      setCreateError(e.message || "Failed to create customer");
     } finally {
       setCreating(false);
     }
@@ -182,6 +334,11 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                 placeholder="Search by name, phone, or email..."
                 className="w-full rounded-2xl border-2 border-neutral-300 px-12 py-4 sm:py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all touch-manipulation"
                 autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchResults.length > 0) {
+                    selectCustomer(searchResults[0]);
+                  }
+                }}
               />
               {searching && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
@@ -223,6 +380,11 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
 
             {showCreateForm && (
               <div className="border-2 border-blue-200 rounded-2xl p-5 md:p-6 bg-blue-50 space-y-4">
+                {createError && (
+                  <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-red-800 text-sm">
+                    {createError}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-neutral-700 mb-2">
@@ -234,6 +396,12 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                       onChange={(e) => setNewFirstName(e.target.value)}
                       className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="First name"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleCreateCustomer();
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -246,6 +414,12 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                       onChange={(e) => setNewLastName(e.target.value)}
                       className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Last name"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleCreateCustomer();
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -272,6 +446,12 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                       onChange={(e) => setNewEmail(e.target.value)}
                       className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="email@example.com"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleCreateCustomer();
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -284,7 +464,10 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                     {creating ? "Creating..." : "Create Customer"}
                   </button>
                   <button
-                    onClick={() => setShowCreateForm(false)}
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setCreateError(null);
+                    }}
                     className="px-6 py-4 rounded-xl border-2 border-neutral-300 text-base text-neutral-700 font-medium hover:bg-neutral-50 transition-all"
                   >
                     Cancel
@@ -294,34 +477,14 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
             )}
           </>
         ) : (
-          <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="font-bold text-lg text-neutral-900">
-                    {data.customer?.firstName} {data.customer?.lastName}
-                  </div>
-                  <div className="text-sm text-neutral-600">
-                    {data.customer?.phone && `📞 ${data.customer.phone}`}
-                    {data.customer?.phone && data.customer?.email && " • "}
-                    {data.customer?.email && `✉️ ${data.customer.email}`}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  updateData({ customerId: null, customer: null });
-                  setSearchQuery("");
-                }}
-                className="text-base text-blue-600 hover:text-blue-700 font-semibold px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
-              >
-                Change
-              </button>
-            </div>
-          </div>
+          <CustomerSelectedCard
+            customer={data.customer!}
+            onChange={() => {
+              updateData({ customerId: null, customer: null });
+              setSearchQuery("");
+            }}
+            onQuickOrder={onQuickOrder}
+          />
         )}
       </div>
 
@@ -468,15 +631,21 @@ export default function Step1CustomerArtwork({ data, updateData, onNext }: Step1
                   <img
                     src={photo}
                     alt={`Artwork ${idx + 1}`}
-                    className="w-full h-32 md:h-40 object-cover rounded-xl border-2 border-neutral-200"
+                    className="w-full h-32 md:h-40 object-cover rounded-xl border-2 border-neutral-200 cursor-pointer"
+                    onClick={() => {
+                      // Open full-size view
+                      window.open(photo, "_blank");
+                    }}
                   />
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       const newPhotos = data.photos.filter((_, i) => i !== idx);
                       updateData({ photos: newPhotos });
                     }}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 touch-manipulation"
                     type="button"
+                    title="Remove photo"
                   >
                     ×
                   </button>

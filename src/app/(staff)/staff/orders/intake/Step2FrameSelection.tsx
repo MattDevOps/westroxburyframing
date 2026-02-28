@@ -37,12 +37,21 @@ interface Step2Props {
 
 type FrameSource = "priceCode" | "vendorItem";
 
+interface InventoryCheck {
+  vendorItemId: string;
+  warning: string | null;
+  isLowStock: boolean;
+  isInsufficient: boolean;
+}
+
 export default function Step2FrameSelection({ data, updateData, onNext, onBack }: Step2Props) {
   const [priceCodes, setPriceCodes] = useState<PriceCode[]>([]);
   const [vendorItems, setVendorItems] = useState<VendorCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFrameId, setSelectedFrameId] = useState<string>("");
   const [frameSource, setFrameSource] = useState<FrameSource>("priceCode");
+  const [inventoryChecks, setInventoryChecks] = useState<Map<string, InventoryCheck>>(new Map());
+  const [checkingInventory, setCheckingInventory] = useState(false);
 
   useEffect(() => {
     async function loadFrames() {
@@ -69,6 +78,58 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
     }
     loadFrames();
   }, []);
+
+  // Check inventory when frames change
+  useEffect(() => {
+    const checkInventory = async () => {
+      const vendorItemIds = data.frames
+        .map((f) => f.vendorItemId)
+        .filter((id): id is string => !!id);
+
+      if (vendorItemIds.length === 0) {
+        setInventoryChecks(new Map());
+        return;
+      }
+
+      setCheckingInventory(true);
+      try {
+        const widthInches = data.units === "cm" ? data.width / 2.54 : data.width;
+        const heightInches = data.units === "cm" ? data.height / 2.54 : data.height;
+
+        const res = await fetch("/staff/api/inventory/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vendorItemIds,
+            width: widthInches,
+            height: heightInches,
+          }),
+        });
+
+        if (res.ok) {
+          const { checks } = await res.json();
+          const checksMap = new Map<string, InventoryCheck>();
+          for (const check of checks) {
+            checksMap.set(check.vendorItemId, {
+              vendorItemId: check.vendorItemId,
+              warning: check.warning,
+              isLowStock: check.isLowStock || false,
+              isInsufficient: check.isInsufficient || false,
+            });
+          }
+          setInventoryChecks(checksMap);
+        }
+      } catch (e) {
+        console.error("Failed to check inventory:", e);
+      } finally {
+        setCheckingInventory(false);
+      }
+    };
+
+    if (data.width > 0 && data.height > 0) {
+      checkInventory();
+    }
+  }, [data.frames, data.width, data.height, data.units]);
 
   const addFrame = () => {
     if (!selectedFrameId) return;
@@ -229,24 +290,33 @@ export default function Step2FrameSelection({ data, updateData, onNext, onBack }
               const vendorItem = frame.vendorItemId
                 ? vendorItems.find((vi) => vi.id === frame.vendorItemId)
                 : null;
+              const inventoryCheck = frame.vendorItemId ? inventoryChecks.get(frame.vendorItemId) : null;
+              
               return (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-2xl border-2 border-purple-200 bg-purple-50 p-5 shadow-sm"
+                  className={`rounded-2xl border-2 p-5 shadow-sm ${
+                    inventoryCheck?.isInsufficient
+                      ? "border-red-300 bg-red-50"
+                      : inventoryCheck?.isLowStock
+                      ? "border-yellow-300 bg-yellow-50"
+                      : "border-purple-200 bg-purple-50"
+                  }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center">
-                      <Frame className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-lg text-neutral-900">
-                        {frame.description || priceCode?.name || vendorItem?.description || "Frame"}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center">
+                        <Frame className="w-6 h-6 text-white" />
                       </div>
-                      {priceCode && (
-                        <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
-                          <span>Price Code: {priceCode.code}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
+                      <div className="flex-1">
+                        <div className="font-bold text-lg text-neutral-900">
+                          {frame.description || priceCode?.name || vendorItem?.description || "Frame"}
+                        </div>
+                        {priceCode && (
+                          <div className="text-sm text-neutral-600 flex items-center gap-2 mt-1">
+                            <span>Price Code: {priceCode.code}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
                             {(priceCode.baseRate / 100).toFixed(2)}/ft
                           </span>

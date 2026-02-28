@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Step components
@@ -10,6 +10,7 @@ import Step3MatsGlass from "./Step3MatsGlass";
 import Step4PreviewScenarios from "./Step4PreviewScenarios";
 import Step5ConfirmDeposit from "./Step5ConfirmDeposit";
 import Step6Payment from "./Step6Payment";
+import { validateStep1, validateStep2, validateStep3, validateStep5, formatValidationErrors } from "./utils/validation";
 
 export interface FrameSelection {
   priceCodeId?: string;
@@ -120,6 +121,8 @@ const INITIAL_DATA: IntakeData = {
   notesCustomer: null,
 };
 
+const DRAFT_STORAGE_KEY = "order_intake_draft";
+
 export default function OrderIntakePage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -129,37 +132,109 @@ export default function OrderIntakePage() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [emailingReceipt, setEmailingReceipt] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft && Object.keys(draft).length > 0) {
+          setHasDraft(true);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load draft:", e);
+    }
+  }, []);
+
+  // Auto-save draft
+  useEffect(() => {
+    // Don't save if order was just created
+    if (createdOrderId) return;
+    
+    // Don't save empty drafts
+    if (!data.customerId && data.artworkType === "" && data.width === 0 && data.height === 0) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ data, currentStep }));
+    } catch (e) {
+      console.error("Failed to save draft:", e);
+    }
+  }, [data, currentStep, createdOrderId]);
+
+  // Clear draft when order is created
+  useEffect(() => {
+    if (createdOrderId) {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setHasDraft(false);
+    }
+  }, [createdOrderId]);
 
   const updateData = (updates: Partial<IntakeData>) => {
     setData((prev) => ({ ...prev, ...updates }));
   };
 
-  const canProceedToStep = (step: number): boolean => {
+  const loadDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.data) {
+          setData(draft.data);
+          if (draft.currentStep) {
+            setCurrentStep(draft.currentStep);
+          }
+          setHasDraft(false);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load draft:", e);
+    }
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setHasDraft(false);
+    setData(INITIAL_DATA);
+    setCurrentStep(1);
+  };
+
+  const canProceedToStep = (step: number): { canProceed: boolean; errors: string[] } => {
     switch (step) {
-      case 2:
-        return !!(
-          data.customerId &&
-          data.artworkType &&
-          data.width > 0 &&
-          data.height > 0
-        );
-      case 3:
-        return data.frames.length > 0;
-      case 4:
-        return data.mats.length >= 0 && data.glassType !== null;
-      case 5:
-        return data.pricing !== null;
+      case 2: {
+        const errors = validateStep1(data);
+        return { canProceed: errors.length === 0, errors: errors.map(e => e.message) };
+      }
+      case 3: {
+        const errors = validateStep2(data);
+        return { canProceed: errors.length === 0, errors: errors.map(e => e.message) };
+      }
+      case 4: {
+        const errors = validateStep3(data);
+        return { canProceed: errors.length === 0, errors: errors.map(e => e.message) };
+      }
+      case 5: {
+        const errors = validateStep5(data);
+        return { canProceed: errors.length === 0, errors: errors.map(e => e.message) };
+      }
       default:
-        return true;
+        return { canProceed: true, errors: [] };
     }
   };
 
   const handleNext = () => {
-    if (canProceedToStep(currentStep + 1)) {
+    const validation = canProceedToStep(currentStep + 1);
+    if (validation.canProceed) {
       setCurrentStep((prev) => Math.min(prev + 1, 5));
       setError(null);
     } else {
-      setError("Please complete all required fields before proceeding.");
+      setError(validation.errors.length === 1 
+        ? validation.errors[0] 
+        : `Please fix the following:\n${validation.errors.map(e => `• ${e}`).join("\n")}`);
     }
   };
 
@@ -429,19 +504,50 @@ export default function OrderIntakePage() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
+        {hasDraft && !createdOrderId && (
+          <div className="mb-6 rounded-2xl border-2 border-blue-200 bg-blue-50 p-5 md:p-6 text-blue-800 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💾</span>
+                <div>
+                  <div className="font-semibold text-lg">Draft Order Found</div>
+                  <div className="text-sm text-blue-700">You have a saved draft. Would you like to continue where you left off?</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={loadDraft}
+                  className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Restore Draft
+                </button>
+                <button
+                  onClick={clearDraft}
+                  className="rounded-xl border-2 border-blue-300 text-blue-700 px-4 py-2 text-sm font-semibold hover:bg-blue-100 transition-all"
+                >
+                  Start Fresh
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {createdOrderId && (
           <div className="mb-6 rounded-2xl border-2 border-green-200 bg-green-50 p-6 md:p-8 text-green-800 shadow-lg">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="font-bold text-xl mb-2">✅ Order Created Successfully!</div>
-                <div className="text-base mb-4">
-                  Order #{createdOrderId.slice(0, 8)}... has been created. Redirecting to order details...
+                <div className="font-bold text-2xl mb-2 flex items-center gap-2">
+                  <span>✅</span>
+                  <span>Order Created Successfully!</span>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="text-base mb-6 text-green-700">
+                  Order <span className="font-bold">#{createdOrderId.slice(0, 8)}</span> has been created.
+                  {!showPayment && " Redirecting to order details..."}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                   <a
                     href={`/staff/api/orders/${createdOrderId}/receipt`}
                     target="_blank"
-                    className="rounded-xl bg-green-600 text-white px-6 py-3 text-base font-semibold hover:bg-green-700 transition-all shadow-lg"
+                    className="rounded-xl bg-green-600 text-white px-4 py-3 text-sm font-semibold hover:bg-green-700 transition-all shadow-lg text-center touch-manipulation active:scale-95"
                   >
                     🧾 Print Receipt
                   </a>
@@ -455,32 +561,38 @@ export default function OrderIntakePage() {
                           });
                           const result = await res.json();
                           if (res.ok) {
-                            alert(`Receipt emailed to ${data.customer?.email}`);
+                            alert(`✅ Receipt emailed successfully to ${data.customer?.email}`);
                           } else {
-                            alert(result.error || "Failed to email receipt");
+                            alert(`❌ ${result.error || "Failed to email receipt"}`);
                           }
                         } catch (e: any) {
-                          alert("Failed to email receipt: " + e.message);
+                          alert(`❌ Failed to email receipt: ${e.message}`);
                         } finally {
                           setEmailingReceipt(false);
                         }
                       }}
                       disabled={emailingReceipt}
-                      className="rounded-xl bg-blue-600 text-white px-6 py-3 text-base font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50"
+                      className="rounded-xl bg-blue-600 text-white px-4 py-3 text-sm font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 touch-manipulation active:scale-95"
                     >
-                      {emailingReceipt ? "Sending..." : "📧 Email Receipt"}
+                      {emailingReceipt ? "⏳ Sending..." : "📧 Email Receipt"}
                     </button>
                   )}
                   <a
                     href={`/staff/orders/${createdOrderId}`}
-                    className="rounded-xl border-2 border-green-600 text-green-700 px-6 py-3 text-base font-semibold hover:bg-green-100 transition-all"
+                    className="rounded-xl border-2 border-green-600 text-green-700 px-4 py-3 text-sm font-semibold hover:bg-green-100 transition-all text-center touch-manipulation active:scale-95"
                   >
-                    View Order
+                    👁️ View Order
+                  </a>
+                  <a
+                    href={`/staff/orders/intake`}
+                    className="rounded-xl border-2 border-neutral-300 text-neutral-700 px-4 py-3 text-sm font-semibold hover:bg-neutral-100 transition-all text-center touch-manipulation active:scale-95"
+                  >
+                    ➕ New Order
                   </a>
                 </div>
                 {!data.customer?.email && (
-                  <div className="mt-3 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
-                    ⚠️ Customer doesn't have an email address. Cannot send receipt via email.
+                  <div className="mt-3 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    ⚠️ <strong>Note:</strong> Customer doesn't have an email address. Cannot send receipt via email.
                   </div>
                 )}
               </div>
@@ -490,8 +602,11 @@ export default function OrderIntakePage() {
         
         {error && (
           <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-5 md:p-6 text-red-800 shadow-sm">
-            <div className="font-semibold text-lg mb-1">Error</div>
-            <div>{error}</div>
+            <div className="font-semibold text-lg mb-2 flex items-center gap-2">
+              <span>⚠️</span>
+              <span>Validation Error</span>
+            </div>
+            <div className="whitespace-pre-line text-base">{error}</div>
           </div>
         )}
 
@@ -501,6 +616,29 @@ export default function OrderIntakePage() {
               data={data}
               updateData={updateData}
               onNext={handleNext}
+              onQuickOrder={async (orderId: string) => {
+                try {
+                  const res = await fetch(`/staff/api/orders/${orderId}`);
+                  if (!res.ok) throw new Error("Failed to load order");
+                  const { order } = await res.json();
+                  
+                  // Pre-fill data from previous order
+                  updateData({
+                    artworkType: order.itemType || "",
+                    width: order.width ? Number(order.width) : 0,
+                    height: order.height ? Number(order.height) : 0,
+                    units: (order.units as "in" | "cm") || "in",
+                    itemDescription: order.itemDescription || null,
+                    depositPercent: 50,
+                    expectedCompletionDays: 10,
+                  });
+                  
+                  // Navigate to step 2
+                  setCurrentStep(2);
+                } catch (e: any) {
+                  setError(`Failed to load order: ${e.message}`);
+                }
+              }}
             />
           )}
           {currentStep === 2 && (

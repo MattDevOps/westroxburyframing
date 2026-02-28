@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, Copy, CheckCircle, DollarSign, Calculator } from "lucide-react";
+import { Eye, Copy, CheckCircle, DollarSign, Calculator, Save, BookOpen } from "lucide-react";
 import type { IntakeData } from "./page";
+import { saveTemplate, loadTemplates, deleteTemplate, applyTemplate, type OrderTemplate } from "./utils/templates";
 
 interface Step4Props {
   data: IntakeData;
@@ -19,6 +20,11 @@ export default function Step4PreviewScenarios({
 }: Step4Props) {
   const [calculating, setCalculating] = useState(false);
 
+  // Load templates on mount
+  useEffect(() => {
+    setTemplates(loadTemplates());
+  }, []);
+
   // Calculate pricing for current design
   useEffect(() => {
     if (data.width > 0 && data.height > 0 && data.frames.length > 0 && data.glassType) {
@@ -26,6 +32,32 @@ export default function Step4PreviewScenarios({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.width, data.height, data.frames.length, data.mats.length, data.glassType, data.mountingType]);
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) {
+      alert("Please enter a template name");
+      return;
+    }
+    saveTemplate(templateName.trim(), templateDescription.trim() || undefined, data);
+    setTemplates(loadTemplates());
+    setShowSaveTemplate(false);
+    setTemplateName("");
+    setTemplateDescription("");
+    alert(`Template "${templateName}" saved successfully!`);
+  };
+
+  const handleLoadTemplate = (template: OrderTemplate) => {
+    const updated = applyTemplate(template, data);
+    updateData(updated);
+    setShowTemplateModal(false);
+  };
+
+  const handleDeleteTemplate = (templateId: string, templateName: string) => {
+    if (confirm(`Delete template "${templateName}"?`)) {
+      deleteTemplate(templateId);
+      setTemplates(loadTemplates());
+    }
+  };
 
   const calculatePricing = async () => {
     setCalculating(true);
@@ -327,12 +359,143 @@ export default function Step4PreviewScenarios({
         </div>
       )}
 
+      {/* Templates */}
+      <div className="flex gap-3 items-center justify-center pt-4 border-t-2 border-neutral-200">
+        <button
+          onClick={() => setShowTemplateModal(true)}
+          className="flex items-center gap-2 rounded-xl border-2 border-neutral-300 px-4 py-2 text-neutral-700 text-sm font-semibold hover:bg-neutral-50 transition-all"
+        >
+          <BookOpen className="w-4 h-4" />
+          Load Template
+        </button>
+        <button
+          onClick={() => setShowSaveTemplate(true)}
+          className="flex items-center gap-2 rounded-xl border-2 border-blue-300 bg-blue-50 px-4 py-2 text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-all"
+        >
+          <Save className="w-4 h-4" />
+          Save as Template
+        </button>
+      </div>
+
+      {/* Save Template Modal */}
+      {showSaveTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold mb-4">Save as Template</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                  Template Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Standard Photo Frame"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  className="w-full rounded-xl border-2 border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="Brief description of this template..."
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSaveTemplate}
+                  className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-white text-base font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Save Template
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSaveTemplate(false);
+                    setTemplateName("");
+                    setTemplateDescription("");
+                  }}
+                  className="px-4 py-3 rounded-xl border-2 border-neutral-300 text-base text-neutral-700 font-medium hover:bg-neutral-50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">Load Template</h3>
+            {templates.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-neutral-400" />
+                <p>No templates saved yet.</p>
+                <p className="text-sm mt-2">Save your current configuration as a template to reuse it later.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="border-2 border-neutral-200 rounded-xl p-4 hover:border-blue-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-bold text-lg text-neutral-900">{template.name}</div>
+                        {template.description && (
+                          <div className="text-sm text-neutral-600 mt-1">{template.description}</div>
+                        )}
+                        <div className="text-xs text-neutral-500 mt-2">
+                          Saved {new Date(template.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleLoadTemplate(template)}
+                          className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-all"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(template.id, template.name)}
+                          className="rounded-lg border-2 border-red-300 text-red-700 px-4 py-2 text-sm font-semibold hover:bg-red-50 transition-all"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="rounded-xl border-2 border-neutral-300 px-6 py-3 text-base text-neutral-700 font-medium hover:bg-neutral-50 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Help Text */}
       <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-5">
         <p className="text-base text-blue-800">
           <strong>💡 Tip:</strong> Create multiple scenarios to show customers different design options.
           You can modify the current design and save it as a new scenario, or duplicate an existing
-          scenario and make changes.
+          scenario and make changes. Save templates to quickly reuse common configurations.
         </p>
       </div>
 
