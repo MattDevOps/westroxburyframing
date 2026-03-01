@@ -16,7 +16,14 @@ interface InventoryItem {
   name: string;
   unitType: string;
   vendorItemId: string | null;
-  vendorItem: { vendorItemNumber: string; vendor: { code: string } } | null;
+  vendorItem: { 
+    id: string;
+    itemNumber: string; 
+    vendor: { 
+      name: string;
+      code: string;
+    } 
+  } | null;
 }
 
 interface POLine {
@@ -110,25 +117,16 @@ export default function NewPurchaseOrderPage() {
     let description = line.description;
 
     if (item) {
-      if (item.vendorItem?.vendorItemNumber) {
-        vendorItemNumber = item.vendorItem.vendorItemNumber;
+      // Use itemNumber from vendorItem (API returns itemNumber, not vendorItemNumber)
+      if (item.vendorItem?.itemNumber) {
+        vendorItemNumber = item.vendorItem.itemNumber;
       }
       if (!description) {
         description = item.name;
       }
-      // Try to get cost from vendor item
-      if (item.vendorItem && "retailPerUnit" in item.vendorItem) {
-        const cost = Number((item.vendorItem as any).retailPerUnit || (item.vendorItem as any).costPerUnit || 0);
-        if (cost > 0) {
-          updateLine(index, {
-            inventoryItemId: itemId,
-            vendorItemNumber,
-            description,
-            unitCost: cost,
-          });
-          return;
-        }
-      }
+      // Try to get cost from vendor item (if available in the response)
+      // Note: The API doesn't return costPerUnit/retailPerUnit in the inventory list
+      // So we'll just update the basic fields
     }
 
     updateLine(index, {
@@ -190,12 +188,20 @@ export default function NewPurchaseOrderPage() {
   }
 
   const selectedVendor = vendors.find((v) => v.id === vendorId);
-  const vendorInventoryItems = selectedVendor
-    ? inventoryItems.filter(
-        (item) =>
-          item.vendorItem?.vendor.code === selectedVendor.code || !item.vendorItem
-      )
-    : inventoryItems;
+  // Show all inventory items, but prioritize items matching the selected vendor
+  // This allows linking any inventory item to a PO line, even if vendor doesn't match
+  // The system will auto-link or create inventory items when receiving the PO anyway
+  const vendorInventoryItems = inventoryItems.sort((a, b) => {
+    // If vendor is selected, prioritize items that match the vendor
+    if (selectedVendor) {
+      const aMatches = a.vendorItem?.vendor.code === selectedVendor.code;
+      const bMatches = b.vendorItem?.vendor.code === selectedVendor.code;
+      if (aMatches && !bMatches) return -1;
+      if (!aMatches && bMatches) return 1;
+    }
+    // Otherwise sort by name
+    return a.name.localeCompare(b.name);
+  });
 
   const totalAmount = lines.reduce(
     (sum, line) => sum + Number(line.quantityOrdered) * Number(line.unitCost) * 100,
