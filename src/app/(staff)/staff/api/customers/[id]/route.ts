@@ -132,16 +132,21 @@ export async function PATCH(req: Request, ctx: Ctx) {
  * Delete a customer (admin only)
  */
 export async function DELETE(req: Request, ctx: Ctx) {
-  const userId = getStaffUserIdFromRequest(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
-    await requireAdmin(req);
-  } catch {
-    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-  }
+    const userId = getStaffUserIdFromRequest(req);
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  try {
+    try {
+      await requireAdmin(req);
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: error?.message || "Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await ctx.params;
 
     const customer = await prisma.customer.findUnique({
@@ -175,8 +180,9 @@ export async function DELETE(req: Request, ctx: Ctx) {
     return NextResponse.json({ ok: true, message: "Customer deleted" });
   } catch (error: any) {
     console.error("Error deleting customer:", error);
+    const errorMessage = error?.message || "Failed to delete customer";
     return NextResponse.json(
-      { error: error?.message || "Failed to delete customer" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

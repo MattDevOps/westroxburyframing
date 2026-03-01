@@ -131,8 +131,8 @@ model CustomerTagAssignment {
 model Order {
   id          String   @id @default(uuid())
   orderNumber String   @unique
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
   locationId  String?  // Optional initially for migration, will be required after data migration
   location    Location? @relation(fields: [locationId], references: [id])
 
@@ -302,8 +302,8 @@ model OrderActivity {
 model Invoice {
   id            String   @id @default(uuid())
   invoiceNumber String   @unique
-  customerId    String
-  customer      Customer @relation(fields: [customerId], references: [id])
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
 
   subtotalAmount Int @default(0) // cents
   discountAmount Int @default(0) // cents

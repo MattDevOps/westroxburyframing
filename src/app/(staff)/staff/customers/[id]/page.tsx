@@ -269,20 +269,43 @@ export default function CustomerDetailPage({
                 try {
                   const res = await fetch(`/staff/api/customers/${id}`, {
                     method: "DELETE",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
                   });
                   
+                  // Get response text first
+                  const rawText = await res.text();
+                  
                   if (!res.ok) {
-                    const raw = await res.text();
-                    let data: any = null;
+                    let errorMessage = "Failed to delete customer";
                     try {
-                      data = raw ? JSON.parse(raw) : null;
-                    } catch {}
-                    throw new Error(data?.error || raw || "Failed to delete customer");
+                      if (rawText) {
+                        const data = JSON.parse(rawText);
+                        errorMessage = data.error || errorMessage;
+                      }
+                    } catch (parseError) {
+                      // If JSON parsing fails, use the raw text or status text
+                      errorMessage = rawText || res.statusText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                  }
+                  
+                  // Success - try to parse JSON if there's content
+                  if (rawText) {
+                    try {
+                      const data = JSON.parse(rawText);
+                      // Data parsed successfully, proceed
+                    } catch (parseError) {
+                      // Not JSON, but that's okay for success case
+                      console.log("Delete successful, but response was not JSON");
+                    }
                   }
                   
                   // Redirect to customers list
                   router.push("/staff/customers");
                 } catch (e: any) {
+                  console.error("Error deleting customer:", e);
                   setErr(e?.message || "Failed to delete customer");
                   setDeleting(false);
                 }
