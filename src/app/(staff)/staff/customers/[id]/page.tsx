@@ -272,8 +272,12 @@ export default function CustomerDetailPage({
                   });
                   
                   if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || "Failed to delete customer");
+                    const raw = await res.text();
+                    let data: any = null;
+                    try {
+                      data = raw ? JSON.parse(raw) : null;
+                    } catch {}
+                    throw new Error(data?.error || raw || "Failed to delete customer");
                   }
                   
                   // Redirect to customers list

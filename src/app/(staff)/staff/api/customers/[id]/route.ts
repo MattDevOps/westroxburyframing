@@ -141,32 +141,43 @@ export async function DELETE(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  const { id } = await ctx.params;
+  try {
+    const { id } = await ctx.params;
 
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-    include: {
-      orders: { select: { id: true, orderNumber: true } },
-      invoices: { select: { id: true, invoiceNumber: true } },
-    },
-  });
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+      include: {
+        orders: { select: { id: true, orderNumber: true } },
+        invoices: { select: { id: true, invoiceNumber: true } },
+      },
+    });
 
-  if (!customer) {
-    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+
+    // Unlink orders and invoices from the customer (don't delete them)
+    await prisma.order.updateMany({
+      where: { customerId: id },
+      data: { customerId: null },
+    });
+    await prisma.invoice.updateMany({
+      where: { customerId: id },
+      data: { customerId: null },
+    });
+
+    // Delete tag assignments
+    await prisma.customerTagAssignment.deleteMany({ where: { customerId: id } });
+
+    // Delete the customer
+    await prisma.customer.delete({ where: { id } });
+
+    return NextResponse.json({ ok: true, message: "Customer deleted" });
+  } catch (error: any) {
+    console.error("Error deleting customer:", error);
+    return NextResponse.json(
+      { error: error?.message || "Failed to delete customer" },
+      { status: 500 }
+    );
   }
-
-  // Delete related records first
-  // Tag assignments are cascade deleted, but we'll be explicit
-  await prisma.customerTagAssignment.deleteMany({ where: { customerId: id } });
-
-  // Note: Orders and Invoices are NOT deleted - they remain in the system
-  // but will have orphaned customer references. This is intentional to preserve
-  // order history. If you want to delete orders/invoices, uncomment below:
-  // await prisma.order.deleteMany({ where: { customerId: id } });
-  // await prisma.invoice.deleteMany({ where: { customerId: id } });
-
-  // Delete the customer
-  await prisma.customer.delete({ where: { id } });
-
-  return NextResponse.json({ ok: true, message: "Customer deleted" });
 }
