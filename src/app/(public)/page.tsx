@@ -168,7 +168,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
-              { step: "1", title: "Bring It In", desc: "Walk in or book an appointment. Bring your art, photo, or memorabilia — we'll take it from there." },
+              { step: "1", title: "Bring It In", desc: "Visit our gallery or schedule a consultation. Bring your treasured artwork, family photograph, or meaningful keepsake — we welcome walk-ins and appointments." },
               { step: "2", title: "Design Together", desc: "Our experts help you choose the perfect frame, mat, and glass to complement your piece and your space." },
               { step: "3", title: "We Frame & You Pick Up", desc: "We craft your custom frame with care. We'll let you know when it's ready — most orders done in about a week." },
             ].map((s, i) => (
