@@ -124,16 +124,18 @@ export async function POST(req: Request, ctx: Ctx) {
             createdByUserId: userId,
           },
         });
-      } else if (smsResult.error && !smsResult.error.includes("not configured")) {
-        // Only log if it's a real error, not just missing config
+      } else {
+        // Log all SMS errors, including configuration issues
+        const errorMsg = smsResult.error || "Unknown error";
         await prismaWithActivity.orderActivity.create({
           data: {
             orderId: order.id,
             type: "note",
-            message: `Pickup SMS failed: ${smsResult.error}`,
+            message: `Pickup SMS failed: ${errorMsg}${errorMsg.includes("not configured") ? " (Check Vercel environment variables: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)" : ""}`,
             createdByUserId: userId,
           },
         });
+        console.error("SMS send failed:", { orderNumber: order.orderNumber, phone: order.customer.phone, error: errorMsg });
       }
     }
   } else if (
@@ -159,15 +161,18 @@ export async function POST(req: Request, ctx: Ctx) {
           createdByUserId: userId,
         },
       });
-    } else if (smsResult.error && !smsResult.error.includes("not configured")) {
+    } else {
+      // Log all SMS errors, including configuration issues
+      const errorMsg = smsResult.error || "Unknown error";
       await prismaWithActivity.orderActivity.create({
         data: {
           orderId: order.id,
           type: "note",
-          message: `Status update SMS failed: ${smsResult.error}`,
+          message: `Status update SMS failed: ${errorMsg}${errorMsg.includes("not configured") ? " (Check Vercel environment variables: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)" : ""}`,
           createdByUserId: userId,
         },
       });
+      console.error("SMS send failed:", { orderNumber: order.orderNumber, phone: order.customer.phone, error: errorMsg });
     }
   }
 

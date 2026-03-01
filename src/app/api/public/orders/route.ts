@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         });
 
         // Notify staff via email
-        sendNewWebLeadNotification({
+        const emailResult = await sendNewWebLeadNotification({
             orderNumber,
             customerName: `${firstName} ${lastName}`,
             customerEmail: email || "N/A",
@@ -141,7 +141,28 @@ export async function POST(request: Request) {
             itemType,
             description: description || "N/A",
             notes: notes || "N/A",
-        }).catch((err) => console.error("Failed to send web lead notification:", err));
+        });
+        
+        if (!emailResult.ok) {
+            console.error("Failed to send web lead notification email:", emailResult.error);
+            // Log to activity log for visibility
+            await prisma.activityLog.create({
+                data: {
+                    entityType: "order",
+                    entityId: order.id,
+                    orderId: order.id,
+                    action: "web_lead_email_failed",
+                    metadata: { 
+                        orderNumber, 
+                        error: emailResult.error || "Unknown error",
+                        to: "jake@westroxburyframing.com",
+                        cc: "frameguy1@hotmail.com"
+                    },
+                },
+            });
+        } else {
+            console.log("Web lead notification email sent successfully:", { orderNumber, to: "jake@westroxburyframing.com", cc: "frameguy1@hotmail.com" });
+        }
 
         return NextResponse.json({
             ok: true,

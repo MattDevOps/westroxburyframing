@@ -836,7 +836,16 @@ Log in to the staff app to review and price this order.
     cc: "frameguy1@hotmail.com"
   });
   if (!result.ok) {
-    console.log("EMAIL OUT (no API key, logged only)", { to, subject, text });
+    console.error("Failed to send web lead notification email:", {
+      error: result.error,
+      to,
+      cc: "frameguy1@hotmail.com",
+      subject,
+      orderNumber: params.orderNumber,
+      apiKeyConfigured: !!(process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN)
+    });
+  } else {
+    console.log("Web lead notification email sent successfully:", { to, cc: "frameguy1@hotmail.com", orderNumber: params.orderNumber });
   }
   return result;
 }

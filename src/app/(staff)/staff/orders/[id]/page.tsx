@@ -75,6 +75,7 @@ export default function OrderDetailPage() {
   const [scenarios, setScenarios] = useState<any[]>([]);
   const [showScenarios, setShowScenarios] = useState(false);
   const [comparingScenarios, setComparingScenarios] = useState<string[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string } | null>(null);
 
   async function refresh() {
     if (!id) return;
@@ -107,6 +108,17 @@ export default function OrderDetailPage() {
     loadScenarios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Close lightbox on ESC key
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape" && lightboxImage) {
+        setLightboxImage(null);
+      }
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [lightboxImage]);
 
   async function loadScenarios() {
     if (!id) return;
@@ -825,28 +837,34 @@ export default function OrderDetailPage() {
                 <img
                   src={p.url}
                   alt={p.caption || "Order photo"}
-                  className="w-full aspect-square object-cover"
+                  className="w-full aspect-square object-cover cursor-pointer"
+                  onClick={() => setLightboxImage({ url: p.url, caption: p.caption })}
                 />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button
-                    className="rounded-lg bg-red-600 text-white px-3 py-1.5 text-xs"
-                    onClick={async () => {
-                      if (!confirm("Delete this photo?")) return;
-                      try {
-                        await fetch(`/staff/api/orders/${order.id}/photos`, {
-                          method: "DELETE",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ photo_id: p.id }),
-                        });
-                        await refresh();
-                      } catch {
-                        alert("Failed to delete photo");
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
+                {/* Enlarge overlay on hover */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <span className="text-white text-sm font-medium">Click to Enlarge</span>
                 </div>
+                {/* Delete button in top-right corner */}
+                <button
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 text-xs font-bold shadow-lg z-10"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm("Delete this photo?")) return;
+                    try {
+                      await fetch(`/staff/api/orders/${order.id}/photos`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ photo_id: p.id }),
+                      });
+                      await refresh();
+                    } catch {
+                      alert("Failed to delete photo");
+                    }
+                  }}
+                  title="Delete photo"
+                >
+                  ×
+                </button>
                 {p.caption && (
                   <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-2 py-1 truncate">
                     {p.caption}
@@ -854,6 +872,35 @@ export default function OrderDetailPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+        
+        {/* Image Lightbox Modal */}
+        {lightboxImage && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setLightboxImage(null)}
+          >
+            <button
+              className="absolute top-4 right-4 text-white hover:text-neutral-300 text-2xl font-bold w-10 h-10 flex items-center justify-center"
+              onClick={() => setLightboxImage(null)}
+              title="Close"
+            >
+              ×
+            </button>
+            <div className="max-w-7xl max-h-[90vh] flex flex-col items-center">
+              <img
+                src={lightboxImage.url}
+                alt={lightboxImage.caption || "Order photo"}
+                className="max-w-full max-h-[85vh] object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+              {lightboxImage.caption && (
+                <div className="mt-4 text-white text-sm text-center max-w-2xl">
+                  {lightboxImage.caption}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

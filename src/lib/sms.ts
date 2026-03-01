@@ -22,8 +22,12 @@ export async function sendSMS(params: {
   const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
   if (!accountSid || !authToken || !fromNumber) {
-    console.warn("SMS: Twilio not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER.");
-    return { ok: false, error: "SMS not configured" };
+    const missingVars = [];
+    if (!accountSid) missingVars.push("TWILIO_ACCOUNT_SID");
+    if (!authToken) missingVars.push("TWILIO_AUTH_TOKEN");
+    if (!fromNumber) missingVars.push("TWILIO_PHONE_NUMBER");
+    console.warn(`SMS: Twilio not configured. Missing environment variables: ${missingVars.join(", ")}. Set these in Vercel environment variables.`);
+    return { ok: false, error: `SMS not configured. Missing: ${missingVars.join(", ")}` };
   }
 
   // Normalize phone number to E.164 format
