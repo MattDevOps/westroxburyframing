@@ -223,12 +223,41 @@ export default function InventoryPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/staff/inventory/${item.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        View
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          href={`/staff/inventory/${item.id}`}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          View
+                        </Link>
+                        {isAdmin && (
+                          <button
+                            onClick={async () => {
+                              const confirmed = confirm(
+                                `Are you sure you want to delete "${item.name}" (${item.sku})?\n\nThis will:\n- Delete all inventory lots for this item\n- Unlink this item from any purchase orders\n\nThis action cannot be undone.`
+                              );
+                              if (!confirmed) return;
+
+                              try {
+                                const res = await fetch(`/staff/api/inventory/${item.id}`, {
+                                  method: "DELETE",
+                                });
+                                if (!res.ok) {
+                                  const error = await res.json();
+                                  throw new Error(error.error || "Failed to delete inventory item");
+                                }
+                                // Reload the list
+                                await loadItems();
+                              } catch (e: any) {
+                                alert(e.message || "Failed to delete inventory item");
+                              }
+                            }}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

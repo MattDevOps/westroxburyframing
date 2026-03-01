@@ -81,6 +81,10 @@ export async function PATCH(req: Request, ctx: Ctx) {
 /**
  * DELETE /staff/api/inventory/[id]
  * Delete an inventory item (admin only)
+ * 
+ * This will:
+ * - Delete all associated InventoryLot records (cascade)
+ * - Unlink PurchaseOrderLine records (set inventoryItemId to null)
  */
 export async function DELETE(req: Request, ctx: Ctx) {
   const userId = getStaffUserIdFromRequest(req);
@@ -94,9 +98,26 @@ export async function DELETE(req: Request, ctx: Ctx) {
 
   const { id } = await ctx.params;
 
+  // Check if item exists
+  const item = await prisma.inventoryItem.findUnique({
+    where: { id },
+    select: { id: true, sku: true, name: true },
+  });
+
+  if (!item) {
+    return NextResponse.json({ error: "Inventory item not found" }, { status: 404 });
+  }
+
+  // Unlink PurchaseOrderLine records (set inventoryItemId to null)
+  await prisma.purchaseOrderLine.updateMany({
+    where: { inventoryItemId: id },
+    data: { inventoryItemId: null },
+  });
+
+  // Delete the inventory item (InventoryLot records will be cascade deleted)
   await prisma.inventoryItem.delete({
     where: { id },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, message: `Inventory item "${item.name}" (${item.sku}) deleted successfully` });
 }
