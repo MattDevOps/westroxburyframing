@@ -23,6 +23,22 @@ export async function GET(req: Request) {
   const customerId = searchParams.get("customerId") || "";
   const createdByUserId = searchParams.get("createdByUserId") || "";
   const locationIdFilter = searchParams.get("locationId") || "";
+  const includeArchived = searchParams.get("includeArchived") === "true";
+
+  // Auto-archive completed orders older than 2 days
+  const twoDaysAgo = new Date();
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+  
+  await prisma.order.updateMany({
+    where: {
+      status: "completed",
+      archivedAt: null,
+      updatedAt: { lte: twoDaysAgo },
+    },
+    data: {
+      archivedAt: new Date(),
+    },
+  });
 
   // Get location filter
   const locationFilter = await getLocationFilter(req);
@@ -48,14 +64,33 @@ export async function GET(req: Request) {
     where.createdAt = createdAt;
   }
 
+  // Build AND conditions
+  const andConditions: any[] = [];
+  
   // Text search
   if (q) {
-    where.OR = [
-      { orderNumber: { contains: q, mode: "insensitive" } },
-      { customer: { firstName: { contains: q, mode: "insensitive" } } },
-      { customer: { lastName: { contains: q, mode: "insensitive" } } },
-      { customer: { phone: { contains: q } } },
-    ];
+    andConditions.push({
+      OR: [
+        { orderNumber: { contains: q, mode: "insensitive" } },
+        { customer: { firstName: { contains: q, mode: "insensitive" } } },
+        { customer: { lastName: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q } } },
+      ],
+    });
+  }
+  
+  // Filter out archived completed orders unless includeArchived is true
+  if (!includeArchived) {
+    andConditions.push({
+      OR: [
+        { status: { not: "completed" } },
+        { status: "completed", archivedAt: null },
+      ],
+    });
+  }
+  
+  if (andConditions.length > 0) {
+    where.AND = [...(where.AND || []), ...andConditions];
   }
 
   const orders = await prisma.order.findMany({
@@ -92,6 +127,9 @@ export async function GET(req: Request) {
       location: {
         select: { name: true },
       },
+      archivedAt: true,
+      updatedAt: true,
+      createdAt: true,
     },
   });
 
@@ -122,6 +160,9 @@ export async function GET(req: Request) {
         invoiceId: o.invoiceId || null,
         created_by_user_id: o.createdByUserId || null,
         location_id: o.locationId || null,
+        created_at: o.createdAt?.toISOString(),
+        updated_at: o.updatedAt?.toISOString(),
+        archived_at: o.archivedAt?.toISOString() || null,
       };
     }),
   });

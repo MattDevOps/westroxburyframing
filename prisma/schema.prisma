@@ -168,6 +168,7 @@ model Order {
   createdBy       User     @relation(fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  archivedAt      DateTime? // Auto-archived completed orders after 2 days (hidden from main view but visible in completed orders page)
 
   specs      OrderSpecs?
   components OrderComponent[] // Phase 2C: Multi-component support

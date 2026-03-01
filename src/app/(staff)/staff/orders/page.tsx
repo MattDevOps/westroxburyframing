@@ -23,6 +23,7 @@ const ACTIVE_COLUMNS: { key: string; title: string }[] = [
   { key: "in_production", title: "In Production" },
   { key: "quality_check", title: "Quality Check" },
   { key: "ready_for_pickup", title: "Ready for Pickup" },
+  { key: "completed", title: "Completed" },
 ];
 
 const COMPLETED_COLUMNS: { key: string; title: string }[] = [
@@ -376,6 +377,31 @@ export default function OrdersBoardPage() {
               Update Status
             </button>
             <button
+              onClick={async () => {
+                if (!confirm(`Are you sure you want to delete ${selectedOrders.size} order(s)?\n\nThis action cannot be undone.`)) return;
+                
+                try {
+                  const deletePromises = Array.from(selectedOrders).map(orderId =>
+                    fetch(`/staff/api/orders/${orderId}`, { method: "DELETE" })
+                  );
+                  const results = await Promise.all(deletePromises);
+                  const failed = results.filter(r => !r.ok);
+                  
+                  if (failed.length > 0) {
+                    alert(`Failed to delete ${failed.length} order(s). Please try again.`);
+                  } else {
+                    setSelectedOrders(new Set());
+                    await load();
+                  }
+                } catch (e) {
+                  alert("Failed to delete orders. Please try again.");
+                }
+              }}
+              className="rounded-lg bg-red-600 text-white px-4 py-1.5 text-sm font-semibold hover:bg-red-700"
+            >
+              Delete
+            </button>
+            <button
               onClick={() => setSelectedOrders(new Set())}
               className="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
             >
@@ -419,6 +445,12 @@ export default function OrdersBoardPage() {
         >
           All Orders
         </button>
+        <a
+          href="/staff/orders/completed"
+          className="px-4 py-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
+        >
+          Completed Orders
+        </a>
       </div>
 
       <div className={`grid gap-4 overflow-x-auto pb-4 ${gridCols}`} style={{ gridAutoColumns: "minmax(240px, 1fr)", gridAutoFlow: activeTab === "estimates" ? undefined : "column" }}>
@@ -435,15 +467,47 @@ export default function OrdersBoardPage() {
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, col.key)}
           >
-            <div className={`font-semibold mb-3 ${
+            <div className={`font-semibold mb-3 flex items-center justify-between ${
               col.key === "estimate" ? "text-red-800" :
               col.key === "on_hold" ? "text-orange-800" :
               "text-neutral-900"
             }`}>
-              {col.title}
-              <span className="text-xs font-normal ml-2 text-neutral-500">
-                ({(grouped.get(col.key) || []).length})
+              <span>
+                {col.title}
+                <span className="text-xs font-normal ml-2 text-neutral-500">
+                  ({(grouped.get(col.key) || []).length})
+                </span>
               </span>
+              {col.key === "ready_for_pickup" && (
+                <button
+                  onClick={async () => {
+                    const readyOrders = grouped.get("ready_for_pickup") || [];
+                    if (readyOrders.length === 0) return;
+                    
+                    if (!confirm(`Mark all ${readyOrders.length} order(s) in "Ready for Pickup" as Completed?`)) return;
+                    
+                    try {
+                      const updatePromises = readyOrders.map(order =>
+                        updateOrderStatus(order.id, "completed")
+                      );
+                      const results = await Promise.all(updatePromises);
+                      const failed = results.filter(r => !r);
+                      
+                      if (failed.length > 0) {
+                        alert(`Failed to complete ${failed.length} order(s). Please try again.`);
+                      } else {
+                        await load();
+                      }
+                    } catch (e) {
+                      alert("Failed to complete orders. Please try again.");
+                    }
+                  }}
+                  className="rounded-lg bg-green-600 text-white px-3 py-1 text-xs font-semibold hover:bg-green-700 transition-colors"
+                  title="Mark all ready orders as completed"
+                >
+                  Complete All
+                </button>
+              )}
             </div>
 
             <div className="space-y-3 min-h-[100px]">
@@ -549,6 +613,21 @@ export default function OrdersBoardPage() {
                       }}
                     >
                       Activate → New Order
+                    </button>
+                  )}
+                  {/* Complete button for ready_for_pickup */}
+                  {o.status === "ready_for_pickup" && (
+                    <button
+                      className="mt-2 w-full rounded-lg bg-green-600 text-white text-xs py-1.5 font-medium hover:bg-green-700 transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Mark order ${o.order_number} as Completed?`)) {
+                          const success = await updateOrderStatus(o.id, "completed");
+                          if (success) await load();
+                        }
+                      }}
+                    >
+                      Complete
                     </button>
                   )}
                 </div>

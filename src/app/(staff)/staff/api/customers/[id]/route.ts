@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
+import { requireAdmin } from "@/lib/permissions";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -124,4 +125,48 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 
   return NextResponse.json({ customer: { id: updated.id } });
+}
+
+/**
+ * DELETE /staff/api/customers/[id]
+ * Delete a customer (admin only)
+ */
+export async function DELETE(req: Request, ctx: Ctx) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    await requireAdmin(req);
+  } catch {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+
+  const { id } = await ctx.params;
+
+  const customer = await prisma.customer.findUnique({
+    where: { id },
+    include: {
+      orders: { select: { id: true, orderNumber: true } },
+      invoices: { select: { id: true, invoiceNumber: true } },
+    },
+  });
+
+  if (!customer) {
+    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+  }
+
+  // Delete related records first
+  // Tag assignments are cascade deleted, but we'll be explicit
+  await prisma.customerTagAssignment.deleteMany({ where: { customerId: id } });
+
+  // Note: Orders and Invoices are NOT deleted - they remain in the system
+  // but will have orphaned customer references. This is intentional to preserve
+  // order history. If you want to delete orders/invoices, uncomment below:
+  // await prisma.order.deleteMany({ where: { customerId: id } });
+  // await prisma.invoice.deleteMany({ where: { customerId: id } });
+
+  // Delete the customer
+  await prisma.customer.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true, message: "Customer deleted" });
 }

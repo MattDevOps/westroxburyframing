@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useRouter } from "next/navigation";
 
 type Customer = {
   id: string;
@@ -42,6 +44,9 @@ export default function CustomerDetailPage({
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { isAdmin } = useUserRole();
+  const router = useRouter();
 
   async function load() {
     setLoading(true);
@@ -242,6 +247,48 @@ export default function CustomerDetailPage({
           >
             New order
           </a>
+          {isAdmin && (
+            <button
+              onClick={async () => {
+                const orderCount = stats?.totalOrders || 0;
+                const invoiceCount = stats?.totalInvoices || 0;
+                
+                const warning = `Are you sure you want to delete this customer?\n\n` +
+                  `Customer: ${customer.firstName} ${customer.lastName}\n` +
+                  `Orders: ${orderCount}\n` +
+                  `Invoices: ${invoiceCount}\n\n` +
+                  `This will permanently delete the customer record and all tag assignments.\n` +
+                  `Orders and invoices will remain in the system but will no longer be linked to this customer.\n\n` +
+                  `This action cannot be undone.`;
+                
+                if (!confirm(warning)) return;
+                
+                setDeleting(true);
+                setErr(null);
+                
+                try {
+                  const res = await fetch(`/staff/api/customers/${id}`, {
+                    method: "DELETE",
+                  });
+                  
+                  if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to delete customer");
+                  }
+                  
+                  // Redirect to customers list
+                  router.push("/staff/customers");
+                } catch (e: any) {
+                  setErr(e?.message || "Failed to delete customer");
+                  setDeleting(false);
+                }
+              }}
+              disabled={deleting}
+              className="rounded-xl border border-red-300 bg-red-50 text-red-700 px-4 py-2 text-sm hover:bg-red-100 disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : "Delete Customer"}
+            </button>
+          )}
         </div>
       </div>
 
