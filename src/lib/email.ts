@@ -759,8 +759,8 @@ export async function sendNewWebLeadNotification(params: {
   notes: string;
 }) {
   const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
-  const to =
-    process.env.STAFF_NOTIFICATIONS_EMAIL || "jake@westroxburyframing.com";
+  // Web leads always go to jake@westroxburyframing.com
+  const to = "jake@westroxburyframing.com";
   const subject = `🖼️ New Web Quote: ${params.orderNumber} from ${params.customerName}`;
 
   const text = `New Custom Framing Request (Web Lead)
