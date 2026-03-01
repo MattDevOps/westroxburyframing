@@ -296,6 +296,15 @@ export default function NewPurchaseOrderPage() {
                         </option>
                       ))}
                     </select>
+                    {vendorInventoryItems.length === 0 && (
+                      <p className="text-xs text-neutral-500 mt-1">
+                        No inventory items yet.{" "}
+                        <Link href="/staff/inventory/new" className="text-blue-600 hover:underline">
+                          Create one
+                        </Link>
+                        {" "}or leave as "None" - items will be auto-created when receiving this PO.
+                      </p>
+                    )}
                   </div>
 
                   <div>

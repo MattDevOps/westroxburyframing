@@ -267,7 +267,7 @@ export default function NewInventoryItemPage() {
           {formData.vendorId && (
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Vendor Catalog Item
+                Vendor Catalog Item <span className="text-neutral-400 font-normal">(optional)</span>
               </label>
               <select
                 value={formData.vendorItemId}
@@ -281,9 +281,15 @@ export default function NewInventoryItemPage() {
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-neutral-500 mt-1">
-                Selecting a vendor item will auto-fill name, category, and unit type
-              </p>
+              {vendorItems.length === 0 ? (
+                <p className="text-xs text-neutral-500 mt-1">
+                  No catalog items for this vendor yet. You can still create the inventory item manually, or catalog items will be auto-created when you receive purchase orders.
+                </p>
+              ) : (
+                <p className="text-xs text-neutral-500 mt-1">
+                  Selecting a vendor item will auto-fill name, category, unit type, and SKU. This links your inventory to the vendor's catalog.
+                </p>
+              )}
             </div>
           )}
 
