@@ -171,13 +171,62 @@ export async function GET(req: Request) {
           inventoryItemId = inventoryItem?.id || null;
         }
 
+        // Calculate quantity on order from pending POs (draft, sent, partial status)
+        // Match by vendor and vendorItemNumber
+        let quantityOnOrder = 0;
+        
+        // Build location filter for POs
+        let poLocationFilter: any = {};
+        if (locationIds.length > 0) {
+          // Multi-location view - include POs for any of these locations or null (cross-location POs)
+          poLocationFilter = {
+            OR: [
+              { locationId: { in: locationIds } },
+              { locationId: null },
+            ],
+          };
+        } else if (locationFilter.locationId) {
+          // Single location - include POs for this location or null
+          poLocationFilter = {
+            OR: [
+              { locationId: locationFilter.locationId },
+              { locationId: null },
+            ],
+          };
+        }
+        
+        const pendingPOs = await prisma.purchaseOrder.findMany({
+          where: {
+            vendorId: vendor.id,
+            status: { in: ["draft", "sent", "partial"] },
+            ...(Object.keys(poLocationFilter).length > 0 ? poLocationFilter : {}),
+          },
+          include: {
+            lines: {
+              where: {
+                vendorItemNumber: vendorItemNumber,
+              },
+            },
+          },
+        });
+
+        for (const po of pendingPOs) {
+          for (const line of po.lines) {
+            // Add the remaining quantity (ordered - received)
+            const remaining = Number(line.quantityOrdered) - Number(line.quantityReceived);
+            if (remaining > 0) {
+              quantityOnOrder += remaining;
+            }
+          }
+        }
+
         item = {
           vendorItemId: component.vendorItemId,
           vendorItemNumber,
           description,
           unitType: component.vendorItem.unitType || "each",
           quantityNeeded: 0,
-          quantityOnHand,
+          quantityOnHand: quantityOnHand + quantityOnOrder, // Add pending PO quantities to available
           inventoryItemId,
           orders: [],
         };
@@ -195,6 +244,7 @@ export async function GET(req: Request) {
   }
 
     // Convert to array and calculate shortfall
+    // Note: quantityOnHand now includes pending PO quantities, so shortfall accounts for items on order
     const vendors = Object.values(materialsByVendor).map((group) => ({
       ...group,
       items: group.items.map((item) => ({

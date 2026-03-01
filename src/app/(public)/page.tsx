@@ -183,7 +183,7 @@ export default function HomePage() {
                 <div className="w-14 h-14 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-5">
                   {s.step}
                 </div>
-                <h3 className="font-serif text-xl text-foreground mb-3">{s.title}</h3>
+                <h3 className="font-impact text-xl text-foreground mb-3">{s.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
               </motion.div>
             ))}

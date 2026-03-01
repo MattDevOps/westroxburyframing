@@ -36,6 +36,7 @@ export default function NewInventoryItemPage() {
     reorderQty: "",
     locationNote: "",
   });
+  const [autoSku, setAutoSku] = useState<string | null>(null);
 
   useEffect(() => {
     loadVendors();
@@ -76,14 +77,35 @@ export default function NewInventoryItemPage() {
   function handleVendorItemChange(itemId: string) {
     const item = vendorItems.find((i) => i.id === itemId);
     if (item) {
-      setFormData({
-        ...formData,
-        vendorItemId: itemId,
-        name: item.description || item.itemNumber,
-        category: item.category,
-        unitType: item.unitType,
-      });
+      const selectedVendor = vendors.find((v) => v.id === formData.vendorId);
+      // Auto-generate SKU from vendor code + item number (same as PO system)
+      if (selectedVendor && item.itemNumber) {
+        const generatedSku = `${selectedVendor.code}-${item.itemNumber}`.toUpperCase().replace(/[^A-Z0-9-]/g, '-');
+        setAutoSku(generatedSku);
+        setFormData({
+          ...formData,
+          vendorItemId: itemId,
+          name: item.description || item.itemNumber,
+          category: item.category,
+          unitType: item.unitType,
+          sku: generatedSku, // Auto-fill SKU
+        });
+      } else {
+        setAutoSku(null);
+        setFormData({
+          ...formData,
+          vendorItemId: itemId,
+          name: item.description || item.itemNumber,
+          category: item.category,
+          unitType: item.unitType,
+        });
+      }
     }
+  }
+
+  function handleVendorChange(vendorId: string) {
+    setFormData({ ...formData, vendorId, vendorItemId: "", sku: "" });
+    setAutoSku(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -153,6 +175,7 @@ export default function NewInventoryItemPage() {
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
                 SKU <span className="text-red-500">*</span>
+                {autoSku && <span className="text-xs text-neutral-500 ml-2">(Auto-generated from vendor item)</span>}
               </label>
               <input
                 type="text"
@@ -160,8 +183,14 @@ export default function NewInventoryItemPage() {
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                 className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="INV-001"
+                placeholder={autoSku || "VENDOR-ITEMNUM or INV-001"}
+                disabled={!!autoSku}
               />
+              {autoSku && (
+                <p className="text-xs text-neutral-500 mt-1">
+                  SKU auto-generated from vendor code and item number. Select a vendor item to auto-fill.
+                </p>
+              )}
             </div>
 
             <div>
@@ -222,7 +251,7 @@ export default function NewInventoryItemPage() {
               </label>
               <select
                 value={formData.vendorId}
-                onChange={(e) => setFormData({ ...formData, vendorId: e.target.value, vendorItemId: "" })}
+                onChange={(e) => handleVendorChange(e.target.value)}
                 className="w-full rounded-xl border border-neutral-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select vendor...</option>

@@ -145,8 +145,8 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
 
-  if (!body.sku || !body.name || !body.category || !body.unitType) {
-    return NextResponse.json({ error: "Missing required fields: sku, name, category, unitType" }, { status: 400 });
+  if (!body.name || !body.category || !body.unitType) {
+    return NextResponse.json({ error: "Missing required fields: name, category, unitType" }, { status: 400 });
   }
 
   const locationFilter = await getLocationFilter(req);
@@ -157,25 +157,60 @@ export async function POST(req: Request) {
     );
   }
 
-  // Check if SKU already exists for this location
-  const existingWhere: any = { sku: body.sku };
-  if (locationFilter.locationId) {
-    existingWhere.locationId = locationFilter.locationId;
+  // Auto-generate SKU if vendor item is provided (same logic as PO receive)
+  let finalSku = body.sku;
+  if (!finalSku && body.vendorItemId) {
+    // Fetch vendor catalog item to get vendor code and item number
+    const vendorItem = await prisma.vendorCatalogItem.findUnique({
+      where: { id: body.vendorItemId },
+      include: { vendor: { select: { code: true } } },
+    });
+
+    if (vendorItem && vendorItem.vendor) {
+      let baseSku = `${vendorItem.vendor.code}-${vendorItem.itemNumber}`.toUpperCase().replace(/[^A-Z0-9-]/g, '-');
+      
+      // Ensure SKU is unique
+      finalSku = baseSku;
+      let existingSku = await prisma.inventoryItem.findFirst({
+        where: { sku: finalSku },
+      });
+      
+      if (existingSku && locationFilter.locationId) {
+        // Append location identifier to make unique
+        const locationCode = locationFilter.locationId.slice(0, 8).toUpperCase();
+        finalSku = `${baseSku}-${locationCode}`;
+        existingSku = await prisma.inventoryItem.findFirst({
+          where: { sku: finalSku },
+        });
+      }
+      
+      // If still exists, append timestamp
+      if (existingSku) {
+        finalSku = `${baseSku}-${Date.now().toString().slice(-6)}`;
+      }
+    }
   }
+
+  if (!finalSku) {
+    return NextResponse.json({ error: "SKU is required. Please provide a SKU or select a vendor item." }, { status: 400 });
+  }
+
+  // Check if SKU already exists (globally, as SKU is unique)
   const existing = await prisma.inventoryItem.findFirst({
-    where: existingWhere,
+    where: { sku: finalSku },
   });
 
   if (existing) {
-    return NextResponse.json({ error: "SKU already exists for this location" }, { status: 400 });
+    return NextResponse.json({ error: "SKU already exists" }, { status: 400 });
   }
 
   const itemData: any = {
-    sku: String(body.sku),
+    sku: finalSku,
     name: String(body.name),
     category: String(body.category),
     unitType: String(body.unitType),
     vendorItemId: body.vendorItemId || null,
+    vendorId: body.vendorId || null,
     quantityOnHand: body.quantityOnHand ? Number(body.quantityOnHand) : 0,
     reorderPoint: body.reorderPoint ? Number(body.reorderPoint) : 0,
     reorderQty: body.reorderQty ? Number(body.reorderQty) : 0,
