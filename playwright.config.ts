@@ -53,7 +53,7 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: staffAuthFile,
       },
-      testMatch: /0[2-6].*\.spec\.ts/,
+      testMatch: /0[2-68].*\.spec\.ts/,
     },
     {
       name: "public",

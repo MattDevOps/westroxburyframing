@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import fs from 'fs';
+import path from 'path';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -41,213 +43,226 @@ export async function POST(req: Request, ctx: Ctx) {
 
   // body.receivedLines is an array of { lineId, quantityReceived, costPerUnit? }
   const receivedLines = body.receivedLines || [];
+  
+  const logPath = path.join(process.cwd(), 'receive-debug.log');
+  fs.appendFileSync(logPath, `[${new Date().toISOString()}] Starting receive for PO ${id}\n`);
 
   // Update each line and inventory
   for (const received of receivedLines) {
-    const line = po.lines.find((l) => l.id === received.lineId);
-    if (!line) continue;
+    try {
+        const line = po.lines.find((l) => l.id === received.lineId);
+        if (!line) continue;
 
-    const qtyReceived = Number(received.quantityReceived || 0);
-    if (qtyReceived <= 0) continue;
-
-    // Update line quantity received
-    const newQtyReceived = Number(line.quantityReceived) + qtyReceived;
-    await prisma.purchaseOrderLine.update({
-      where: { id: line.id },
-      data: { quantityReceived: newQtyReceived },
-    });
-
-    // Try to find or create inventory item if not already linked
-    let inventoryItemId = line.inventoryItemId;
-    
-    // If no inventory item linked, try to find by vendor item number
-    if (!inventoryItemId && line.vendorItemNumber) {
-      // Try to find inventory item by vendor item number
-      // First, try to find or create vendor catalog item
-      let vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
-        where: {
-          vendorId: po.vendorId,
-          itemNumber: line.vendorItemNumber,
-        },
-      });
-
-      // If vendor catalog item doesn't exist, create it
-      if (!vendorCatalogItem) {
-        vendorCatalogItem = await prisma.vendorCatalogItem.create({
-          data: {
-            vendorId: po.vendorId,
-            itemNumber: line.vendorItemNumber,
-            description: line.description || null,
-            category: "frame", // Default, can be updated later
-            unitType: "foot", // Default, can be updated later
-            costPerUnit: line.unitCost ? Number(line.unitCost) : 0,
-            retailPerUnit: null,
-          },
-        });
-      }
-
-      if (vendorCatalogItem) {
-        // Find inventory item linked to this vendor catalog item
-        // First try to match by locationId if PO has one, otherwise find any with matching vendorItemId
-        // Also check for items with null locationId (legacy items)
-        let inventoryItem: any = null;
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Processing line ${line.id}, Item: ${line.vendorItemNumber}\n`);
         
-        if (po.locationId) {
-          // First try to find item with matching locationId
-          inventoryItem = await prisma.inventoryItem.findFirst({
+        const qtyReceived = Number(received.quantityReceived || 0);
+        if (qtyReceived <= 0) continue;
+
+        // Update line quantity received
+        const newQtyReceived = Number(line.quantityReceived) + qtyReceived;
+        await prisma.purchaseOrderLine.update({
+          where: { id: line.id },
+          data: { quantityReceived: newQtyReceived },
+        });
+
+        // Try to find or create inventory item if not already linked
+        let inventoryItemId = line.inventoryItemId;
+        
+        // If no inventory item linked, try to find by vendor item number
+        if (!inventoryItemId && line.vendorItemNumber) {
+          console.log(`[PO Receive] No inventory item linked. Finding/Creating for ${line.vendorItemNumber}`);
+          // Try to find inventory item by vendor item number
+          // First, try to find or create vendor catalog item
+          let vendorCatalogItem = await prisma.vendorCatalogItem.findFirst({
             where: {
-              vendorItemId: vendorCatalogItem.id,
-              locationId: po.locationId,
+              vendorId: po.vendorId,
+              itemNumber: line.vendorItemNumber,
             },
           });
-          
-          // If not found, try to find item with null locationId (legacy)
-          if (!inventoryItem) {
-            inventoryItem = await prisma.inventoryItem.findFirst({
-              where: {
-                vendorItemId: vendorCatalogItem.id,
-                locationId: null,
+
+          // If vendor catalog item doesn't exist, create it
+          if (!vendorCatalogItem) {
+            vendorCatalogItem = await prisma.vendorCatalogItem.create({
+              data: {
+                vendorId: po.vendorId,
+                itemNumber: line.vendorItemNumber,
+                description: line.description || null,
+                category: "frame", // Default, can be updated later
+                unitType: "foot", // Default, can be updated later
+                costPerUnit: line.unitCost ? Number(line.unitCost.toString()) : 0,
+                retailPerUnit: null,
               },
             });
           }
-        } else {
-          // No locationId on PO, find any matching item
-          inventoryItem = await prisma.inventoryItem.findFirst({
-            where: {
-              vendorItemId: vendorCatalogItem.id,
-            },
-          });
+
+          if (vendorCatalogItem) {
+            // Find inventory item linked to this vendor catalog item
+            // First try to match by locationId if PO has one, otherwise find any with matching vendorItemId
+            // Also check for items with null locationId (legacy items)
+            let inventoryItem: any = null;
+            
+            if (po.locationId) {
+              // First try to find item with matching locationId
+              inventoryItem = await prisma.inventoryItem.findFirst({
+                where: {
+                  vendorItemId: vendorCatalogItem.id,
+                  locationId: po.locationId,
+                },
+              });
+              
+              // If not found, try to find item with null locationId (legacy)
+              if (!inventoryItem) {
+                inventoryItem = await prisma.inventoryItem.findFirst({
+                  where: {
+                    vendorItemId: vendorCatalogItem.id,
+                    locationId: null,
+                  },
+                });
+              }
+            } else {
+              // No locationId on PO, find any matching item
+              inventoryItem = await prisma.inventoryItem.findFirst({
+                where: {
+                  vendorItemId: vendorCatalogItem.id,
+                },
+              });
+            }
+
+            // If inventory item doesn't exist, create it
+            if (!inventoryItem) {
+              // Generate SKU from vendor code and item number
+              let baseSku = `${po.vendor.code}-${line.vendorItemNumber}`.toUpperCase().replace(/[^A-Z0-9-]/g, '-');
+              
+              // Ensure SKU is unique (check if exists, if so append location code)
+              let finalSku = baseSku;
+              let existingSku = await prisma.inventoryItem.findFirst({
+                where: { sku: finalSku },
+              });
+              
+              if (existingSku && po.locationId) {
+                // Append location identifier to make unique
+                const locationCode = po.locationId.slice(0, 8).toUpperCase();
+                finalSku = `${baseSku}-${locationCode}`;
+                // Check again
+                existingSku = await prisma.inventoryItem.findFirst({
+                  where: { sku: finalSku },
+                });
+              }
+              
+              // If still exists, append timestamp
+              if (existingSku) {
+                finalSku = `${baseSku}-${Date.now().toString().slice(-6)}`;
+              }
+              
+              inventoryItem = await prisma.inventoryItem.create({
+                data: {
+                  sku: finalSku,
+                  name: line.description || line.vendorItemNumber || vendorCatalogItem.description || `Item ${line.vendorItemNumber}`,
+                  category: vendorCatalogItem.category,
+                  unitType: vendorCatalogItem.unitType,
+                  vendorItemId: vendorCatalogItem.id,
+                  vendorId: po.vendorId,
+                  locationId: po.locationId,
+                  quantityOnHand: 0, // Will be incremented below
+                  reorderPoint: 0,
+                  reorderQty: 0,
+                },
+              });
+              console.log(`[PO Receive] Created new inventory item: ${inventoryItem.id} (${inventoryItem.sku})`);
+            }
+
+            if (inventoryItem) {
+              inventoryItemId = inventoryItem.id;
+              // Update the PO line to link it
+              await prisma.purchaseOrderLine.update({
+                where: { id: line.id },
+                data: { inventoryItemId },
+              });
+            }
+          }
         }
 
-        // If inventory item doesn't exist, create it
-        if (!inventoryItem) {
-          // Generate SKU from vendor code and item number
-          let baseSku = `${po.vendor.code}-${line.vendorItemNumber}`.toUpperCase().replace(/[^A-Z0-9-]/g, '-');
-          
-          // Ensure SKU is unique (check if exists, if so append location code)
-          let finalSku = baseSku;
-          let existingSku = await prisma.inventoryItem.findFirst({
-            where: { sku: finalSku },
-          });
-          
-          if (existingSku && po.locationId) {
-            // Append location identifier to make unique
-            const locationCode = po.locationId.slice(0, 8).toUpperCase();
-            finalSku = `${baseSku}-${locationCode}`;
-            // Check again
-            existingSku = await prisma.inventoryItem.findFirst({
-              where: { sku: finalSku },
-            });
-          }
-          
-          // If still exists, append timestamp
-          if (existingSku) {
-            finalSku = `${baseSku}-${Date.now().toString().slice(-6)}`;
-          }
-          
-          inventoryItem = await prisma.inventoryItem.create({
-            data: {
-              sku: finalSku,
-              name: line.description || line.vendorItemNumber || vendorCatalogItem.description || `Item ${line.vendorItemNumber}`,
-              category: vendorCatalogItem.category,
-              unitType: vendorCatalogItem.unitType,
-              vendorItemId: vendorCatalogItem.id,
-              vendorId: po.vendorId,
-              locationId: po.locationId,
-              quantityOnHand: 0, // Will be incremented below
-              reorderPoint: 0,
-              reorderQty: 0,
-            },
-          });
+        // Update inventory if we have an inventory item (either existing or newly created)
+        if (!inventoryItemId) {
+          console.error(`[PO Receive] No inventory item found or created for line ${line.id}, vendorItemNumber: ${line.vendorItemNumber}`);
+          // Continue to next line - don't fail the entire receive operation
+          continue;
         }
 
-        if (inventoryItem) {
-          inventoryItemId = inventoryItem.id;
-          // Update the PO line to link it
-          await prisma.purchaseOrderLine.update({
-            where: { id: line.id },
-            data: { inventoryItemId },
-          });
-        }
+        const costPerUnit = received.costPerUnit
+          ? Number(received.costPerUnit)
+          : line.unitCost
+            ? Number(line.unitCost.toString())
+            : null;
+
+        // Add to inventory
+        await prisma.inventoryItem.update({
+          where: { id: inventoryItemId },
+          data: {
+            quantityOnHand: {
+              increment: qtyReceived,
+            },
+          },
+        });
+
+        // Create inventory lot
+        await prisma.inventoryLot.create({
+          data: {
+            inventoryItemId: inventoryItemId,
+            quantity: qtyReceived,
+            costPerUnit: costPerUnit,
+            purchaseOrderId: id,
+            notes: `Received from PO ${po.poNumber}`,
+          },
+        });
+      } catch (error) {
+        console.error(`[PO Receive] Error processing line ${received.lineId}:`, error);
+        // Continue to next line - don't fail the entire receive operation
+        continue;
       }
     }
 
-    // Update inventory if we have an inventory item (either existing or newly created)
-    if (!inventoryItemId) {
-      console.error(`[PO Receive] No inventory item found or created for line ${line.id}, vendorItemNumber: ${line.vendorItemNumber}`);
-      // Continue to next line - don't fail the entire receive operation
-      continue;
+    // Check if all lines are fully received
+    const updatedPo = await prisma.purchaseOrder.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
+
+    if (!updatedPo) {
+      return NextResponse.json({ error: "Failed to update purchase order" }, { status: 500 });
     }
 
-    const costPerUnit = received.costPerUnit
-      ? Number(received.costPerUnit)
-      : line.unitCost
-        ? Number(line.unitCost)
-        : null;
+    const allReceived = updatedPo.lines.every(
+      (line) => Number(line.quantityReceived) >= Number(line.quantityOrdered)
+    );
+    const someReceived = updatedPo.lines.some(
+      (line) => Number(line.quantityReceived) > 0
+    );
 
-    // Add to inventory
-    await prisma.inventoryItem.update({
-      where: { id: inventoryItemId },
+    let newStatus = po.status;
+    if (allReceived) {
+      newStatus = "received";
+    } else if (someReceived) {
+      newStatus = "partial";
+    }
+
+    // Update PO status and receivedAt
+    const finalPo = await prisma.purchaseOrder.update({
+      where: { id },
       data: {
-        quantityOnHand: {
-          increment: qtyReceived,
+        status: newStatus,
+        receivedAt: newStatus === "received" ? new Date() : po.receivedAt,
+      },
+      include: {
+        vendor: { select: { id: true, name: true, code: true } },
+        createdBy: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            inventoryItem: { select: { id: true, sku: true, name: true } },
+          },
         },
       },
     });
 
-    // Create inventory lot
-    await prisma.inventoryLot.create({
-      data: {
-        inventoryItemId: inventoryItemId,
-        quantity: qtyReceived,
-        costPerUnit: costPerUnit,
-        purchaseOrderId: id,
-        notes: `Received from PO ${po.poNumber}`,
-      },
-    });
-  }
-
-  // Check if all lines are fully received
-  const updatedPo = await prisma.purchaseOrder.findUnique({
-    where: { id },
-    include: { lines: true },
-  });
-
-  if (!updatedPo) {
-    return NextResponse.json({ error: "Failed to update purchase order" }, { status: 500 });
-  }
-
-  const allReceived = updatedPo.lines.every(
-    (line) => Number(line.quantityReceived) >= Number(line.quantityOrdered)
-  );
-  const someReceived = updatedPo.lines.some(
-    (line) => Number(line.quantityReceived) > 0
-  );
-
-  let newStatus = po.status;
-  if (allReceived) {
-    newStatus = "received";
-  } else if (someReceived) {
-    newStatus = "partial";
-  }
-
-  // Update PO status and receivedAt
-  const finalPo = await prisma.purchaseOrder.update({
-    where: { id },
-    data: {
-      status: newStatus,
-      receivedAt: newStatus === "received" ? new Date() : po.receivedAt,
-    },
-    include: {
-      vendor: { select: { id: true, name: true, code: true } },
-      createdBy: { select: { id: true, name: true } },
-      lines: {
-        include: {
-          inventoryItem: { select: { id: true, sku: true, name: true } },
-        },
-      },
-    },
-  });
-
-  return NextResponse.json({ order: finalPo });
+    return NextResponse.json({ order: finalPo });
 }

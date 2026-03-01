@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface PurchaseOrderLine {
   id: string;
@@ -45,6 +46,7 @@ export default function PurchaseOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { isAdmin } = useUserRole();
   const [order, setOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,18 +121,39 @@ export default function PurchaseOrderDetailPage({
     }
   }
 
-  async function handleDelete() {
+  async function handleDelete(removeInventory: boolean = false) {
     if (!id) return;
-    if (!confirm(`Are you sure you want to delete purchase order ${order?.poNumber}? This action cannot be undone.`)) {
-      return;
+    
+    const isReceived = order?.status === "received" || order?.status === "partial";
+    const requiresInventoryConfirm = isReceived && !removeInventory;
+    
+    if (requiresInventoryConfirm && isAdmin) {
+      const confirmed = confirm(
+        `⚠️ WARNING: Deleting this ${order?.status} PO will remove all associated inventory entries and revert material quantities.\n\n` +
+        `PO: ${order?.poNumber}\n` +
+        `Status: ${order?.status}\n\n` +
+        `This action cannot be undone. Are you sure?`
+      );
+      if (!confirmed) return;
+    } else if (!requiresInventoryConfirm) {
+      const confirmed = confirm(`Are you sure you want to delete purchase order ${order?.poNumber}? This action cannot be undone.`);
+      if (!confirmed) return;
     }
+    
     setSaving(true);
     try {
+      const body = removeInventory || isReceived ? { removeInventory: true } : {};
       const res = await fetch(`/staff/api/purchase-orders/${id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
       });
       if (!res.ok) {
         const data = await res.json();
+        if (data.requiresConfirmation) {
+          // Re-call with removeInventory=true
+          return handleDelete(true);
+        }
         throw new Error(data.error || "Failed to delete purchase order");
       }
       router.push("/staff/purchase-orders");
@@ -192,11 +215,21 @@ export default function PurchaseOrderDetailPage({
             </span>
             {(order.status === "draft" || order.status === "cancelled") && (
               <button
-                onClick={handleDelete}
+                onClick={() => handleDelete()}
                 disabled={saving}
                 className="rounded-lg border border-red-300 bg-red-50 text-red-700 px-4 py-2 text-sm font-medium hover:bg-red-100 disabled:opacity-50"
               >
                 {saving ? "Deleting..." : "Delete"}
+              </button>
+            )}
+            {isAdmin && (order.status === "received" || order.status === "partial") && (
+              <button
+                onClick={() => handleDelete()}
+                disabled={saving}
+                className="rounded-lg border border-red-300 bg-red-50 text-red-700 px-4 py-2 text-sm font-medium hover:bg-red-100 disabled:opacity-50"
+                title="Admin: Delete & remove inventory"
+              >
+                {saving ? "Deleting..." : "Delete (Admin)"}
               </button>
             )}
           </div>
