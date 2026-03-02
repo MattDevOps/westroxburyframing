@@ -322,12 +322,12 @@ export async function PATCH(req: Request, ctx: Ctx) {
   // Update customer info if provided
   if (body.customerFirstName || body.customerLastName || body.customerPhone || body.customerEmail) {
     const order_ = await prisma.order.findUnique({ where: { id }, select: { customerId: true } });
-    if (order_) {
+    if (order_ && order_.customerId) {
       const custData: Record<string, unknown> = {};
       if ("customerFirstName" in body) custData.firstName = String(body.customerFirstName || "");
       if ("customerLastName" in body) custData.lastName = String(body.customerLastName || "");
       if ("customerPhone" in body && body.customerPhone) custData.phone = String(body.customerPhone);
-      if ("customerEmail" in body) custData.email = body.customerEmail ? String(body.customerEmail) : null;
+      if ("customerEmail" in body) custData.email = body.customerEmail ? String(body.customerEmail) : undefined;
       if (Object.keys(custData).length > 0) {
         await prisma.customer.update({ where: { id: order_.customerId }, data: custData });
       }
