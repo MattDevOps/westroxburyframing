@@ -42,6 +42,13 @@ export async function GET(_req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
+  if (!invoice.customer) {
+    return NextResponse.json(
+      { error: "Invoice has no customer associated" },
+      { status: 400 }
+    );
+  }
+
   // Don't expose internal IDs or sensitive fields
   return NextResponse.json({
     id: invoice.id,

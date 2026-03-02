@@ -258,10 +258,10 @@ export default function OrderDetailPage() {
       paidInFull: order.paidInFull ?? true,
       discountType: order.discountType || "none",
       discountValue: discountType === "fixed" ? discountValue.toFixed(2) : String(discountValue),
-      customerFirstName: order.customer.firstName || "",
-      customerLastName: order.customer.lastName || "",
-      customerPhone: order.customer.phone || "",
-      customerEmail: order.customer.email || "",
+      customerFirstName: order.customer?.firstName || "",
+      customerLastName: order.customer?.lastName || "",
+      customerPhone: order.customer?.phone || "",
+      customerEmail: order.customer?.email || "",
     });
     setIsEditing(true);
   }
@@ -356,7 +356,7 @@ export default function OrderDetailPage() {
             )}
           </h1>
           <div className="text-neutral-700">
-            {order.customer.firstName} {order.customer.lastName}
+            {order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : "No Customer"}
           </div>
         </div>
         <div className="flex gap-2 print:hidden">
@@ -415,17 +415,17 @@ export default function OrderDetailPage() {
           >
             🧾 Receipt
           </a>
-          {order.customer.email && (
+          {order.customer?.email && (
             <button
               onClick={async () => {
-                if (!confirm(`Email receipt to ${order.customer.email}?`)) return;
+                if (!confirm(`Email receipt to ${order.customer?.email}?`)) return;
                 try {
                   const res = await fetch(`/staff/api/orders/${order.id}/email-receipt`, {
                     method: "POST",
                   });
                   const result = await res.json();
                   if (res.ok) {
-                    alert(`Receipt emailed to ${order.customer.email}`);
+                    alert(`Receipt emailed to ${order.customer?.email}`);
                   } else {
                     alert(result.error || "Failed to email receipt");
                   }
@@ -555,9 +555,15 @@ export default function OrderDetailPage() {
           <div className="print:block hidden">
             <span className="font-medium text-neutral-600">Customer:</span>{" "}
             <span className="text-neutral-900">
-              {order.customer.firstName} {order.customer.lastName}
-              {order.customer.phone && ` · ${order.customer.phone}`}
-              {order.customer.email && ` · ${order.customer.email}`}
+              {order.customer ? (
+                <>
+                  {order.customer.firstName} {order.customer.lastName}
+                  {order.customer.phone && ` · ${order.customer.phone}`}
+                  {order.customer.email && ` · ${order.customer.email}`}
+                </>
+              ) : (
+                "No Customer"
+              )}
             </span>
           </div>
         </div>
@@ -965,7 +971,7 @@ export default function OrderDetailPage() {
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
           <div className="text-neutral-900 font-semibold">Invoice</div>
-          {!order.invoice && (
+          {!order.invoice && order.customer && (
             <a
               href={`/staff/invoices/new?customerId=${order.customer.id}&orderId=${order.id}`}
               className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"

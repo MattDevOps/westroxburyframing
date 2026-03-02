@@ -83,6 +83,13 @@ export async function POST(req: Request, ctx: Ctx) {
     .toString(36)
     .slice(2, 10)}`;
 
+  if (!invoice.customer) {
+    return NextResponse.json(
+      { error: "Invoice has no customer associated" },
+      { status: 400 }
+    );
+  }
+
   const orderNumbers = invoice.orders.map((o) => o.orderNumber).join(", ");
   const customerName = `${invoice.customer.firstName} ${invoice.customer.lastName}`;
 
