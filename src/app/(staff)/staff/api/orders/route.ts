@@ -150,8 +150,8 @@ export async function GET(req: Request) {
         orderNumber: o.orderNumber,
         status: o.status,
         due_date: o.dueDate,
-        customer_name: `${o.customer.firstName} ${o.customer.lastName}`,
-        customer_email: o.customer.email || "",
+        customer_name: o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : "Unknown Customer",
+        customer_email: o.customer?.email || "",
         total_cents: o.totalAmount,
         totalAmount: o.totalAmount,
         paid: paidStatus !== "unpaid",
@@ -455,12 +455,12 @@ export async function POST(req: Request) {
     // No additional action needed here - the materials-needed API calculates requirements dynamically
 
     // Send order received email to customer (if email available and not an estimate)
-    if (order.customer.email && requestedStatus !== "estimate") {
+    if (order.customer?.email && requestedStatus !== "estimate") {
       const estimatedTotal = finalTotal > 0 ? `$${(finalTotal / 100).toFixed(2)}` : undefined;
       sendOrderReceivedEmail({
         to: order.customer.email,
         orderNumber: order.orderNumber,
-        customerName: `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer",
+        customerName: order.customer ? `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer" : "Customer",
         itemType: order.itemType || undefined,
         itemDescription: order.itemDescription || undefined,
         estimatedTotal,

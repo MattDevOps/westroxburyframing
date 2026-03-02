@@ -122,7 +122,7 @@ export async function GET(req: Request) {
       orders: orders.map((o) => ({
         id: o.id,
         orderNumber: o.orderNumber,
-        customerName: `${o.customer.firstName} ${o.customer.lastName}`,
+        customerName: o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : "Unknown Customer",
         status: o.status,
         daysOpen: o.daysOpen,
         totalAmount: o.totalAmount,
