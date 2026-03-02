@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     where: {
       status: "estimate",
       createdAt: { lte: cutoffDate },
+      customerId: { not: null },
       customer: {
         email: { not: null },
       },
@@ -38,9 +39,9 @@ export async function POST(req: Request) {
   };
 
   for (const estimate of estimates) {
-    if (!estimate.customer.email) continue;
+    if (!estimate.customer?.email) continue;
 
-    const customerName = `${estimate.customer.firstName || ""} ${estimate.customer.lastName || ""}`.trim() || "Customer";
+    const customerName = estimate.customer ? `${estimate.customer.firstName || ""} ${estimate.customer.lastName || ""}`.trim() || "Customer" : "Customer";
     const estimatedTotal = estimate.totalAmount > 0 ? `$${(estimate.totalAmount / 100).toFixed(2)}` : "TBD";
 
     const result = await sendEstimateFollowUpEmail({

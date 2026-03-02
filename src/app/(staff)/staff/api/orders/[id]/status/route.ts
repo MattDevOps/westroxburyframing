@@ -82,10 +82,10 @@ export async function POST(req: Request, ctx: Ctx) {
       }
     }
 
-    const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
+    const customerName = order.customer ? `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer" : "Customer";
     
     // Send notifications for status changes
-    if (status === "ready_for_pickup") {
+    if (status === "ready_for_pickup" && order.customer) {
     // Send email if available
     if (order.customer.email) {
       const emailResult = await sendReadyForPickupEmail({
@@ -140,6 +140,7 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   } else if (
     // Send SMS status updates for key status changes (if opted in)
+    order.customer &&
     (status === "in_production" || status === "quality_check" || status === "completed") &&
     order.customer.phone &&
     hasSMSOptIn(order.customer)

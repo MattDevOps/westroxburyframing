@@ -26,6 +26,13 @@ export async function POST(req: Request, ctx: Ctx) {
 
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
+  if (!order.customer) {
+    return NextResponse.json(
+      { error: "Order has no customer associated." },
+      { status: 400 }
+    );
+  }
+
   const email = order.customer.email;
   if (!email) {
     return NextResponse.json(
