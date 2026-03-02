@@ -101,7 +101,7 @@ export async function POST(req: Request) {
 
       // Save QBO customer ID to our customer record
       await prisma.customer.update({
-        where: { id: invoice.customerId },
+        where: { id: invoice.customer.id },
         data: { qboCustomerId: qboCustomerId },
       });
     }
