@@ -57,6 +57,13 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
+  if (!order.customer) {
+    return NextResponse.json(
+      { error: "Order has no customer associated" },
+      { status: 400 }
+    );
+  }
+
   if (!order.customer.email) {
     return NextResponse.json(
       { error: "Customer does not have an email address" },

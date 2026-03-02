@@ -91,9 +91,9 @@ export async function GET(req: Request) {
     const rows = invoicesWithAging.map((invoice) => [
       invoice.agingBucket,
       invoice.invoiceNumber,
-      `${invoice.customer.firstName} ${invoice.customer.lastName}`,
-      invoice.customer.email || "",
-      invoice.customer.phone || "",
+      invoice.customer ? `${invoice.customer.firstName} ${invoice.customer.lastName}` : "Unknown Customer",
+      invoice.customer?.email || "",
+      invoice.customer?.phone || "",
       invoice.orders.map((o) => o.orderNumber).join(", ") || "",
       (invoice.totalAmount / 100).toFixed(2),
       (invoice.balanceDue / 100).toFixed(2),

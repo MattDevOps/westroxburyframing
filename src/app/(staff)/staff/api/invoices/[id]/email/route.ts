@@ -32,6 +32,13 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
+  if (!invoice.customer) {
+    return NextResponse.json(
+      { error: "Invoice has no customer associated" },
+      { status: 400 }
+    );
+  }
+
   if (!invoice.customer.email) {
     return NextResponse.json(
       { error: "Customer does not have an email address" },

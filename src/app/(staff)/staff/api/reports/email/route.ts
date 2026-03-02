@@ -156,8 +156,8 @@ async function generateSalesCSV(params: any) {
   const rows = orders.map((o) => [
     o.createdAt.toISOString().split("T")[0],
     o.orderNumber,
-    `${o.customer.firstName} ${o.customer.lastName}`,
-    o.customer.email || "",
+    o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : "Unknown Customer",
+    o.customer?.email || "",
     o.status,
     (o.subtotalAmount / 100).toFixed(2),
     (o.taxAmount / 100).toFixed(2),
@@ -197,9 +197,9 @@ async function generateOpenOrdersCSV(params: any) {
   const headers = ["Order Number", "Customer Name", "Customer Email", "Customer Phone", "Status", "Staff", "Days Open", "Total Amount", "Created At"];
   const rows = ordersWithAging.map((o) => [
     o.orderNumber,
-    `${o.customer.firstName} ${o.customer.lastName}`,
-    o.customer.email || "",
-    o.customer.phone || "",
+    o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : "Unknown Customer",
+    o.customer?.email || "",
+    o.customer?.phone || "",
     o.status,
     o.createdBy.name || "Unknown",
     o.daysOpen.toString(),
@@ -318,9 +318,9 @@ async function generateArAgingCSV() {
   const rows = invoicesWithAging.map((inv) => [
     inv.agingBucket,
     inv.invoiceNumber,
-    `${inv.customer.firstName} ${inv.customer.lastName}`,
-    inv.customer.email || "",
-    inv.customer.phone || "",
+    inv.customer ? `${inv.customer.firstName} ${inv.customer.lastName}` : "Unknown Customer",
+    inv.customer?.email || "",
+    inv.customer?.phone || "",
     inv.orders.map((o) => o.orderNumber).join(", ") || "",
     (inv.totalAmount / 100).toFixed(2),
     (inv.balanceDue / 100).toFixed(2),

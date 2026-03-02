@@ -51,6 +51,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
+    if (!invoice.customer) {
+      return NextResponse.json(
+        { error: "Invoice has no customer associated" },
+        { status: 400 }
+      );
+    }
+
     // Refresh access token if needed
     let accessToken = env.QBO_ACCESS_TOKEN;
     let refreshToken = env.QBO_REFRESH_TOKEN;

@@ -61,6 +61,10 @@ export async function GET(req: Request, ctx: Ctx) {
     return new Response("Order not found", { status: 404 });
   }
 
+  if (!order.customer) {
+    return new Response("Order has no customer associated", { status: 400 });
+  }
+
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   // Calculate discount amount from discountType and discountValue

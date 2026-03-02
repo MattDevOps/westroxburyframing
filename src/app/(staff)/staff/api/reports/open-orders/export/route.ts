@@ -76,9 +76,9 @@ export async function GET(req: Request) {
 
     const rows = ordersWithAging.map((order) => [
       order.orderNumber,
-      `${order.customer.firstName} ${order.customer.lastName}`,
-      order.customer.email || "",
-      order.customer.phone || "",
+      order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : "Unknown Customer",
+      order.customer?.email || "",
+      order.customer?.phone || "",
       order.status,
       order.createdBy.name || "Unknown",
       order.daysOpen.toString(),

@@ -113,9 +113,9 @@ export async function GET(req: Request) {
         invoices: bucketInvoices.map((inv) => ({
           id: inv.id,
           invoiceNumber: inv.invoiceNumber,
-          customerName: `${inv.customer.firstName} ${inv.customer.lastName}`,
-          customerEmail: inv.customer.email,
-          customerPhone: inv.customer.phone,
+          customerName: inv.customer ? `${inv.customer.firstName} ${inv.customer.lastName}` : "Unknown Customer",
+          customerEmail: inv.customer?.email || null,
+          customerPhone: inv.customer?.phone || null,
           totalAmount: inv.totalAmount,
           balanceDue: inv.balanceDue,
           status: inv.status,

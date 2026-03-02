@@ -43,6 +43,13 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invoice is already paid" }, { status: 400 });
   }
 
+  if (!invoice.customer) {
+    return NextResponse.json(
+      { error: "Invoice has no customer associated" },
+      { status: 400 }
+    );
+  }
+
   if (!invoice.customer.email) {
     return NextResponse.json(
       { error: "Customer email is required to send a Square invoice" },

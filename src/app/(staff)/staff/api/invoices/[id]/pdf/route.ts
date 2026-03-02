@@ -57,6 +57,10 @@ export async function GET(req: Request, ctx: Ctx) {
     return new Response("Invoice not found", { status: 404 });
   }
 
+  if (!invoice.customer) {
+    return new Response("Invoice has no customer associated", { status: 400 });
+  }
+
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const h = (str: string | null | undefined) => {
