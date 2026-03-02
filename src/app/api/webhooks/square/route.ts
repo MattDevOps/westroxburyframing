@@ -205,7 +205,7 @@ export async function POST(req: Request) {
         }
 
         // Webhook Payment Auto-Reconciliation: Auto-send confirmation email when payment received
-        if (localInvoice.customer.email) {
+        if (localInvoice.customer?.email) {
           const amountFormatted = `$${(paymentAmountCents / 100).toFixed(2)}`;
           const remaining = Math.max(0, localInvoice.totalAmount - (localInvoice.amountPaid + paymentAmountCents));
           
@@ -222,7 +222,7 @@ export async function POST(req: Request) {
           try {
             await sendPaymentConfirmationToCustomer({
               to: localInvoice.customer.email,
-              customerName: `${localInvoice.customer.firstName} ${localInvoice.customer.lastName}`,
+              customerName: `${localInvoice.customer.firstName || ""} ${localInvoice.customer.lastName || ""}`.trim() || "Customer",
               invoiceNumber: localInvoice.invoiceNumber,
               amountPaid: amountFormatted,
               balanceRemaining: `$${(remaining / 100).toFixed(2)}`,
@@ -238,7 +238,9 @@ export async function POST(req: Request) {
           process.env.STAFF_NOTIFICATIONS_EMAIL ||
           process.env.EMAIL_FROM ||
           "jake@westroxburyframing.com";
-        const customerName = `${localInvoice.customer.firstName} ${localInvoice.customer.lastName}`;
+        const customerName = localInvoice.customer 
+          ? `${localInvoice.customer.firstName || ""} ${localInvoice.customer.lastName || ""}`.trim() || "Customer"
+          : "Customer";
         const amountFormatted = `$${(paymentAmountCents / 100).toFixed(2)}`;
         const firstOrderNumber = localInvoice.orders[0]?.orderNumber || localInvoice.invoiceNumber;
 
