@@ -420,9 +420,9 @@ export default function CustomersPage() {
 
       {/* Add Customer Modal */}
       {showAddCustomer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full">
-            <div className="p-6 border-b border-neutral-200">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col my-auto">
+            <div className="p-6 border-b border-neutral-200 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-neutral-900">Add Customer</h2>
                 <button
@@ -448,7 +448,7 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {customerError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                   {customerError}
@@ -601,36 +601,36 @@ export default function CustomersPage() {
                   Add to email list (marketing opt-in)
                 </label>
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={createCustomer}
-                  disabled={savingCustomer || !newCustomerFirstName.trim() || !newCustomerLastName.trim() || (!newCustomerEmail.trim() && !newCustomerPhone.trim())}
-                  className="flex-1 rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savingCustomer ? "Creating..." : "Create Customer"}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddCustomer(false);
-                    setCustomerError(null);
-                    setNewCustomerFirstName("");
-                    setNewCustomerLastName("");
-                    setNewCustomerEmail("");
-                    setNewCustomerPhone("");
-                    setNewCustomerAddressLine1("");
-                    setNewCustomerAddressLine2("");
-                    setNewCustomerCity("");
-                    setNewCustomerState("");
-                    setNewCustomerZip("");
-                    setNewCustomerPreferredContact("email");
-                    setNewCustomerMarketingOptIn(false);
-                  }}
-                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-                >
-                  Cancel
-                </button>
-              </div>
+            <div className="p-6 border-t border-neutral-200 flex gap-3 flex-shrink-0">
+              <button
+                onClick={createCustomer}
+                disabled={savingCustomer || !newCustomerFirstName.trim() || !newCustomerLastName.trim() || (!newCustomerEmail.trim() && !newCustomerPhone.trim())}
+                className="flex-1 rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingCustomer ? "Creating..." : "Create Customer"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddCustomer(false);
+                  setCustomerError(null);
+                  setNewCustomerFirstName("");
+                  setNewCustomerLastName("");
+                  setNewCustomerEmail("");
+                  setNewCustomerPhone("");
+                  setNewCustomerAddressLine1("");
+                  setNewCustomerAddressLine2("");
+                  setNewCustomerCity("");
+                  setNewCustomerState("");
+                  setNewCustomerZip("");
+                  setNewCustomerPreferredContact("email");
+                  setNewCustomerMarketingOptIn(false);
+                }}
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
