@@ -1,8 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TwilioComplianceEmbed } from "@twilio/twilio-compliance-embed";
+import dynamic from "next/dynamic";
 import { Phone, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+
+// Dynamically import TwilioComplianceEmbed with SSR disabled since it uses browser-only APIs
+const TwilioComplianceEmbed = dynamic(
+  () => import("@twilio/twilio-compliance-embed").then((mod) => mod.TwilioComplianceEmbed),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+      </div>
+    ),
+  }
+);
 
 export default function TwilioSettingsPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
