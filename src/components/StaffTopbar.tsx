@@ -30,6 +30,7 @@ const STAFF_NAV: Array<{
   { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/reports", label: "Reports" },
   { href: "/staff/users", label: "Users" },
+  { href: "/staff/settings/twilio", label: "Twilio" },
 ];
 
 function NavLink({
