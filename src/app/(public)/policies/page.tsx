@@ -55,9 +55,9 @@ export default function PoliciesPage() {
           </div>
 
           <div>
-            <h2 className="font-serif text-2xl text-foreground mb-4">SMS/Text Message Marketing</h2>
+            <h2 className="font-serif text-2xl text-foreground mb-4">SMS/Text Message Notifications</h2>
             <p className="mb-3">
-              We may send text messages to customers who have opted in to receive SMS notifications. You can opt in to receive text messages by:
+              We may send informational text messages to customers who have opted in to receive account updates and notifications. These messages include order status updates, pickup reminders, and other account-related notifications. You can opt in to receive text messages by:
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2 mb-3">
               <li>Visiting our SMS opt-in page at <a href="/sms-opt-in" className="text-gold hover:text-gold-light underline underline-offset-2">westroxburyframing.com/sms-opt-in</a></li>
@@ -65,7 +65,7 @@ export default function PoliciesPage() {
               <li>Checking the SMS opt-in box during order intake</li>
             </ul>
             <p className="mb-3">
-              Message and data rates may apply. Message frequency varies. You can opt out at any time by replying <strong>STOP</strong> to any message, or by contacting us directly. For help, reply <strong>HELP</strong>.
+              By opting in, you agree to receive account updates and notifications via text message. Message and data rates may apply. Message frequency varies. You can opt out at any time by replying <strong>STOP</strong> to any message, or by contacting us directly. For help, reply <strong>HELP</strong>.
             </p>
             <p>
               We use Twilio to send text messages. Twilio&rsquo;s privacy policy governs their handling of your phone number. For more information, visit{" "}

@@ -65,7 +65,7 @@ export default function SMSOptInPage() {
               Opt In to Text Messages
             </h1>
             <p className="text-neutral-600">
-              Receive order updates, pickup reminders, and special offers via SMS
+              Receive account updates and notifications about your orders via SMS
             </p>
           </div>
 
@@ -141,7 +141,7 @@ export default function SMSOptInPage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>By opting in, you agree to receive automated text messages</strong> from West Roxbury Framing at the phone number provided. You can opt out at any time by replying STOP to any message. Message frequency varies. Message and data rates may apply.
+                  <strong>I agree to receive account updates and notifications</strong> from West Roxbury Framing at the phone number provided. This includes order status updates, pickup reminders, and other account-related notifications. You can opt out at any time by replying STOP to any message. Message frequency varies. Message and data rates may apply.
                 </p>
                 <p className="text-xs text-blue-800 mt-2">
                   By submitting this form, you also agree to our{" "}
