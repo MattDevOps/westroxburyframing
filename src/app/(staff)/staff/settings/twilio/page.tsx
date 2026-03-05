@@ -342,8 +342,7 @@ export default function TwilioSettingsPage() {
               onCancel={() => {
                 setError("Verification was cancelled");
               }}
-              onError={(error: any) => {
-                console.error("Embed error:", error);
+              onError={() => {
                 setError("An error occurred in the verification form");
               }}
             />
