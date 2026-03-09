@@ -1,0 +1,629 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  estimate
+  new_design
+  awaiting_materials
+  in_production
+  quality_check
+  ready_for_pickup
+  on_hold
+  picked_up
+  completed
+  cancelled
+}
+
+enum IntakeChannel {
+  walk_in
+  appointment
+  web_lead
+}
+
+enum PaymentStatus {
+  paid
+  refunded
+  voided
+}
+
+// ─── Multi-Site Support ───────────────────────────────────
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique // e.g., "WRF", "BOS", "CAM"
+  address     String?
+  phone       String?
+  email       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders         Order[]
+  inventoryItems InventoryItem[]
+  purchaseOrders PurchaseOrder[]
+  users          User[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  role         String // "admin" | "staff"
+  passwordHash String
+  locationId   String? // null = admin (can access all), set = staff assigned to location
+  location     Location? @relation(fields: [locationId], references: [id])
+  createdAt    DateTime @default(now())
+
+  orders                 Order[]
+  invoicesCreated        Invoice[]         @relation("InvoiceCreatedBy")
+  activity               ActivityLog[]     @relation("ActorActivity")
+  orderActivity          OrderActivity[]
+  purchaseOrders         PurchaseOrder[]
+  giftCertificatesIssued GiftCertificate[]
+  sentMessages           StaffMessage[]    @relation("SentMessages")
+  receivedMessages       StaffMessage[]    @relation("ReceivedMessages")
+}
+
+model Customer {
+  id               String    @id @default(uuid())
+  firstName        String
+  lastName         String
+  phone            String?   @unique
+  email            String?   @unique
+  passwordHash     String? // null = staff-created (no login), set = customer account
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  state            String?
+  zip              String?
+  preferredContact String    @default("email") // "email" | "call"
+  marketingOptIn   Boolean   @default(false)
+  marketingOptInAt DateTime?
+  smsOptIn         Boolean   @default(false)
+  smsOptInAt       DateTime?
+  qboCustomerId   String?   // QuickBooks Online customer ID
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  orders           Order[]
+  invoices         Invoice[]
+  appointments     Appointment[]
+  tagAssignments   CustomerTagAssignment[]
+  giftCertificates GiftCertificate[]
+  products         Product[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([smsOptIn])
+}
+
+// ─── Phase 5A: Customer Tags ───────────────────────────────────
+
+model CustomerTag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String? // hex color for UI display
+  createdAt DateTime @default(now())
+
+  assignments CustomerTagAssignment[]
+}
+
+model CustomerTagAssignment {
+  id         String      @id @default(uuid())
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        CustomerTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedAt DateTime    @default(now())
+
+  @@unique([customerId, tagId])
+  @@index([customerId])
+  @@index([tagId])
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  orderNumber String   @unique
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  locationId  String?  // Optional initially for migration, will be required after data migration
+  location    Location? @relation(fields: [locationId], references: [id])
+
+  status          OrderStatus   @default(new_design)
+  intakeChannel   IntakeChannel @default(walk_in)
+  dueDate         DateTime?
+  itemType        String
+  itemDescription String?
+  width           Decimal?
+  height          Decimal?
+  units           String        @default("in") // "in" | "cm"
+  notesInternal   String?
+  notesCustomer   String?
+
+  subtotalAmount Int
+  discountType   String  @default("none") // "none" | "percent" | "fixed"
+  discountValue  Decimal @default(0)
+  taxAmount      Int
+  totalAmount    Int
+  materialCost   Int      @default(0) // Actual cost of materials used (COGS) in cents
+  currency       String  @default("USD")
+  paidInFull     Boolean @default(true)
+
+  squareInvoiceId     String?
+  squareInvoiceUrl    String?
+  squareInvoiceStatus String?
+
+  /// Link to the new Invoice model (Phase 2A). Null for legacy orders.
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+
+  createdByUserId String
+  createdBy       User     @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  archivedAt      DateTime? // Auto-archived completed orders after 2 days (hidden from main view but visible in completed orders page)
+
+  specs      OrderSpecs?
+  components OrderComponent[] // Phase 2C: Multi-component support
+  scenarios  OrderScenario[] // Phase 3: Design scenarios
+  photos     OrderPhoto[]
+  payments   Payment[]
+
+  /// Existing generic activity log entries
+  activityLogs ActivityLog[] @relation("OrderActivityLog")
+
+  /// New dedicated order timeline entries (status changes, edits, invoice sent, etc.)
+  activity         OrderActivity[]
+  giftCertificates GiftCertificate[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([locationId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([dueDate])
+  @@index([status, locationId])
+  @@index([status, createdAt])
+  @@index([locationId, status, createdAt])
+  @@index([customerId, status])
+}
+
+model OrderSpecs {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  frameCode     String?
+  frameVendor   String?
+  mat1Code      String?
+  mat2Code      String?
+  glassType     String?
+  mountType     String?
+  backingType   String?
+  spacers       Boolean @default(false)
+  specialtyType String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderPhoto {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id      String @id @default(uuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  processor        String        @default("square")
+  squarePaymentId  String?       @unique
+  squareReceiptUrl String?
+  amount           Int
+  status           PaymentStatus @default(paid)
+  paidAt           DateTime
+  rawMetadata      Json          @default("{}")
+  createdAt        DateTime      @default(now())
+}
+
+model Appointment {
+  id              String @id @default(uuid())
+  provider        String @default("calcom")
+  externalEventId String @unique
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  name      String
+  email     String
+  phone     String?
+  startTime DateTime
+  endTime   DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id         String @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+
+  actorUserId String?
+  actor       User?   @relation("ActorActivity", fields: [actorUserId], references: [id])
+
+  orderId String?
+  order   Order?  @relation("OrderActivityLog", fields: [orderId], references: [id])
+
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+}
+
+model GalleryItem {
+  id          String   @id @default(uuid())
+  title       String?
+  description String?
+  category    String   @default("custom_framing") // custom_framing, restoration, memorabilia, etc.
+  imageUrl    String
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OrderActivity {
+  id              String   @id @default(uuid())
+  orderId         String
+  type            String
+  message         String
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User? @relation(fields: [createdByUserId], references: [id])
+
+  @@index([orderId, createdAt])
+}
+
+// ─── Phase 2A: Invoice Model ───────────────────────────────────
+
+model Invoice {
+  id            String   @id @default(uuid())
+  invoiceNumber String   @unique
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+
+  subtotalAmount Int @default(0) // cents
+  discountAmount Int @default(0) // cents
+  taxAmount      Int @default(0) // cents
+  totalAmount    Int @default(0) // cents
+
+  depositPercent Int? // e.g. 50 for 50%
+  depositAmount  Int  @default(0) // cents (auto-calculated or manual)
+  amountPaid     Int  @default(0) // cents (sum of payments)
+  balanceDue     Int  @default(0) // cents (totalAmount - amountPaid)
+
+  currency String @default("USD")
+  status   String @default("draft") // draft, sent, partial, paid, void, cancelled
+
+  squareInvoiceId  String?
+  squareInvoiceUrl String?
+
+  // QuickBooks Online sync
+  qboInvoiceId   String?
+  qboSyncToken   String?
+  qboSyncedAt    DateTime?
+
+  notes String?
+
+  createdByUserId String
+  createdBy       User     @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders   Order[]
+  payments InvoicePayment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model InvoicePayment {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount           Int // cents
+  method           String        @default("square") // square, cash, check, other
+  squarePaymentId  String?       @unique
+  squareReceiptUrl String?
+  status           PaymentStatus @default(paid)
+  paidAt           DateTime
+  note             String?
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Phase 2B: Pricing Engine ───────────────────────────────────
+
+model Vendor {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  phone     String?
+  email     String?
+  website   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  catalogItems     VendorCatalogItem[]
+  inventoryItems   InventoryItem[]
+  purchaseOrders   PurchaseOrder[]
+  giftCertificates GiftCertificate[]
+}
+
+model VendorCatalogItem {
+  id            String   @id @default(uuid())
+  vendorId      String
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  itemNumber    String
+  description   String?
+  category      String // moulding, matboard, glass, mounting, hardware, etc.
+  unitType      String // foot, sheet, sqft, each
+  costPerUnit   Decimal
+  retailPerUnit Decimal?
+  discontinued  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderComponents OrderComponent[]
+  inventoryItems  InventoryItem[]
+
+  @@unique([vendorId, itemNumber])
+}
+
+model PriceCode {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  category     String // moulding, mat, glass, mounting, labor, extra, hardware, fitting
+  formula      String // "per_foot", "per_sqft", "per_sheet", "fixed", "per_inch"
+  baseRate     Decimal
+  minCharge    Decimal  @default(0)
+  wastePercent Decimal  @default(0)
+  multiplier   Decimal  @default(1)
+  notes        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  components OrderComponent[]
+}
+
+// ─── Phase 2C: OrderComponent (Multi-Component Support) ───────────────────────────────────
+
+model OrderComponent {
+  id         String  @id @default(uuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  scenarioId String? // null = active design, or linked to a scenario (Phase 3)
+
+  category     String // frame, mat, fillet, glass, mounting, fabric, extra, hardware, fitting
+  position     Int                @default(0) // for ordering (frame 1, frame 2, mat 1, mat 2, etc.)
+  priceCodeId  String?
+  priceCode    PriceCode?         @relation(fields: [priceCodeId], references: [id])
+  vendorItemId String?
+  vendorItem   VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
+  description  String?
+  quantity     Decimal            @default(1)
+  unitPrice    Int                @default(0) // cents
+  discount     Int                @default(0) // cents
+  lineTotal    Int                @default(0) // cents
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  scenario OrderScenario? @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([scenarioId])
+  @@index([vendorItemId])
+  @@index([priceCodeId])
+}
+
+// ─── Phase 3: OrderScenario (Design Options) ───────────────────────────────────
+
+model OrderScenario {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label     String // "Option A", "Option B", etc.
+  isActive  Boolean  @default(false)
+  subtotal  Int      @default(0) // cents
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  components OrderComponent[]
+
+  @@index([orderId])
+}
+
+// ─── Phase 4A: Inventory Tracking ───────────────────────────────────
+
+model InventoryItem {
+  id                String             @id @default(uuid())
+  vendorItemId      String?
+  vendorItem        VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
+  locationId        String?            // Optional initially for migration
+  location          Location?           @relation(fields: [locationId], references: [id])
+  sku               String             @unique
+  name              String
+  category          String // moulding, matboard, glass, hardware, etc.
+  unitType          String // foot, sheet, each, sqft
+  quantityOnHand    Decimal            @default(0)
+  reorderPoint      Decimal            @default(0)
+  reorderQty        Decimal            @default(0)
+  preferredVendorId String?
+  locationNote      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  lots               InventoryLot[]
+  vendor             Vendor?             @relation(fields: [vendorId], references: [id])
+  vendorId           String?
+  purchaseOrderLines PurchaseOrderLine[]
+
+  @@index([locationId])
+}
+
+model InventoryLot {
+  id              String        @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity        Decimal
+  costPerUnit     Decimal?
+  receivedAt      DateTime      @default(now())
+  purchaseOrderId String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([inventoryItemId])
+}
+
+// ─── Phase 4B: Purchase Orders ───────────────────────────────────
+
+model PurchaseOrder {
+  id              String    @id @default(uuid())
+  poNumber        String    @unique
+  vendorId        String
+  vendor          Vendor    @relation(fields: [vendorId], references: [id])
+  locationId      String?   // null = combined PO for multiple locations
+  location        Location? @relation(fields: [locationId], references: [id])
+  status          String    @default("draft") // draft, sent, partial, received, cancelled
+  totalAmount     Int       @default(0) // cents
+  notes           String?
+  orderedAt       DateTime?
+  receivedAt      DateTime?
+  createdByUserId String
+  createdBy       User      @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lines PurchaseOrderLine[]
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([locationId])
+}
+
+model PurchaseOrderLine {
+  id               String         @id @default(uuid())
+  purchaseOrderId  String
+  purchaseOrder    PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  inventoryItemId  String?
+  inventoryItem    InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  vendorItemNumber String
+  description      String?
+  quantityOrdered  Decimal
+  quantityReceived Decimal        @default(0)
+  unitCost         Decimal
+  lineTotal        Int            @default(0) // cents
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([inventoryItemId])
+}
+
+// ─── Phase 7: Gift Certificates ───────────────────────────────────
+
+model GiftCertificate {
+  id                 String    @id @default(uuid())
+  certificateNumber  String    @unique // Human-readable number (e.g., GC-2026-001)
+  amount             Int // cents
+  balance            Int // cents (remaining balance)
+  issuedToCustomerId String?
+  issuedToCustomer   Customer? @relation(fields: [issuedToCustomerId], references: [id])
+  issuedByUserId     String
+  issuedBy           User      @relation(fields: [issuedByUserId], references: [id])
+  issuedAt           DateTime  @default(now())
+  expiresAt          DateTime?
+  redeemedAt         DateTime?
+  redeemedOnOrderId  String?
+  redeemedOnOrder    Order?    @relation(fields: [redeemedOnOrderId], references: [id])
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  vendor             Vendor?   @relation(fields: [vendorId], references: [id])
+  vendorId           String?
+
+  @@index([certificateNumber])
+  @@index([issuedToCustomerId])
+  @@index([redeemedOnOrderId])
+}
+
+// ─── Phase 7: In-house Messaging ───────────────────────────────────
+
+model StaffMessage {
+  id         String    @id @default(uuid())
+  fromUserId String
+  fromUser   User      @relation("SentMessages", fields: [fromUserId], references: [id])
+  toUserId   String
+  toUser     User      @relation("ReceivedMessages", fields: [toUserId], references: [id])
+  subject    String
+  body       String
+  read       Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([toUserId, read])
+  @@index([fromUserId])
+  @@index([createdAt])
+}
+
+// ─── Phase 7: Art/Retail Products ───────────────────────────────────
+
+model Product {
+  id             String    @id @default(uuid())
+  sku            String    @unique
+  name           String
+  description    String?
+  category       String // readymade_frame, giftware, art_supplies, consignment_art, etc.
+  type           String    @default("retail") // "retail" | "consignment"
+  artistId       String? // For consignment art
+  artist         Customer? @relation(fields: [artistId], references: [id])
+  cost           Int       @default(0) // cents
+  retailPrice    Int       @default(0) // cents
+  quantityOnHand Decimal   @default(0)
+  reorderPoint   Decimal   @default(0)
+  imageUrl       String?
+  barcode        String?
+  notes          String?
+  published      Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([sku])
+  @@index([category])
+  @@index([type])
+  @@index([artistId])
+}
