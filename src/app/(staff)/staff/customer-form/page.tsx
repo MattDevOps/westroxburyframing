@@ -69,7 +69,7 @@ export default function CustomerFormPage() {
                     <h1 className="text-2xl font-bold text-neutral-900">Customer Information</h1>
                 </div>
                 <p className="text-sm text-neutral-600">
-                    Enter customer information. This form is optimized for iPad use in-store.
+                    Enter your information.
                 </p>
             </div>
 
