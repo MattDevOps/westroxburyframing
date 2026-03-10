@@ -1,0 +1,180 @@
+"use client";
+
+import { useState } from "react";
+import { CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
+
+export default function CustomerFormPage() {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [optIn, setOptIn] = useState(false);
+
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError(null);
+        setSubmitting(true);
+        setSuccess(false);
+
+        try {
+            const res = await fetch("/api/public/customer-info", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    phone,
+                    marketing_opt_in: optIn,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Something went wrong. Please try again.");
+                return;
+            }
+
+            setSuccess(true);
+            // Clear form
+            setFirstName("");
+            setLastName("");
+            setEmail("");
+            setPhone("");
+            setOptIn(false);
+        } catch {
+            setError("Unable to save. Please try again or contact support.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    return (
+        <div className="p-6 max-w-2xl mx-auto">
+            <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <User className="w-6 h-6 text-neutral-700" />
+                    <h1 className="text-2xl font-bold text-neutral-900">Customer Information</h1>
+                </div>
+                <p className="text-sm text-neutral-600">
+                    Enter customer information. This form is optimized for iPad use in-store.
+                </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-neutral-200 p-6 space-y-6">
+                {error && (
+                    <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                        <AlertCircle className="w-5 h-5 shrink-0" />
+                        <p className="text-sm">{error}</p>
+                    </div>
+                )}
+
+                {success && (
+                    <div className="flex items-center gap-2 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700">
+                        <CheckCircle className="w-5 h-5 shrink-0" />
+                        <p className="text-sm">Customer information saved successfully!</p>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                            First Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            placeholder="First name"
+                            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                            autoFocus
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                            Last Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            placeholder="Last name"
+                            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="name@email.com"
+                            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="mt-1 text-xs text-neutral-500">
+                            Email or phone required
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                            Phone
+                        </label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="617-555-1234"
+                            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="mt-1 text-xs text-neutral-500">
+                            Email or phone required
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={optIn}
+                            onChange={(e) => setOptIn(e.target.checked)}
+                            className="w-4 h-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-neutral-700">
+                            Add to email list (marketing opt-in)
+                        </span>
+                    </label>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={submitting || !firstName.trim() || !lastName.trim() || (!email.trim() && !phone.trim())}
+                    className="w-full px-6 py-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                    {submitting ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Saving...
+                        </>
+                    ) : (
+                        "Save Customer Information"
+                    )}
+                </button>
+            </form>
+        </div>
+    );
+}

@@ -31,6 +31,7 @@ const STAFF_NAV: Array<{
   { href: "/staff/reports", label: "Reports" },
   { href: "/staff/users", label: "Users" },
   { href: "/staff/settings/twilio", label: "Twilio" },
+  { href: "/staff/customer-form", label: "Customer Form" },
 ];
 
 function NavLink({
