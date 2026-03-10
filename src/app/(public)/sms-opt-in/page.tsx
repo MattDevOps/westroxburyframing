@@ -8,6 +8,7 @@ import Link from "next/link";
 export default function SMSOptInPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -140,11 +141,20 @@ export default function SMSOptInPage() {
               )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  <strong>I agree to receive account updates and notifications</strong> from West Roxbury Framing at the phone number provided. This includes order status updates, pickup reminders, and other account-related notifications. You can opt out at any time by replying STOP to any message. Message frequency varies. Message and data rates may apply.
-                </p>
-                <p className="text-xs text-blue-800 mt-2">
-                  By submitting this form, you also agree to our{" "}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={consentChecked}
+                    onChange={(e) => setConsentChecked(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-blue-400 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="text-sm text-blue-900">
+                    <strong>I agree to receive account updates and notifications</strong> from West Roxbury Framing at the phone number provided. This includes order status updates, pickup reminders, and other account-related notifications. You can opt out at any time by replying STOP to any message. Message frequency varies. Message and data rates may apply.
+                  </span>
+                </label>
+                <p className="text-xs text-blue-800 mt-2 ml-7">
+                  By checking this box, you also agree to our{" "}
                   <Link href="/terms" className="underline hover:text-blue-900">
                     Terms & Conditions
                   </Link>
@@ -158,7 +168,7 @@ export default function SMSOptInPage() {
 
               <button
                 type="submit"
-                disabled={loading || (!phone.trim() && !email.trim())}
+                disabled={loading || !phone.trim() || !consentChecked}
                 className="w-full bg-black text-white rounded-lg px-6 py-3 text-base font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? "Processing..." : "Opt In to Text Messages"}
