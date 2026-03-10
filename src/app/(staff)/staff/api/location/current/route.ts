@@ -50,6 +50,7 @@ export async function GET(req: Request) {
             currentLocation,
             availableLocations,
             isAdmin: user.role === "admin",
+            userRole: user.role,
           });
           response.cookies.set("wrx_location", currentLocation.id, {
             httpOnly: true,
@@ -73,6 +74,7 @@ export async function GET(req: Request) {
       currentLocation,
       availableLocations,
       isAdmin: user.role === "admin",
+      userRole: user.role,
     });
   } catch (error: any) {
     console.error("Error fetching current location:", error);

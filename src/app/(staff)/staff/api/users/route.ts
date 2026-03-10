@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     const name = (body.name ?? "").toString().trim();
     const email = (body.email ?? "").toString().trim().toLowerCase();
     const password = (body.password ?? "").toString();
-    const role = body.role === "admin" ? "admin" : "staff";
+    const role = body.role === "admin" ? "admin" : body.role === "receptionist" ? "receptionist" : "staff";
     const locationId = body.locationId || null;
 
     if (!name || !email || password.length < 6) {
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
         );
     }
 
-    // Staff users must have a location assigned
+    // Staff users must have a location assigned (receptionist doesn't need location)
     if (role === "staff" && !locationId) {
         return NextResponse.json(
             { error: "Staff users must be assigned to a location." },
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
             email,
             passwordHash: hashPassword(password),
             role,
-            locationId: role === "admin" ? null : locationId, // Admin = null (all locations), Staff = assigned location
+            locationId: role === "admin" || role === "receptionist" ? null : locationId, // Admin/Receptionist = null, Staff = assigned location
         },
     });
 

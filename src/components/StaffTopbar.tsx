@@ -98,6 +98,7 @@ export default function StaffTopbar() {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const router = useRouter();
 
@@ -114,7 +115,7 @@ export default function StaffTopbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router]);
 
-  // Fetch location context
+  // Fetch location context and user role
   useEffect(() => {
     async function loadLocation() {
       try {
@@ -124,6 +125,7 @@ export default function StaffTopbar() {
           setCurrentLocation(data.currentLocation);
           setAvailableLocations(data.availableLocations || []);
           setIsAdmin(data.isAdmin || false);
+          setUserRole(data.userRole || null);
         }
       } catch (e) {
         // Silently fail
@@ -172,7 +174,10 @@ export default function StaffTopbar() {
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex gap-1 flex-wrap">
-              {STAFF_NAV.map((link) => (
+              {(userRole === "receptionist" 
+                ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+                : STAFF_NAV
+              ).map((link) => (
                 <NavLink
                   key={link.href}
                   href={link.href}
@@ -293,7 +298,10 @@ export default function StaffTopbar() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3">
           <nav className="flex flex-col gap-1">
-            {STAFF_NAV.map((link) => (
+            {(userRole === "receptionist"
+              ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+              : STAFF_NAV
+            ).map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}

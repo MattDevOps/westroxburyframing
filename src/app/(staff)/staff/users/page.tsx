@@ -242,13 +242,14 @@ export default function StaffUsersPage() {
                                 value={role}
                                 onChange={(e) => {
                                     setRole(e.target.value);
-                                    if (e.target.value === "admin") {
-                                        setLocationId(""); // Admin doesn't need location
+                                    if (e.target.value === "admin" || e.target.value === "receptionist") {
+                                        setLocationId(""); // Admin and receptionist don't need location
                                     }
                                 }}
                             >
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
+                                <option value="receptionist">Receptionist (Customer Form Only)</option>
                             </select>
                         </div>
                         {role === "staff" && (
