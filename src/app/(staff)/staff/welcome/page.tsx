@@ -17,7 +17,7 @@ export default function ReceptionistWelcomePage() {
                         <h2 className="text-2xl font-semibold text-neutral-900">Customer Form</h2>
                     </div>
                     <p className="text-neutral-600 mb-6">
-                        Help customers enter their information using the form below.
+                        Input your information below to get started.
                     </p>
                     <Link
                         href="/staff/customer-form"
