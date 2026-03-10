@@ -115,7 +115,7 @@ export default function CustomerFormPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Email
+                            Email <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="email"
@@ -123,15 +123,13 @@ export default function CustomerFormPage() {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="name@email.com"
                             className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
                         />
-                        <p className="mt-1 text-xs text-neutral-500">
-                            Email or phone required
-                        </p>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Phone
+                            Phone <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="tel"
@@ -139,10 +137,8 @@ export default function CustomerFormPage() {
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="617-555-1234"
                             className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
                         />
-                        <p className="mt-1 text-xs text-neutral-500">
-                            Email or phone required
-                        </p>
                     </div>
                 </div>
 
@@ -162,7 +158,7 @@ export default function CustomerFormPage() {
 
                 <button
                     type="submit"
-                    disabled={submitting || !firstName.trim() || !lastName.trim() || (!email.trim() && !phone.trim())}
+                    disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()}
                     className="w-full px-6 py-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                     {submitting ? (
