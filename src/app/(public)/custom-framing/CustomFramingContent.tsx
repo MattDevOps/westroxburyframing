@@ -18,6 +18,7 @@ const ITEM_TYPES = [
 ];
 
 export default function CustomFramingContent() {
+    const [simpleMode, setSimpleMode] = useState(false);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -31,7 +32,7 @@ export default function CustomFramingContent() {
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<{ orderNumber: string } | null>(null);
+    const [success, setSuccess] = useState<{ orderNumber?: string; message: string } | null>(null);
 
     function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
@@ -67,30 +68,55 @@ export default function CustomFramingContent() {
         setSubmitting(true);
 
         try {
-            const res = await fetch("/api/public/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName,
-                    email,
-                    phone,
-                    item_type: itemType,
-                    description,
-                    notes: "",
-                    marketing_opt_in: optIn,
-                    photos,
-                }),
-            });
+            if (simpleMode) {
+                // Simple mode: just create/update customer
+                const res = await fetch("/api/public/customer-info", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        phone,
+                        marketing_opt_in: optIn,
+                    }),
+                });
 
-            const data = await res.json();
+                const data = await res.json();
 
-            if (!res.ok) {
-                setError(data.error || "Something went wrong. Please try again.");
-                return;
+                if (!res.ok) {
+                    setError(data.error || "Something went wrong. Please try again.");
+                    return;
+                }
+
+                setSuccess({ message: "Thank you! Your information has been saved." });
+            } else {
+                // Full mode: create order with all details
+                const res = await fetch("/api/public/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        phone,
+                        item_type: itemType,
+                        description,
+                        notes: "",
+                        marketing_opt_in: optIn,
+                        photos,
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    setError(data.error || "Something went wrong. Please try again.");
+                    return;
+                }
+
+                setSuccess({ orderNumber: data.order_number, message: "" });
             }
-
-            setSuccess({ orderNumber: data.order_number });
         } catch {
             setError("Unable to submit. Please try again or call us at 617-327-3890.");
         } finally {
@@ -112,14 +138,22 @@ export default function CustomFramingContent() {
                             <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
                                 Request <span className="text-gold">Received!</span>
                             </h1>
-                            <p className="text-muted-foreground max-w-2xl mx-auto mb-2">
-                                Thank you for your custom framing request. Your order reference is:
-                            </p>
-                            <p className="text-gold text-2xl font-bold mb-6">{success.orderNumber}</p>
-                            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-                                We&apos;ll review your request and reach out to discuss pricing and options.
-                                Most orders are reviewed within one business day.
-                            </p>
+                            {success.orderNumber ? (
+                                <>
+                                    <p className="text-muted-foreground max-w-2xl mx-auto mb-2">
+                                        Thank you for your custom framing request. Your order reference is:
+                                    </p>
+                                    <p className="text-gold text-2xl font-bold mb-6">{success.orderNumber}</p>
+                                    <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+                                        We&apos;ll review your request and reach out to discuss pricing and options.
+                                        Most orders are reviewed within one business day.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+                                    {success.message}
+                                </p>
+                            )}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link
                                     href="/"
@@ -193,6 +227,47 @@ export default function CustomFramingContent() {
                         </div>
                     </motion.div>
 
+                    {/* Mode Toggle */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mb-6"
+                    >
+                        <div className="bg-card rounded-sm border border-border p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-serif text-lg text-foreground mb-1">Form Mode</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        {simpleMode 
+                                            ? "Simple mode: Just enter your contact information"
+                                            : "Full mode: Complete framing request with details"}
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={simpleMode}
+                                        onChange={(e) => {
+                                            setSimpleMode(e.target.checked);
+                                            // Clear form when switching modes
+                                            if (e.target.checked) {
+                                                setItemType("");
+                                                setDescription("");
+                                                setPhotos([]);
+                                            }
+                                        }}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-muted-foreground/30 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+                                    <span className="ml-3 text-sm font-medium text-foreground">
+                                        {simpleMode ? "Simple" : "Full"}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </motion.div>
+
                     <motion.form
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -249,83 +324,87 @@ export default function CustomFramingContent() {
                             </div>
                         </div>
 
-                        {/* Item Details */}
-                        <div>
-                            <h3 className="font-serif text-xl text-foreground mb-4">What Are You Framing?</h3>
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Item Type</label>
-                                    <select
-                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
-                                        value={itemType}
-                                        onChange={(e) => setItemType(e.target.value)}
-                                    >
-                                        <option value="">Select what you&apos;re framing...</option>
-                                        {ITEM_TYPES.map((t) => (
-                                            <option key={t.value} value={t.value}>
-                                                {t.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                        {/* Item Details - Only show in full mode */}
+                        {!simpleMode && (
+                            <>
+                                <div>
+                                    <h3 className="font-serif text-xl text-foreground mb-4">What Are You Framing?</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-sm font-medium text-foreground/70">Item Type</label>
+                                            <select
+                                                className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
+                                                value={itemType}
+                                                onChange={(e) => setItemType(e.target.value)}
+                                            >
+                                                <option value="">Select what you&apos;re framing...</option>
+                                                {ITEM_TYPES.map((t) => (
+                                                    <option key={t.value} value={t.value}>
+                                                        {t.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-medium text-foreground/70">Description</label>
-                                    <textarea
-                                        className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors min-h-[100px] resize-y"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="Tell us about your piece — size, condition, any specific framing preferences, etc."
-                                    />
-                                </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-sm font-medium text-foreground/70">Description</label>
+                                            <textarea
+                                                className="rounded-sm border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-gold focus:outline-none transition-colors min-h-[100px] resize-y"
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                placeholder="Tell us about your piece — size, condition, any specific framing preferences, etc."
+                                            />
+                                        </div>
 
-                            </div>
-                        </div>
-
-                        {/* Photo Upload */}
-                        <div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <ImageIcon size={20} className="text-gold" />
-                                <h3 className="font-serif text-xl text-foreground">Upload Photos</h3>
-                            </div>
-                            <p className="text-muted-foreground text-sm mb-4">
-                                Upload up to 6 photos of your artwork or item. This helps us give you a more accurate quote. (Max 5MB per image)
-                            </p>
-
-                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
-                                {photos.map((dataUrl, i) => (
-                                    <div key={i} className="relative aspect-square rounded-sm overflow-hidden border border-border group">
-                                        <img
-                                            src={dataUrl}
-                                            alt={`Upload ${i + 1}`}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => removePhoto(i)}
-                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={12} />
-                                        </button>
                                     </div>
-                                ))}
+                                </div>
 
-                                {photos.length < 6 && (
-                                    <label className="aspect-square rounded-sm border-2 border-dashed border-border hover:border-gold/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-gold">
-                                        <Upload size={20} />
-                                        <span className="text-[10px] font-medium uppercase tracking-wide">Add</span>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            className="hidden"
-                                            onChange={handlePhotoSelect}
-                                        />
-                                    </label>
-                                )}
-                            </div>
-                        </div>
+                                {/* Photo Upload */}
+                                <div>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <ImageIcon size={20} className="text-gold" />
+                                        <h3 className="font-serif text-xl text-foreground">Upload Photos</h3>
+                                    </div>
+                                    <p className="text-muted-foreground text-sm mb-4">
+                                        Upload up to 6 photos of your artwork or item. This helps us give you a more accurate quote. (Max 5MB per image)
+                                    </p>
+
+                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
+                                        {photos.map((dataUrl, i) => (
+                                            <div key={i} className="relative aspect-square rounded-sm overflow-hidden border border-border group">
+                                                <img
+                                                    src={dataUrl}
+                                                    alt={`Upload ${i + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePhoto(i)}
+                                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                        {photos.length < 6 && (
+                                            <label className="aspect-square rounded-sm border-2 border-dashed border-border hover:border-gold/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-gold">
+                                                <Upload size={20} />
+                                                <span className="text-[10px] font-medium uppercase tracking-wide">Add</span>
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    multiple
+                                                    className="hidden"
+                                                    onChange={handlePhotoSelect}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
                         {/* Opt-in */}
                         <label className="flex items-start gap-3 cursor-pointer">
@@ -348,14 +427,14 @@ export default function CustomFramingContent() {
 
                         <button
                             type="submit"
-                            disabled={submitting}
+                            disabled={submitting || (!simpleMode && !itemType)}
                             className="w-full px-8 py-4 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {submitting ? (
                                 "Submitting..."
                             ) : (
                                 <>
-                                    Submit Framing Request
+                                    {simpleMode ? "Save Information" : "Submit Framing Request"}
                                     <ArrowRight size={16} />
                                 </>
                             )}
