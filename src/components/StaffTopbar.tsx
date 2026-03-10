@@ -131,9 +131,13 @@ export default function StaffTopbar() {
           if (process.env.NODE_ENV === "development") {
             console.log("User role:", role);
           }
+        } else if (res.status === 401) {
+          // Not authenticated - middleware will handle redirect
+          // Don't set any state, just let the page handle it
         }
       } catch (e) {
-        // Silently fail
+        // Silently fail - don't break the page if API call fails
+        console.error("Failed to load location/role:", e);
       }
     }
 
@@ -179,23 +183,44 @@ export default function StaffTopbar() {
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex gap-1 flex-wrap">
-              {(userRole === "receptionist" 
-                ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
-                : STAFF_NAV
-              ).map((link) => (
-                <NavLink
-                  key={link.href}
-                  href={link.href}
-                  highlight={link.highlight}
-                >
-                  {link.label}
-                  {link.shortcut && (
-                    <span className="ml-2 text-xs text-neutral-400">
-                      {link.shortcut}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
+              {(() => {
+                // Wait for userRole to be loaded before filtering
+                if (userRole === null) {
+                  // Show all nav items while loading (will be filtered once role loads)
+                  return STAFF_NAV.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      highlight={link.highlight}
+                    >
+                      {link.label}
+                      {link.shortcut && (
+                        <span className="ml-2 text-xs text-neutral-400">
+                          {link.shortcut}
+                        </span>
+                      )}
+                    </NavLink>
+                  ));
+                }
+                // Filter based on role once loaded
+                const navItems = userRole === "receptionist" 
+                  ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+                  : STAFF_NAV;
+                return navItems.map((link) => (
+                  <NavLink
+                    key={link.href}
+                    href={link.href}
+                    highlight={link.highlight}
+                  >
+                    {link.label}
+                    {link.shortcut && (
+                      <span className="ml-2 text-xs text-neutral-400">
+                        {link.shortcut}
+                      </span>
+                    )}
+                  </NavLink>
+                ));
+              })()}
             </nav>
           </div>
 
@@ -303,19 +328,34 @@ export default function StaffTopbar() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3">
           <nav className="flex flex-col gap-1">
-            {(userRole === "receptionist"
-              ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
-              : STAFF_NAV
-            ).map((link) => (
-              <NavLink
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                highlight={link.highlight}
-              >
-                {link.label}
-              </NavLink>
-            ))}
+            {(() => {
+              // Wait for userRole to be loaded before filtering
+              if (userRole === null) {
+                return STAFF_NAV.map((link) => (
+                  <NavLink
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    highlight={link.highlight}
+                  >
+                    {link.label}
+                  </NavLink>
+                ));
+              }
+              const navItems = userRole === "receptionist"
+                ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+                : STAFF_NAV;
+              return navItems.map((link) => (
+                <NavLink
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  highlight={link.highlight}
+                >
+                  {link.label}
+                </NavLink>
+              ));
+            })()}
           </nav>
         </div>
       )}

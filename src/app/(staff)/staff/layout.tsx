@@ -10,20 +10,22 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Check if user is receptionist and restrict access
+    // Client-side backup check for receptionist access (server-side handles primary redirect)
     async function checkAccess() {
       try {
         const res = await fetch("/staff/api/location/current");
         if (res.ok) {
           const data = await res.json();
-          // Receptionist can only access customer-form page
-          if (data.userRole === "receptionist" && pathname !== "/staff/customer-form" && pathname !== "/staff/login") {
-            router.push("/staff/customer-form");
+          // Receptionist can only access customer-form page (backup check)
+          if (data.userRole === "receptionist" && pathname && pathname !== "/staff/customer-form" && pathname !== "/staff/login") {
+            router.replace("/staff/customer-form");
             return;
           }
+        } else if (res.status === 401) {
+          // Not authenticated, redirect will happen via middleware
         }
       } catch (error) {
-        // Silently fail
+        // Silently fail - server-side redirect should have handled it
       } finally {
         setChecking(false);
       }
