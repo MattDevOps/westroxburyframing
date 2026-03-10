@@ -125,7 +125,12 @@ export default function StaffTopbar() {
           setCurrentLocation(data.currentLocation);
           setAvailableLocations(data.availableLocations || []);
           setIsAdmin(data.isAdmin || false);
-          setUserRole(data.userRole || null);
+          const role = data.userRole || null;
+          setUserRole(role);
+          // Debug: log the role to help troubleshoot
+          if (process.env.NODE_ENV === "development") {
+            console.log("User role:", role);
+          }
         }
       } catch (e) {
         // Silently fail

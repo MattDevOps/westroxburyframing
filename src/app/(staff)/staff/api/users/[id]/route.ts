@@ -24,9 +24,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (body.name) data.name = body.name.toString().trim();
     if (body.email) data.email = body.email.toString().trim().toLowerCase();
     if (body.role) {
-        const newRole = body.role === "admin" ? "admin" : "staff";
+        const newRole = body.role === "admin" ? "admin" : body.role === "receptionist" ? "receptionist" : "staff";
         data.role = newRole;
-        // If changing to staff, require locationId; if changing to admin, set locationId to null
+        // If changing to staff, require locationId; if changing to admin/receptionist, set locationId to null
         if (newRole === "staff" && body.locationId) {
             // Verify location exists
             const location = await prisma.location.findUnique({ where: { id: body.locationId } });
@@ -34,8 +34,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
                 return NextResponse.json({ error: "Location not found" }, { status: 400 });
             }
             data.locationId = body.locationId;
-        } else if (newRole === "admin") {
-            data.locationId = null; // Admin can access all locations
+        } else if (newRole === "admin" || newRole === "receptionist") {
+            data.locationId = null; // Admin and receptionist don't need location
         }
     }
     if (body.locationId !== undefined && body.role === "staff") {
