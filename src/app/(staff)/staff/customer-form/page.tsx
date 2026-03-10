@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
 
 export default function CustomerFormPage() {
+    const router = useRouter();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -47,6 +49,11 @@ export default function CustomerFormPage() {
             setEmail("");
             setPhone("");
             setOptIn(false);
+            
+            // Redirect to welcome page after 2 seconds
+            setTimeout(() => {
+                router.push("/staff/welcome");
+            }, 2000);
         } catch {
             setError("Unable to save. Please try again or contact support.");
         } finally {

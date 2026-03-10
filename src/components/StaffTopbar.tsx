@@ -204,7 +204,7 @@ export default function StaffTopbar() {
                 }
                 // Filter based on role once loaded
                 const navItems = userRole === "receptionist" 
-                  ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+                  ? [{ href: "/staff/welcome", label: "Welcome" }, { href: "/staff/customer-form", label: "Customer Form" }]
                   : STAFF_NAV;
                 return navItems.map((link) => (
                   <NavLink
@@ -343,7 +343,7 @@ export default function StaffTopbar() {
                 ));
               }
               const navItems = userRole === "receptionist"
-                ? STAFF_NAV.filter(link => link.href === "/staff/customer-form")
+                ? [{ href: "/staff/welcome", label: "Welcome" }, { href: "/staff/customer-form", label: "Customer Form" }]
                 : STAFF_NAV;
               return navItems.map((link) => (
                 <NavLink

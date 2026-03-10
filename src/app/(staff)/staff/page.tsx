@@ -16,9 +16,9 @@ export default async function StaffRoot() {
         select: { role: true },
       });
       
-      // Receptionists should go directly to customer form
+      // Receptionists should go to welcome page
       if (user?.role === "receptionist") {
-        redirect("/staff/customer-form");
+        redirect("/staff/welcome");
       }
     }
   } catch (error) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface OverdueOrder {
@@ -111,8 +112,28 @@ const ACTIVITY_ICONS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if user is receptionist and redirect
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const res = await fetch("/staff/api/location/current");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.userRole === "receptionist") {
+            router.replace("/staff/welcome");
+            return;
+          }
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    }
+    checkRole();
+  }, [router]);
 
   const load = useCallback(async () => {
     const res = await fetch("/staff/api/dashboard");
