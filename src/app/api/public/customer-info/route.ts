@@ -43,11 +43,30 @@ export async function POST(request: Request) {
             );
         }
 
-        // Create or update customer
+        // Check for existing customer by phone or email
+        const existingCustomer = await prisma.customer.findFirst({
+            where: {
+                OR: [
+                    ...(phone ? [{ phone }] : []),
+                    ...(email ? [{ email }] : []),
+                ],
+            },
+        });
+
+        if (existingCustomer) {
+            return NextResponse.json(
+                { 
+                    error: "duplicate",
+                    message: "You are already in our system.",
+                },
+                { status: 409 }, // 409 Conflict
+            );
+        }
+
+        // Create new customer
         const customerPhone = phone || `web-${Date.now()}`;
-        const customer = await prisma.customer.upsert({
-            where: { phone: customerPhone },
-            create: {
+        const customer = await prisma.customer.create({
+            data: {
                 firstName,
                 lastName,
                 phone: customerPhone,
@@ -55,13 +74,6 @@ export async function POST(request: Request) {
                 preferredContact: email ? "email" : "call",
                 marketingOptIn: marketing,
                 marketingOptInAt: marketing ? new Date() : null,
-            },
-            update: {
-                firstName,
-                lastName,
-                email: email || undefined,
-                marketingOptIn: marketing,
-                marketingOptInAt: marketing ? new Date() : undefined,
             },
         });
 

@@ -38,6 +38,21 @@ export default function CustomerFormPage() {
             const data = await res.json();
 
             if (!res.ok) {
+                // Handle duplicate customer case
+                if (data.error === "duplicate" || res.status === 409) {
+                    setError("You are already in our system.");
+                    // Clear form
+                    setFirstName("");
+                    setLastName("");
+                    setEmail("");
+                    setPhone("");
+                    setOptIn(false);
+                    // Redirect to welcome page after 2 seconds
+                    setTimeout(() => {
+                        router.push("/staff/welcome");
+                    }, 2000);
+                    return;
+                }
                 setError(data.error || "Something went wrong. Please try again.");
                 return;
             }
