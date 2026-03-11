@@ -105,6 +105,13 @@ export default function PoliciesPage() {
           </div>
 
           <div>
+            <h2 className="font-serif text-2xl text-foreground mb-4">Mobile Data</h2>
+            <p>
+              We do not sell or share mobile or personal data with third parties, affiliates, or partners for marketing or promotional purposes. We only share data with third parties when it is strictly necessary to deliver our service and only under binding agreements that ensure confidentiality. Under no circumstances will mobile data be shared or sold for advertising or promotional use.
+            </p>
+          </div>
+
+          <div>
             <h2 className="font-serif text-2xl text-foreground mb-4">Third-Party Services</h2>
             <p className="mb-3">We use the following third-party services:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">

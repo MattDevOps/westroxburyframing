@@ -149,16 +149,16 @@ export default function CustomerFormPage() {
                     </div>
                 </div>
 
-                <div>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={optIn}
                             onChange={(e) => setOptIn(e.target.checked)}
-                            className="w-4 h-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-blue-400 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-sm text-neutral-700">
-                            Add to email list (marketing opt-in)
+                        <span className="text-sm text-blue-900">
+                            <strong>I agree to receive account updates and notifications</strong> from West Roxbury Framing at the phone number provided. This includes order status updates, pickup reminders, and other account-related notifications. You can opt out at any time by replying STOP to any message. Reply HELP for assistance. Message frequency varies. Message and data rates may apply.
                         </span>
                     </label>
                 </div>
