@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Menu, X, User } from "lucide-react";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -21,15 +21,13 @@ const navLinks = [
 export default function HeaderPublic() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/customer/me")
-      .then((r) => {
-        if (r.ok) setLoggedIn(true);
-      })
-      .catch(() => {});
-  }, []);
+  // TODO: re-enable customer sign-in when needed
+  // const [loggedIn, setLoggedIn] = useState(false);
+  // useEffect(() => {
+  //   fetch("/api/customer/me")
+  //     .then((r) => { if (r.ok) setLoggedIn(true); })
+  //     .catch(() => {});
+  // }, []);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
@@ -65,13 +63,7 @@ export default function HeaderPublic() {
           >
             Book
           </Link>
-          <Link
-            href={loggedIn ? "/account" : "/login"}
-            className="flex items-center gap-1.5 font-nav text-[12px] font-semibold tracking-[0.14em] uppercase text-foreground/70 hover:text-gold transition-colors"
-          >
-            <User size={16} />
-            {loggedIn ? "My Account" : "Sign In"}
-          </Link>
+          {/* TODO: re-enable customer sign-in when needed */}
         </div>
 
         <button
@@ -103,14 +95,7 @@ export default function HeaderPublic() {
                   {link.name}
                 </Link>
               ))}
-              <Link
-                href={loggedIn ? "/account" : "/login"}
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-1.5 font-nav text-[12px] font-semibold tracking-[0.14em] uppercase text-foreground/70 hover:text-gold transition-colors"
-              >
-                <User size={16} />
-                {loggedIn ? "My Account" : "Sign In"}
-              </Link>
+              {/* TODO: re-enable customer sign-in when needed */}
               <Link
                 href="/book"
                 onClick={() => setIsOpen(false)}
