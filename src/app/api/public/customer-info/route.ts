@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const limiter = rateLimit({ limit: 20, windowSeconds: 600 }); // 20 per 10 min
 
@@ -76,6 +77,14 @@ export async function POST(request: Request) {
                 marketingOptInAt: marketing ? new Date() : null,
             },
         });
+
+        // Send welcome email (fire-and-forget, independent of marketing opt-in)
+        if (email) {
+            sendWelcomeEmail({
+                to: email,
+                customerName: firstName,
+            }).catch((err) => console.error("Failed to send welcome email:", err));
+        }
 
         return NextResponse.json({
             success: true,
