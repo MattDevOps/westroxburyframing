@@ -749,6 +749,101 @@ West Roxbury Framing
   return result;
 }
 
+/* ─── Email: Welcome (to new customer) ───────────────────────────── */
+
+export async function sendWelcomeEmail(params: {
+  to: string;
+  customerName: string;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = "Welcome to West Roxbury Framing!";
+
+  const text = `Hi ${params.customerName},
+
+Welcome to West Roxbury Framing! We're thrilled to have you as a customer.
+
+For over 30 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.
+
+Here's what you can expect from us:
+
+- Expert guidance on framing options, matting, and glass
+- High-quality materials and meticulous attention to detail
+- Updates on your order every step of the way
+- Free parking right in front of the shop
+
+Have something you'd like framed? You can request a quote online anytime:
+${baseUrl}/custom-framing
+
+Or stop by the shop — we'd love to see you!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+
+Hours:
+Mon-Fri: 10am - 6pm
+Saturday: 10am - 4pm
+Sunday: Closed
+
+Thanks again for choosing us. We look forward to working with you!
+
+- Jake & the West Roxbury Framing team`;
+
+  const html = emailLayout({
+    preheader: `Welcome to West Roxbury Framing, ${params.customerName}! We're excited to work with you.`,
+    heading: "Welcome to West Roxbury Framing!",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>We're thrilled to have you as a customer!</p>
+      <p>For over 30 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.</p>
+
+      <h3 style="margin:24px 0 12px;font-size:16px;font-weight:600;color:#1a1a1a">Here's what you can expect from us:</h3>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px">
+        <tr>
+          <td style="padding:8px 12px;font-size:14px;color:#404040;line-height:1.6;vertical-align:top;width:24px">&#10003;</td>
+          <td style="padding:8px 0;font-size:14px;color:#404040;line-height:1.6">Expert guidance on framing options, matting, and glass</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:14px;color:#404040;line-height:1.6;vertical-align:top">&#10003;</td>
+          <td style="padding:8px 0;font-size:14px;color:#404040;line-height:1.6">High-quality materials and meticulous attention to detail</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:14px;color:#404040;line-height:1.6;vertical-align:top">&#10003;</td>
+          <td style="padding:8px 0;font-size:14px;color:#404040;line-height:1.6">Updates on your order every step of the way</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:14px;color:#404040;line-height:1.6;vertical-align:top">&#10003;</td>
+          <td style="padding:8px 0;font-size:14px;color:#404040;line-height:1.6">Free parking right in front of the shop</td>
+        </tr>
+      </table>
+
+      <p>Have something you'd like framed? Request a quote online anytime — or stop by the shop, we'd love to see you!</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;background:#fafaf9;border-radius:6px;width:100%">
+        <tr><td style="padding:16px 20px;font-size:14px;color:#404040;line-height:1.6">
+          <strong style="color:#1a1a1a">Visit Us</strong><br>
+          1741 Centre Street, West Roxbury, MA 02132<br><br>
+          <strong>Hours:</strong><br>
+          Mon–Fri: 10am – 6pm<br>
+          Saturday: 10am – 4pm<br>
+          Sunday: Closed
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">Thanks again for choosing us. We look forward to working with you!</p>
+      <p style="font-size:14px;color:#404040;font-weight:600">— Jake & the West Roxbury Framing team</p>
+    `,
+    cta: { label: "Get a Free Quote", url: `${baseUrl}/custom-framing` },
+    footer: "You're receiving this email because you recently visited West Roxbury Framing.",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
 /* ─── Email: New Web Lead (to staff) ─────────────────────────────── */
 
 export async function sendNewWebLeadNotification(params: {

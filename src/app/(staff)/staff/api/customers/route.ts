@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
+import { sendWelcomeEmail } from "@/lib/email";
 
 /**
  * GET /staff/api/customers?q=
@@ -255,6 +256,14 @@ export async function POST(req: Request) {
     },
   });
 
+
+  // Send welcome email to new customers (fire-and-forget)
+  if (email) {
+    sendWelcomeEmail({
+      to: email,
+      customerName: firstName,
+    }).catch((err) => console.error("Failed to send welcome email:", err));
+  }
 
   return NextResponse.json({ customer: { id: customer.id } });
 }
