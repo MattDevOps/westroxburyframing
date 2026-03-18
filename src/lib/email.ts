@@ -762,7 +762,7 @@ export async function sendWelcomeEmail(params: {
 
 Welcome to West Roxbury Framing! We're thrilled to have you as a customer.
 
-For over 30 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.
+For over 40 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.
 
 Here's what you can expect from us:
 
@@ -771,7 +771,7 @@ Here's what you can expect from us:
 - Updates on your order every step of the way
 - Free parking right in front of the shop
 
-Have something you'd like framed? You can request a quote online anytime:
+Have something you'd like framed? Submit an order or book an appointment online anytime:
 ${baseUrl}/custom-framing
 
 Or stop by the shop — we'd love to see you!
@@ -795,7 +795,7 @@ Thanks again for choosing us. We look forward to working with you!
     body: `
       <p>Hi ${params.customerName},</p>
       <p>We're thrilled to have you as a customer!</p>
-      <p>For over 30 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.</p>
+      <p>For over 40 years, we've been helping people in the Boston area preserve and display what matters most to them. Whether it's a family photo, a jersey, a diploma, or a piece of art — we treat every project with the same care and craftsmanship.</p>
 
       <h3 style="margin:24px 0 12px;font-size:16px;font-weight:600;color:#1a1a1a">Here's what you can expect from us:</h3>
       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px">
@@ -817,7 +817,7 @@ Thanks again for choosing us. We look forward to working with you!
         </tr>
       </table>
 
-      <p>Have something you'd like framed? Request a quote online anytime — or stop by the shop, we'd love to see you!</p>
+      <p>Have something you'd like framed? Submit an order or book an appointment online — or stop by the shop, we'd love to see you!</p>
 
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;background:#fafaf9;border-radius:6px;width:100%">
         <tr><td style="padding:16px 20px;font-size:14px;color:#404040;line-height:1.6">
@@ -833,7 +833,7 @@ Thanks again for choosing us. We look forward to working with you!
       <p style="font-size:14px;color:#737373">Thanks again for choosing us. We look forward to working with you!</p>
       <p style="font-size:14px;color:#404040;font-weight:600">— Jake & the West Roxbury Framing team</p>
     `,
-    cta: { label: "Get a Free Quote", url: `${baseUrl}/custom-framing` },
+    cta: { label: "Start an Order or Book an Appointment", url: `${baseUrl}/custom-framing` },
     footer: "You're receiving this email because you recently visited West Roxbury Framing.",
   });
 
