@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
 
 export default function CustomerFormPage() {
-    const router = useRouter();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -41,15 +39,14 @@ export default function CustomerFormPage() {
                 // Handle duplicate customer case
                 if (data.error === "duplicate" || res.status === 409) {
                     setError("You are already in our system.");
-                    // Clear form
+                    // Clear form and reset after 2 seconds for next customer
                     setFirstName("");
                     setLastName("");
                     setEmail("");
                     setPhone("");
                     setOptIn(false);
-                    // Redirect to welcome page after 2 seconds
                     setTimeout(() => {
-                        router.push("/staff/welcome");
+                        setError(null);
                     }, 2000);
                     return;
                 }
@@ -58,16 +55,14 @@ export default function CustomerFormPage() {
             }
 
             setSuccess(true);
-            // Clear form
+            // Clear form and reset after 2 seconds for next customer
             setFirstName("");
             setLastName("");
             setEmail("");
             setPhone("");
             setOptIn(false);
-            
-            // Redirect to welcome page after 2 seconds
             setTimeout(() => {
-                router.push("/staff/welcome");
+                setSuccess(false);
             }, 2000);
         } catch {
             setError("Unable to save. Please try again or contact support.");
