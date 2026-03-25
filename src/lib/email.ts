@@ -154,6 +154,8 @@ Mon–Fri: 10am – 6pm
 Saturday: 10am – 4pm
 Sunday: Closed
 
+Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.
+
 Free parking is available directly in front of the shop on Centre Street.
 
 Thank you for choosing West Roxbury Framing!`;
@@ -172,7 +174,8 @@ Thank you for choosing West Roxbury Framing!`;
           <strong>Hours:</strong><br>
           Mon–Fri: 10am – 6pm<br>
           Saturday: 10am – 4pm<br>
-          Sunday: Closed<br><br>
+          Sunday: Closed<br>
+          <span style="font-size:12px;color:#888">Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.</span><br><br>
           🅿️ Free parking available in front of the shop
         </td></tr>
       </table>
@@ -784,6 +787,7 @@ Hours:
 Mon-Fri: 10am - 6pm
 Saturday: 10am - 4pm
 Sunday: Closed
+Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.
 
 Thanks again for choosing us. We look forward to working with you!
 
@@ -826,7 +830,8 @@ Thanks again for choosing us. We look forward to working with you!
           <strong>Hours:</strong><br>
           Mon–Fri: 10am – 6pm<br>
           Saturday: 10am – 4pm<br>
-          Sunday: Closed
+          Sunday: Closed<br>
+          <span style="font-size:12px;color:#888">Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.</span>
         </td></tr>
       </table>
 

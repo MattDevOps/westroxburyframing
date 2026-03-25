@@ -63,6 +63,7 @@ export default function ContactContent() {
                   <p className="text-muted-foreground text-sm">Mon – Fri: 9:30am – 6pm</p>
                   <p className="text-muted-foreground text-sm">Saturday: Closed</p>
                   <p className="text-muted-foreground text-sm">Sunday: 10:30am – 4:30pm</p>
+                  <p className="text-muted-foreground text-xs mt-1">Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.</p>
                 </div>
               </div>
             </div>
