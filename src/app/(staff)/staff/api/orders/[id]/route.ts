@@ -510,24 +510,46 @@ export async function DELETE(req: Request, ctx: Ctx) {
 
   // Unlink from invoice if linked
   if (order.invoiceId) {
-    // Recalculate invoice totals after removing this order
+    // Check remaining sibling orders (excluding the one being deleted)
     const siblingOrders = await prisma.order.findMany({
       where: { invoiceId: order.invoiceId, id: { not: id } },
       select: { subtotalAmount: true, taxAmount: true, totalAmount: true },
     });
-    const newSubtotal = siblingOrders.reduce((s, o) => s + o.subtotalAmount, 0);
-    const newTax = siblingOrders.reduce((s, o) => s + o.taxAmount, 0);
-    const newTotal = siblingOrders.reduce((s, o) => s + o.totalAmount, 0);
-    const inv = await prisma.invoice.findUnique({ where: { id: order.invoiceId }, select: { amountPaid: true } });
-    await prisma.invoice.update({
-      where: { id: order.invoiceId },
-      data: {
-        subtotalAmount: newSubtotal,
-        taxAmount: newTax,
-        totalAmount: newTotal,
-        balanceDue: Math.max(0, newTotal - (inv?.amountPaid || 0)),
-      },
-    });
+
+    if (siblingOrders.length === 0) {
+      // No orders left on this invoice — clean it up
+      const inv = await prisma.invoice.findUnique({
+        where: { id: order.invoiceId },
+        select: { id: true, payments: { select: { id: true }, take: 1 } },
+      });
+      if (inv) {
+        if (inv.payments.length > 0) {
+          // Has payment history — void instead of delete
+          await prisma.invoice.update({
+            where: { id: order.invoiceId },
+            data: { status: "void" },
+          });
+        } else {
+          // No payments — safe to delete
+          await prisma.invoice.delete({ where: { id: order.invoiceId } });
+        }
+      }
+    } else {
+      // Recalculate invoice totals with remaining orders
+      const newSubtotal = siblingOrders.reduce((s, o) => s + o.subtotalAmount, 0);
+      const newTax = siblingOrders.reduce((s, o) => s + o.taxAmount, 0);
+      const newTotal = siblingOrders.reduce((s, o) => s + o.totalAmount, 0);
+      const inv = await prisma.invoice.findUnique({ where: { id: order.invoiceId }, select: { amountPaid: true } });
+      await prisma.invoice.update({
+        where: { id: order.invoiceId },
+        data: {
+          subtotalAmount: newSubtotal,
+          taxAmount: newTax,
+          totalAmount: newTotal,
+          balanceDue: Math.max(0, newTotal - (inv?.amountPaid || 0)),
+        },
+      });
+    }
   }
 
   await prisma.order.delete({ where: { id } });
