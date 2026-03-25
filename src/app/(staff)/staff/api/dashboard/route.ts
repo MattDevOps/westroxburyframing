@@ -210,10 +210,15 @@ export async function GET(req: Request) {
     prisma.order.count({
       where: { ...locationFilter, status: "on_hold" },
     }),
-    // A/R totals
+    // A/R totals — filter by location through linked orders and exclude orphans
     prisma.invoice.findMany({
       where: {
         status: { in: ["draft", "sent", "partial"] },
+        orders: {
+          some: locationFilter.locationId
+            ? { locationId: locationFilter.locationId }
+            : {},
+        },
       },
       select: { balanceDue: true },
     }).catch(() => []),
