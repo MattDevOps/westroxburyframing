@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 interface Invoice {
@@ -49,28 +50,48 @@ const STATUS_LABELS: Record<string, string> = {
 
 const FILTER_TABS = [
   { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
   { key: "draft", label: "Draft" },
   { key: "sent", label: "Sent" },
   { key: "partial", label: "Partial" },
   { key: "paid", label: "Paid" },
 ];
 
-export default function InvoicesListPage() {
+const PENDING_STATUSES = ["draft", "sent", "partial"];
+
+export default function InvoicesListPageWrapper() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-6xl px-4 py-10 text-neutral-500 text-sm">Loading…</div>}>
+      <InvoicesListPage />
+    </Suspense>
+  );
+}
+
+function InvoicesListPage() {
+  const searchParams = useSearchParams();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
 
   const loadInvoices = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("search", search.trim());
-      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (statusFilter === "pending") {
+        // Fetch all and filter client-side for pending (draft + sent + partial)
+      } else if (statusFilter !== "all") {
+        params.set("status", statusFilter);
+      }
 
       const res = await fetch(`/staff/api/invoices?${params}`);
       const data = await res.json();
-      setInvoices(data.invoices || []);
+      let results = data.invoices || [];
+      if (statusFilter === "pending") {
+        results = results.filter((i: Invoice) => PENDING_STATUSES.includes(i.status));
+      }
+      setInvoices(results);
     } catch {
       // ignore
     } finally {
@@ -139,6 +160,30 @@ export default function InvoicesListPage() {
             </button>
           ))}
         </div>
+        {statusFilter === "pending" && invoices.length > 0 && (
+          <button
+            onClick={async () => {
+              if (!confirm(`Void all ${invoices.length} pending invoice(s)? This will unlink any associated orders.`)) return;
+              try {
+                const results = await Promise.all(
+                  invoices.map((inv) =>
+                    fetch(`/staff/api/invoices/${inv.id}`, { method: "DELETE" })
+                  )
+                );
+                const failed = results.filter((r) => !r.ok).length;
+                if (failed > 0) {
+                  alert(`${failed} invoice(s) could not be voided.`);
+                }
+                loadInvoices();
+              } catch {
+                alert("Failed to void invoices.");
+              }
+            }}
+            className="rounded-lg px-3 py-2 text-sm whitespace-nowrap bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition"
+          >
+            Void All Pending
+          </button>
+        )}
       </div>
 
       {/* Invoice List */}

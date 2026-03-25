@@ -53,6 +53,7 @@ export default function OrdersBoardPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterItemType, setFilterItemType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [filterStaff, setFilterStaff] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
@@ -79,6 +80,7 @@ export default function OrdersBoardPage() {
     if (filterItemType) params.set("item_type", filterItemType);
     if (filterStaff) params.set("createdByUserId", filterStaff);
     if (filterLocation) params.set("locationId", filterLocation);
+    if (filterStatus) params.set("status", filterStatus);
 
     try {
       const res = await fetch(`/staff/api/orders?${params}`, { cache: "no-store" });
@@ -97,7 +99,7 @@ export default function OrdersBoardPage() {
     load();
     const t = setInterval(load, 8000);
     return () => clearInterval(t);
-  }, [searchQ, dateFrom, dateTo, filterItemType, filterStaff, filterLocation]);
+  }, [searchQ, dateFrom, dateTo, filterItemType, filterStatus, filterStaff, filterLocation]);
 
   const [draggedOrder, setDraggedOrder] = useState<OrderCard | null>(null);
 
@@ -205,9 +207,9 @@ export default function OrdersBoardPage() {
 
   const gridCols = activeTab === "estimates"
     ? "md:grid-cols-1 max-w-2xl"
-    : activeTab === "all"
-      ? "md:grid-cols-5 lg:grid-cols-10"
-      : "md:grid-cols-5";
+    : activeTab === "active"
+      ? "md:grid-cols-3 lg:grid-cols-6"
+      : "";
 
   return (
     <div className="p-6 space-y-4">
@@ -310,6 +312,26 @@ export default function OrdersBoardPage() {
           </select>
         </div>
         <div>
+          <label className="block text-[11px] text-neutral-500 mb-1">Status</label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          >
+            <option value="">All statuses</option>
+            <option value="on_hold">On Hold</option>
+            <option value="estimate">Estimate</option>
+            <option value="new_design">New / Design</option>
+            <option value="awaiting_materials">Awaiting Materials</option>
+            <option value="in_production">In Production</option>
+            <option value="quality_check">Quality Check</option>
+            <option value="ready_for_pickup">Ready for Pickup</option>
+            <option value="picked_up">Picked Up</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div>
           <label className="block text-[11px] text-neutral-500 mb-1">Staff</label>
           <select
             value={filterStaff}
@@ -335,15 +357,16 @@ export default function OrdersBoardPage() {
             ))}
           </select>
         </div>
-        {(searchQ || dateFrom || dateTo || filterItemType || filterStaff || filterLocation) && (
+        {(searchQ || dateFrom || dateTo || filterItemType || filterStatus || filterStaff || filterLocation) && (
           <button
-            onClick={() => { 
-              setSearchQ(""); 
-              setDateFrom(""); 
-              setDateTo(""); 
-              setFilterItemType(""); 
-              setFilterStaff(""); 
-              setFilterLocation(""); 
+            onClick={() => {
+              setSearchQ("");
+              setDateFrom("");
+              setDateTo("");
+              setFilterItemType("");
+              setFilterStatus("");
+              setFilterStaff("");
+              setFilterLocation("");
             }}
             className="rounded-xl border border-neutral-300 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100"
           >
@@ -451,9 +474,15 @@ export default function OrdersBoardPage() {
         >
           Completed Orders
         </a>
+        <a
+          href="/staff/invoices?status=pending"
+          className="px-4 py-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
+        >
+          Pending Invoices
+        </a>
       </div>
 
-      <div className={`grid gap-4 overflow-x-auto pb-4 ${gridCols}`} style={{ gridAutoColumns: "minmax(240px, 1fr)", gridAutoFlow: activeTab === "estimates" ? undefined : "column" }}>
+      <div className={`grid gap-4 overflow-x-auto pb-4 ${gridCols}`} style={activeTab === "all" ? { gridTemplateColumns: `repeat(${currentColumns.length}, minmax(220px, 1fr))` } : { gridAutoColumns: "minmax(240px, 1fr)", gridAutoFlow: activeTab === "estimates" ? undefined : "column" }}>
         {currentColumns.map((col) => (
           <div
             key={col.key}
