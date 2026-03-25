@@ -279,21 +279,8 @@ export async function GET(req: Request) {
   // Process recent activity
   const recentActivity = Array.isArray(recentActivityResult) ? recentActivityResult : [];
 
-  // Process top customers
-  const topCustomers = Array.isArray(topCustomersRaw) ? topCustomersRaw
-    .map((c: any) => {
-      const lifetimeValue = c.orders.reduce((sum: number, o: any) => sum + o.totalAmount, 0);
-      return {
-        id: c.id,
-        firstName: c.firstName,
-        lastName: c.lastName,
-        email: c.email,
-        orderCount: c.orders.length,
-        lifetimeValue,
-      };
-    })
-    .sort((a: any, b: any) => b.lifetimeValue - a.lifetimeValue)
-    .slice(0, 5) : [];
+  // Process top customers (already formatted by the groupBy query above)
+  const topCustomers = Array.isArray(topCustomersRaw) ? topCustomersRaw.slice(0, 5) : [];
 
   // Revenue trends (last 7 days)
   const revenueByDayPromises = [];
