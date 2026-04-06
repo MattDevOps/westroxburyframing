@@ -76,6 +76,8 @@ export default function OrderDetailPage() {
   const [showScenarios, setShowScenarios] = useState(false);
   const [comparingScenarios, setComparingScenarios] = useState<string[]>([]);
   const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string } | null>(null);
+  const [showCustomerArtwork, setShowCustomerArtwork] = useState(false);
+  const [attachingArtwork, setAttachingArtwork] = useState<string | null>(null);
 
   async function refresh() {
     if (!id) return;
@@ -793,8 +795,25 @@ export default function OrderDetailPage() {
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
         <div className="flex items-center justify-between">
           <div className="text-neutral-900 font-semibold">Photos</div>
-          <label className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 cursor-pointer">
-            Upload Photo
+          <div className="flex gap-2">
+            {order.customer && (() => {
+              const artworkPhotos: string[] = [
+                ...(Array.isArray(order.customer.photoUrls) ? order.customer.photoUrls : []),
+                ...(!Array.isArray(order.customer.photoUrls) && order.customer.photoUrl ? [order.customer.photoUrl] : []),
+              ];
+              if (artworkPhotos.length === 0) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerArtwork(true)}
+                  className="rounded-xl border border-blue-300 px-3 py-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100"
+                >
+                  Customer Artwork ({artworkPhotos.length})
+                </button>
+              );
+            })()}
+            <label className="rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 cursor-pointer">
+              Upload Photo
             <input
               type="file"
               accept="image/*"
@@ -832,7 +851,89 @@ export default function OrderDetailPage() {
               }}
             />
           </label>
+          </div>
         </div>
+
+        {/* Customer Artwork Modal */}
+        {showCustomerArtwork && order.customer && (() => {
+          const artworkPhotos: string[] = [
+            ...(Array.isArray(order.customer.photoUrls) ? order.customer.photoUrls : []),
+            ...(!Array.isArray(order.customer.photoUrls) && order.customer.photoUrl ? [order.customer.photoUrl] : []),
+          ];
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCustomerArtwork(false)}>
+              <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">
+                      {order.customer.firstName}&apos;s Artwork Photos
+                    </h2>
+                    <p className="text-sm text-neutral-500">Tap a photo to attach it to this order</p>
+                  </div>
+                  <button onClick={() => setShowCustomerArtwork(false)} className="text-neutral-400 hover:text-neutral-600 text-2xl font-bold w-8 h-8 flex items-center justify-center">&times;</button>
+                </div>
+                {artworkPhotos.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No artwork photos on file.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {artworkPhotos.map((url, i) => {
+                      const alreadyAttached = order.photos?.some((p: any) => p.url === url);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          disabled={!!attachingArtwork || alreadyAttached}
+                          onClick={async () => {
+                            setAttachingArtwork(url);
+                            try {
+                              const res = await fetch(`/staff/api/orders/${order.id}/photos`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ url, caption: `Customer artwork ${i + 1}` }),
+                              });
+                              if (!res.ok) {
+                                const out = await res.json().catch(() => ({}));
+                                alert(out.error || "Failed to attach photo");
+                              } else {
+                                await refresh();
+                              }
+                            } catch {
+                              alert("Failed to attach photo");
+                            } finally {
+                              setAttachingArtwork(null);
+                            }
+                          }}
+                          className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                            alreadyAttached
+                              ? "border-emerald-400 opacity-60 cursor-default"
+                              : attachingArtwork === url
+                                ? "border-blue-400 opacity-70"
+                                : "border-neutral-200 hover:border-blue-400 cursor-pointer"
+                          }`}
+                        >
+                          <img src={url} alt={`Artwork ${i + 1}`} className="w-full h-full object-cover" />
+                          {alreadyAttached && (
+                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                              <span className="bg-emerald-600 text-white text-xs font-medium px-2 py-1 rounded-lg">Attached</span>
+                            </div>
+                          )}
+                          {attachingArtwork === url && (
+                            <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                              <span className="text-sm text-blue-700 font-medium">Attaching...</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="mt-4 pt-4 border-t border-neutral-200 flex justify-end">
+                  <button onClick={() => setShowCustomerArtwork(false)} className="rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800">Done</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {(!order.photos || order.photos.length === 0) ? (
           <div className="text-sm text-neutral-500">No photos uploaded yet.</div>
