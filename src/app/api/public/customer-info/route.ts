@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         const phone = normalizePhone(body.phone ?? "");
         const email = normalizeEmail(body.email);
         const marketing = Boolean(body.marketing_opt_in);
+        const photoUrl = (body.photo_url ?? "").toString().trim() || null;
 
         if (!firstName || !lastName) {
             return NextResponse.json(
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
                 preferredContact: email ? "email" : "call",
                 marketingOptIn: marketing,
                 marketingOptInAt: marketing ? new Date() : null,
+                ...(photoUrl ? { photoUrl } : {}),
             },
         });
 

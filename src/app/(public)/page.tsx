@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy } from "lucide-react";
 
 const services = [
   { icon: Frame, title: "Custom & Handmade Frames", description: "Choose from hundreds of different styles, finishes (wood and aluminum), colors, and designs to suit your needs." },
@@ -119,6 +119,68 @@ export default function HomePage() {
           >
             Walk-ins welcome · Free parking available
           </motion.p>
+        </div>
+      </section>
+
+      {/* World Cup Promotion */}
+      <section className="relative py-16 bg-gradient-to-r from-[#56042C] via-[#8B1538] to-[#56042C] overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 left-10 text-6xl">&#9917;</div>
+          <div className="absolute bottom-4 right-10 text-6xl">&#9917;</div>
+          <div className="absolute top-1/2 left-1/3 text-4xl opacity-50">&#9917;</div>
+        </div>
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Trophy className="w-8 h-8 text-gold" />
+              <p className="text-gold text-sm font-semibold tracking-[0.3em] uppercase">
+                Limited Time Offer
+              </p>
+              <Trophy className="w-8 h-8 text-gold" />
+            </div>
+            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+              World Cup <span className="text-gold">2026</span> Special
+            </h2>
+            <p className="text-3xl md:text-4xl font-bold text-gold mb-6">
+              25% OFF
+            </p>
+            <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto mb-4 leading-relaxed">
+              Frame your World Cup memorabilia and celebrate the beautiful game.
+              Jerseys, photographs, flags, scarves, and more — professionally framed and preserved.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              {["Jerseys", "Photographs", "Flags", "Scarves", "Tickets", "Posters"].map((item) => (
+                <span
+                  key={item}
+                  className="px-4 py-1.5 bg-white/10 border border-gold/40 rounded-full text-white text-sm"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/book"
+                className="px-8 py-3.5 bg-gold text-primary-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:opacity-90 transition-colors"
+              >
+                Book a Consultation
+              </Link>
+              <a
+                href="tel:16173273890"
+                className="px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
+              >
+                Call to Learn More
+              </a>
+            </div>
+            <p className="text-white/50 text-xs mt-6">
+              Discount applies to all World Cup-related framing projects. Cannot be combined with other offers.
+            </p>
+          </motion.div>
         </div>
       </section>
 

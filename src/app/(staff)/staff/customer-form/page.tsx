@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
+import { useState, useRef } from "react";
+import { CheckCircle, AlertCircle, Loader2, User, Camera, X, RotateCcw } from "lucide-react";
+import Image from "next/image";
 
 export default function CustomerFormPage() {
     const [firstName, setFirstName] = useState("");
@@ -10,9 +11,50 @@ export default function CustomerFormPage() {
     const [phone, setPhone] = useState("");
     const [optIn, setOptIn] = useState(false);
 
+    // Photo capture state
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setPhotoFile(file);
+        const url = URL.createObjectURL(file);
+        setPhotoPreview(url);
+    }
+
+    function clearPhoto() {
+        setPhotoFile(null);
+        if (photoPreview) URL.revokeObjectURL(photoPreview);
+        setPhotoPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+
+    async function uploadPhoto(): Promise<string | null> {
+        if (!photoFile) return null;
+        setUploadingPhoto(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", photoFile);
+            const res = await fetch("/api/public/customer-photo", {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.url ?? null;
+        } catch {
+            return null;
+        } finally {
+            setUploadingPhoto(false);
+        }
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -21,6 +63,15 @@ export default function CustomerFormPage() {
         setSuccess(false);
 
         try {
+            // Upload photo first if one was captured
+            let photoUrl: string | null = null;
+            if (photoFile) {
+                photoUrl = await uploadPhoto();
+                if (!photoUrl) {
+                    setError("Photo upload failed. Your info will be saved without the photo.");
+                }
+            }
+
             const res = await fetch("/api/public/customer-info", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -30,6 +81,7 @@ export default function CustomerFormPage() {
                     email,
                     phone,
                     marketing_opt_in: optIn,
+                    ...(photoUrl ? { photo_url: photoUrl } : {}),
                 }),
             });
 
@@ -39,12 +91,12 @@ export default function CustomerFormPage() {
                 // Handle duplicate customer case
                 if (data.error === "duplicate" || res.status === 409) {
                     setError("You are already in our system.");
-                    // Clear form and reset after 2 seconds for next customer
                     setFirstName("");
                     setLastName("");
                     setEmail("");
                     setPhone("");
                     setOptIn(false);
+                    clearPhoto();
                     setTimeout(() => {
                         setError(null);
                     }, 2000);
@@ -55,12 +107,12 @@ export default function CustomerFormPage() {
             }
 
             setSuccess(true);
-            // Clear form and reset after 2 seconds for next customer
             setFirstName("");
             setLastName("");
             setEmail("");
             setPhone("");
             setOptIn(false);
+            clearPhoto();
             setTimeout(() => {
                 setSuccess(false);
             }, 2000);
@@ -159,6 +211,66 @@ export default function CustomerFormPage() {
                     </div>
                 </div>
 
+                {/* Photo Capture Section */}
+                <div className="border border-neutral-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Camera className="w-5 h-5 text-neutral-700" />
+                        <h2 className="text-sm font-medium text-neutral-700">Profile Photo</h2>
+                        <span className="text-xs text-neutral-400">(optional)</span>
+                    </div>
+
+                    {photoPreview ? (
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="relative w-40 h-40 rounded-full overflow-hidden border-2 border-neutral-200">
+                                <Image
+                                    src={photoPreview}
+                                    alt="Photo preview"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    Retake
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={clearPhoto}
+                                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-neutral-300 rounded-lg hover:border-blue-400 hover:bg-blue-50/50 transition-colors cursor-pointer"
+                        >
+                            <Camera className="w-10 h-10 text-neutral-400" />
+                            <span className="text-sm font-medium text-neutral-600">Tap to Take Photo</span>
+                            <span className="text-xs text-neutral-400">Opens your camera</span>
+                        </button>
+                    )}
+
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        onChange={handlePhotoCapture}
+                        className="hidden"
+                    />
+                </div>
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <label className="flex items-start gap-3 cursor-pointer">
                         <input
@@ -175,13 +287,13 @@ export default function CustomerFormPage() {
 
                 <button
                     type="submit"
-                    disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()}
+                    disabled={submitting || uploadingPhoto || !firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()}
                     className="w-full px-6 py-4 bg-black text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
-                    {submitting ? (
+                    {submitting || uploadingPhoto ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Saving...
+                            {uploadingPhoto ? "Uploading Photo..." : "Saving..."}
                         </>
                     ) : (
                         "Save Customer Information"
