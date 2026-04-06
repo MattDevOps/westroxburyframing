@@ -6,7 +6,7 @@ const limiter = rateLimit({ limit: 10, windowSeconds: 600 }); // 10 per 10 min
 
 /**
  * POST /api/public/customer-photo
- * Public endpoint for uploading a customer photo from the iPad kiosk camera.
+ * Public endpoint for uploading a photo of customer artwork from the iPad kiosk camera.
  * Returns the public URL of the uploaded image.
  */
 export async function POST(request: Request) {

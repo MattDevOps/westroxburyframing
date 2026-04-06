@@ -88,7 +88,7 @@ model Customer {
   marketingOptInAt DateTime?
   smsOptIn         Boolean   @default(false)
   smsOptInAt       DateTime?
-  photoUrl         String?   // Profile photo captured at kiosk
+  photoUrl         String?   // Photo of artwork captured at kiosk
   qboCustomerId   String?   // QuickBooks Online customer ID
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

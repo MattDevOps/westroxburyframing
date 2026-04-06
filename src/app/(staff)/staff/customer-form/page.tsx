@@ -215,16 +215,16 @@ export default function CustomerFormPage() {
                 <div className="border border-neutral-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <Camera className="w-5 h-5 text-neutral-700" />
-                        <h2 className="text-sm font-medium text-neutral-700">Profile Photo</h2>
+                        <h2 className="text-sm font-medium text-neutral-700">Photo of Your Artwork</h2>
                         <span className="text-xs text-neutral-400">(optional)</span>
                     </div>
 
                     {photoPreview ? (
                         <div className="flex flex-col items-center gap-3">
-                            <div className="relative w-40 h-40 rounded-full overflow-hidden border-2 border-neutral-200">
+                            <div className="relative w-56 h-56 rounded-lg overflow-hidden border-2 border-neutral-200">
                                 <Image
                                     src={photoPreview}
-                                    alt="Photo preview"
+                                    alt="Artwork photo preview"
                                     fill
                                     className="object-cover"
                                     unoptimized
@@ -256,8 +256,8 @@ export default function CustomerFormPage() {
                             className="w-full flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-neutral-300 rounded-lg hover:border-blue-400 hover:bg-blue-50/50 transition-colors cursor-pointer"
                         >
                             <Camera className="w-10 h-10 text-neutral-400" />
-                            <span className="text-sm font-medium text-neutral-600">Tap to Take Photo</span>
-                            <span className="text-xs text-neutral-400">Opens your camera</span>
+                            <span className="text-sm font-medium text-neutral-600">Tap to Photograph Your Artwork</span>
+                            <span className="text-xs text-neutral-400">Take a photo of the piece you&apos;re bringing in to be framed</span>
                         </button>
                     )}
 
@@ -265,7 +265,7 @@ export default function CustomerFormPage() {
                         ref={fileInputRef}
                         type="file"
                         accept="image/*"
-                        capture="user"
+                        capture="environment"
                         onChange={handlePhotoCapture}
                         className="hidden"
                     />
