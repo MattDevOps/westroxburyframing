@@ -17,6 +17,8 @@ type Customer = {
   zip?: string | null;
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
+  photoUrl?: string | null;
+  photoUrls?: string[];
   createdAt?: string;
 };
 
@@ -610,6 +612,38 @@ export default function CustomerDetailPage({
           )}
         </div>
       </div>
+      {/* Artwork Photos */}
+      {(() => {
+        const allPhotos: string[] = [
+          ...(Array.isArray(customer.photoUrls) ? customer.photoUrls : []),
+          ...(!Array.isArray(customer.photoUrls) && customer.photoUrl ? [customer.photoUrl] : []),
+        ];
+        if (allPhotos.length === 0) return null;
+        return (
+          <div className="rounded-2xl border border-neutral-200 p-4">
+            <div className="text-sm font-medium mb-3">Artwork Photos</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {allPhotos.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 hover:border-neutral-400 transition-colors group"
+                >
+                  <img
+                    src={url}
+                    alt={`Artwork ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Invoices */}
       {invoices.length > 0 && (
         <div className="rounded-2xl border border-neutral-200 p-4">

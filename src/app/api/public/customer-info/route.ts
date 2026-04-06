@@ -29,7 +29,9 @@ export async function POST(request: Request) {
         const phone = normalizePhone(body.phone ?? "");
         const email = normalizeEmail(body.email);
         const marketing = Boolean(body.marketing_opt_in);
-        const photoUrl = (body.photo_url ?? "").toString().trim() || null;
+        const photoUrls: string[] = Array.isArray(body.photo_urls) ? body.photo_urls.filter((u: unknown) => typeof u === "string" && u.trim()) : [];
+        // Legacy single photo support
+        const photoUrl = photoUrls[0] ?? ((body.photo_url ?? "").toString().trim() || null);
 
         if (!firstName || !lastName) {
             return NextResponse.json(
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
                 marketingOptIn: marketing,
                 marketingOptInAt: marketing ? new Date() : null,
                 ...(photoUrl ? { photoUrl } : {}),
+                ...(photoUrls.length > 0 ? { photoUrls } : {}),
             },
         });
 
