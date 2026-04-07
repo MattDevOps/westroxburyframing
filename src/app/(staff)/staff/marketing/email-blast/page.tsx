@@ -162,6 +162,28 @@ West Roxbury Framing
 (617) 327-3890
 
 We look forward to seeing you!`);
+    } else if (template === "worldcup") {
+      setSubject(`World Cup 2026 Special — ${discount}% Off All World Cup Artwork!`);
+      setMessage(`Hi {{name}},
+
+The beautiful game is coming, and we're celebrating with a special offer just for you!
+
+Get ${discount}% off all World Cup-related framing projects. Whether it's a signed jersey, a treasured photograph, a flag, scarf, ticket stub, or poster — let us help you preserve your World Cup memories in a way that lasts a lifetime.
+
+What we can frame for you:
+• Jerseys & kits
+• Photographs
+• Flags & scarves
+• Tickets & programs
+• Posters & memorabilia
+
+This is a limited-time offer to celebrate World Cup 2026. Stop by our shop, give us a call, or book a consultation online to get started!
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+
+Cannot be combined with other offers. We look forward to framing your World Cup memories!`);
     } else {
       setSubject("");
       setMessage("");
@@ -287,13 +309,16 @@ We look forward to seeing you!`);
                 onChange={(e) => {
                   const template = e.target.value;
                   setSelectedTemplate(template);
-                  applyTemplate(template, discountPercent);
+                  const defaultDiscount = template === "worldcup" ? 25 : discountPercent;
+                  setDiscountPercent(defaultDiscount);
+                  applyTemplate(template, defaultDiscount);
                 }}
                 className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm"
               >
                 <option value="">No template (custom message)</option>
                 <option value="holiday">Holiday Special</option>
                 <option value="blackfriday">Black Friday Sale</option>
+                <option value="worldcup">World Cup 2026 Special</option>
               </select>
             </div>
             {selectedTemplate && (
