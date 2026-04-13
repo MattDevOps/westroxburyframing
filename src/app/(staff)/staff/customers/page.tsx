@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, Shield, ChevronDown, Tag } from "lucide-react";
+import { Download, FileText, Shield, ChevronDown, ChevronUp, Tag } from "lucide-react";
 
 const DEFAULT_COLORS = [
   "#3b82f6", // blue
@@ -58,6 +58,10 @@ export default function CustomersPage() {
   const [newTagColor, setNewTagColor] = useState("#3b82f6");
   const [savingTag, setSavingTag] = useState(false);
   
+  // Sorting state
+  const [sortBy, setSortBy] = useState<"name" | "dateAdded">("dateAdded");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
   // Add customer state
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCustomerFirstName, setNewCustomerFirstName] = useState("");
@@ -289,14 +293,28 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((c) => {
-      const name = `${c.firstName || ""} ${c.lastName || ""}`.toLowerCase();
-      const email = (c.email || "").toLowerCase();
-      const phone = (c.phone || "").toLowerCase();
-      return name.includes(needle) || email.includes(needle) || phone.includes(needle);
+    let result = rows;
+    if (needle) {
+      result = rows.filter((c) => {
+        const name = `${c.firstName || ""} ${c.lastName || ""}`.toLowerCase();
+        const email = (c.email || "").toLowerCase();
+        const phone = (c.phone || "").toLowerCase();
+        return name.includes(needle) || email.includes(needle) || phone.includes(needle);
+      });
+    }
+    const sorted = [...result].sort((a, b) => {
+      if (sortBy === "name") {
+        const nameA = `${a.firstName || ""} ${a.lastName || ""}`.toLowerCase();
+        const nameB = `${b.firstName || ""} ${b.lastName || ""}`.toLowerCase();
+        return sortDir === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      }
+      // dateAdded
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return sortDir === "asc" ? dateA - dateB : dateB - dateA;
     });
-  }, [q, rows]);
+    return sorted;
+  }, [q, rows, sortBy, sortDir]);
 
   async function handleBackup() {
     setBackingUp(true);
@@ -732,12 +750,31 @@ export default function CustomersPage() {
 
       <div className="rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="grid grid-cols-12 gap-3 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-600">
-          <div className="col-span-2">Customer</div>
+          <button
+            className="col-span-2 flex items-center gap-1 hover:text-neutral-900 text-left"
+            onClick={() => {
+              if (sortBy === "name") setSortDir(sortDir === "asc" ? "desc" : "asc");
+              else { setSortBy("name"); setSortDir("asc"); }
+            }}
+          >
+            Customer
+            {sortBy === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+          </button>
           <div className="col-span-2">Email</div>
-          <div className="col-span-2">Phone</div>
+          <div className="col-span-1">Phone</div>
           <div className="col-span-1">Orders</div>
           <div className="col-span-2">Tags</div>
-          <div className="col-span-2">Preferred</div>
+          <button
+            className="col-span-2 flex items-center gap-1 hover:text-neutral-900 text-left"
+            onClick={() => {
+              if (sortBy === "dateAdded") setSortDir(sortDir === "asc" ? "desc" : "asc");
+              else { setSortBy("dateAdded"); setSortDir("desc"); }
+            }}
+          >
+            Date Added
+            {sortBy === "dateAdded" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+          </button>
+          <div className="col-span-1">Preferred</div>
           <div className="col-span-1 text-right">Opt-in</div>
         </div>
 
@@ -756,8 +793,8 @@ export default function CustomersPage() {
                 className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50"
               >
                 <div className="col-span-2 font-medium">{name}</div>
-                <div className="col-span-2 text-neutral-600">{c.email || "—"}</div>
-                <div className="col-span-2 text-neutral-600">{c.phone || "—"}</div>
+                <div className="col-span-2 text-neutral-600 truncate">{c.email || "—"}</div>
+                <div className="col-span-1 text-neutral-600">{c.phone || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{orderCount}</div>
                 <div className="col-span-2">
                   <div className="flex flex-wrap gap-1">
@@ -786,6 +823,9 @@ export default function CustomersPage() {
                   </div>
                 </div>
                 <div className="col-span-2 text-neutral-600">
+                  {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
+                </div>
+                <div className="col-span-1 text-neutral-600">
                   {c.preferredContact === "call" ? "Call" : "Email"}
                 </div>
                 <div className="col-span-1 text-right text-neutral-600">
