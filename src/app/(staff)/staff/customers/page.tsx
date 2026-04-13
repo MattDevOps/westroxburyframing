@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, Shield, ChevronDown, ChevronUp, Tag } from "lucide-react";
+import { Download, FileText, Shield, ChevronDown, ChevronUp, Tag, ArrowUpDown } from "lucide-react";
 
 const DEFAULT_COLORS = [
   "#3b82f6", // blue
@@ -719,6 +719,23 @@ export default function CustomersPage() {
             </option>
           ))}
         </select>
+        <div className="flex items-center gap-1.5 rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm">
+          <ArrowUpDown size={14} className="text-neutral-500 flex-shrink-0" />
+          <select
+            value={`${sortBy}-${sortDir}`}
+            onChange={(e) => {
+              const [field, dir] = e.target.value.split("-") as ["name" | "dateAdded", "asc" | "desc"];
+              setSortBy(field);
+              setSortDir(dir);
+            }}
+            className="bg-transparent outline-none cursor-pointer text-sm py-1"
+          >
+            <option value="dateAdded-desc">Newest First</option>
+            <option value="dateAdded-asc">Oldest First</option>
+            <option value="name-asc">Name A — Z</option>
+            <option value="name-desc">Name Z — A</option>
+          </select>
+        </div>
         <button
           onClick={() => setShowTagManager(true)}
           className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm hover:bg-neutral-50"
@@ -751,28 +768,44 @@ export default function CustomersPage() {
       <div className="rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="grid grid-cols-12 gap-3 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-600">
           <button
-            className="col-span-2 flex items-center gap-1 hover:text-neutral-900 text-left"
+            className={`col-span-2 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
+              sortBy === "name"
+                ? "text-neutral-900 font-semibold"
+                : "hover:text-neutral-900 underline decoration-dotted underline-offset-4 decoration-neutral-400"
+            }`}
             onClick={() => {
               if (sortBy === "name") setSortDir(sortDir === "asc" ? "desc" : "asc");
               else { setSortBy("name"); setSortDir("asc"); }
             }}
           >
             Customer
-            {sortBy === "name" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+            {sortBy === "name" ? (
+              sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+            ) : (
+              <ArrowUpDown size={11} className="text-neutral-400" />
+            )}
           </button>
           <div className="col-span-2">Email</div>
           <div className="col-span-1">Phone</div>
           <div className="col-span-1">Orders</div>
           <div className="col-span-2">Tags</div>
           <button
-            className="col-span-2 flex items-center gap-1 hover:text-neutral-900 text-left"
+            className={`col-span-2 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
+              sortBy === "dateAdded"
+                ? "text-neutral-900 font-semibold"
+                : "hover:text-neutral-900 underline decoration-dotted underline-offset-4 decoration-neutral-400"
+            }`}
             onClick={() => {
               if (sortBy === "dateAdded") setSortDir(sortDir === "asc" ? "desc" : "asc");
               else { setSortBy("dateAdded"); setSortDir("desc"); }
             }}
           >
             Date Added
-            {sortBy === "dateAdded" && (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+            {sortBy === "dateAdded" ? (
+              sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+            ) : (
+              <ArrowUpDown size={11} className="text-neutral-400" />
+            )}
           </button>
           <div className="col-span-1">Preferred</div>
           <div className="col-span-1 text-right">Opt-in</div>
