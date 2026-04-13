@@ -36,6 +36,61 @@ export const metadata: Metadata = {
   },
 };
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Can you restore a torn or water-damaged photo?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes — we restore photos with tears, creases, water damage, mold, fading, and discoloration. We create a high-quality restored copy for framing while preserving the original untouched.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does photo restoration cost?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Photo restoration starts around $50 for minor repairs and ranges up to $150+ for heavily damaged images. Bring your photo in for a free assessment — we'll give you an honest estimate on the spot.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can you repair a broken picture frame?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Absolutely. We repair cracked, chipped, warped, and broken frames. We can also refinish, repaint, or regild an existing frame to restore it to its original beauty.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How long does photo restoration take?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Most photo restorations are completed within 5–10 business days, depending on the extent of the damage. Simple repairs may be faster. We'll give you a timeline when you bring it in.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do you restore antique or very old photographs?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes — we've restored photographs dating back over 100 years. We work carefully with fragile antique prints, daguerreotypes, and vintage photos to bring them back to life.",
+      },
+    },
+  ],
+};
+
 export default function RestorationPage() {
-  return <RestorationContent />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <RestorationContent />
+    </>
+  );
 }

@@ -23,6 +23,7 @@ export default function FooterPublic() {
               <Link href="/framed-art" className="text-muted-foreground text-sm hover:text-gold transition-colors">Framed Art</Link>
               <Link href="/restoration" className="text-muted-foreground text-sm hover:text-gold transition-colors">Repair & Restoration</Link>
               <Link href="/testimonials" className="text-muted-foreground text-sm hover:text-gold transition-colors">Testimonials</Link>
+              <Link href="/blog" className="text-muted-foreground text-sm hover:text-gold transition-colors">Framing Tips & Blog</Link>
               <Link href="/contact" className="text-muted-foreground text-sm hover:text-gold transition-colors">Contact Us</Link>
               <Link href="/book" className="text-muted-foreground text-sm hover:text-gold transition-colors">Book Appointment</Link>
               <Link href="/order-status" className="text-muted-foreground text-sm hover:text-gold transition-colors">Track Your Order</Link>

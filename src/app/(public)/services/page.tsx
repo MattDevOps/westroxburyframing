@@ -2,10 +2,15 @@ import { Metadata } from "next";
 import ServicesContent from "./ServicesContent";
 
 export const metadata: Metadata = {
-  title: "Custom Framing Services in West Roxbury, MA",
+  title: "Framing Services — Custom Frame Shop in West Roxbury, MA",
   description:
-    "Full-service custom picture framing in West Roxbury, MA. Custom frames, matting, shadow boxes, canvas stretching, photo restoration, museum glass, conservation framing & more. Serving Boston since 1981. Walk-ins welcome.",
+    "Full-service framer in West Roxbury, MA. Custom picture frames, matting, shadow boxes, canvas stretching, photo restoration, museum glass, conservation framing & more. Your local frame shop serving Boston since 1981. Walk-ins welcome.",
   keywords: [
+    "framer",
+    "frame",
+    "frame shop",
+    "framer near me",
+    "frame shop near me",
     "custom framing services West Roxbury",
     "picture framing Boston",
     "shadow box framing near me",
@@ -20,9 +25,9 @@ export const metadata: Metadata = {
     "affordable custom framing Boston",
   ],
   openGraph: {
-    title: "Custom Framing Services | West Roxbury Framing",
+    title: "Frame Shop & Custom Framing Services | West Roxbury Framing",
     description:
-      "Custom picture framing, shadow boxes, photo restoration, museum glass & more. Family-owned in West Roxbury since 1981.",
+      "Your local framer — custom picture frames, shadow boxes, photo restoration, museum glass & more. Family-owned frame shop in West Roxbury since 1981.",
     url: "https://westroxburyframing.com/services",
     images: [
       {

@@ -23,6 +23,8 @@ const STAFF_NAV: Array<{
   { href: "/staff/customers", label: "Customers" },
   { href: "/staff/gift-certificates", label: "Gift Certs" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
+  { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },
+  { href: "/staff/marketing/utm-links", label: "UTM Links" },
   { href: "/staff/pricing", label: "Pricing" },
   { href: "/staff/materials-needed", label: "Materials" },
   { href: "/staff/purchase-orders", label: "POs" },
