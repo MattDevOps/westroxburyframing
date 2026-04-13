@@ -6,7 +6,7 @@ const REVIEW_URL = "https://westroxburyframing.com/review";
 
 export default function PrintableReviewCard() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 pt-24">
       {/* Print controls — hidden when printing */}
       <div className="print:hidden mb-8 text-center space-y-4 max-w-md">
         <h1 className="text-2xl font-bold text-neutral-900">
