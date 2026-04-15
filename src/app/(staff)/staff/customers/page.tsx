@@ -15,6 +15,11 @@ const DEFAULT_COLORS = [
   "#84cc16", // lime
 ];
 
+type Notification = {
+  at: string;
+  method: "sms" | "email";
+};
+
 type Customer = {
   id: string;
   firstName: string | null;
@@ -26,6 +31,7 @@ type Customer = {
   createdAt?: string;
   lastNotifiedAt?: string | null;
   lastNotifiedMethod?: "sms" | "email" | null;
+  notifications?: Notification[];
   _count?: { orders: number };
 };
 
@@ -68,6 +74,16 @@ export default function CustomersPage() {
   const [sendingPickupId, setSendingPickupId] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [pickupFlash, setPickupFlash] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
+
+  function toggleNotificationsExpanded(customerId: string) {
+    setExpandedNotifications((prev) => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  }
 
   // Add customer state
   const [showAddCustomer, setShowAddCustomer] = useState(false);
@@ -933,16 +949,53 @@ export default function CustomersPage() {
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
                 </div>
                 <div className="col-span-2 text-neutral-600 text-xs">
-                  {c.lastNotifiedAt ? (
-                    <>
-                      <div>{new Date(c.lastNotifiedAt).toLocaleString()}</div>
-                      <div className="text-neutral-400 uppercase tracking-wide">
-                        via {c.lastNotifiedMethod}
+                  {(() => {
+                    const notifs = c.notifications ?? (
+                      c.lastNotifiedAt && c.lastNotifiedMethod
+                        ? [{ at: c.lastNotifiedAt, method: c.lastNotifiedMethod }]
+                        : []
+                    );
+                    if (notifs.length === 0) {
+                      return <span className="text-neutral-400">Never</span>;
+                    }
+                    const isExpanded = expandedNotifications.has(c.id);
+                    const visible = isExpanded ? notifs : notifs.slice(0, 1);
+                    const hiddenCount = notifs.length - visible.length;
+                    return (
+                      <div className="space-y-1">
+                        {visible.map((n, i) => (
+                          <div key={`${n.at}-${i}`} className="flex items-baseline gap-1.5">
+                            <span className="text-neutral-400 uppercase tracking-wide text-[10px] font-medium w-9 flex-shrink-0">
+                              {n.method}
+                            </span>
+                            <span>{new Date(n.at).toLocaleString()}</span>
+                          </div>
+                        ))}
+                        {notifs.length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleNotificationsExpanded(c.id);
+                            }}
+                            className="inline-flex items-center gap-0.5 text-[10px] text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronUp size={10} />
+                                Hide
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown size={10} />
+                                Show all ({hiddenCount} more)
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
-                    </>
-                  ) : (
-                    <span className="text-neutral-400">Never</span>
-                  )}
+                    );
+                  })()}
                 </div>
                 <div className="col-span-2 text-right flex items-center justify-end gap-1.5">
                   <button

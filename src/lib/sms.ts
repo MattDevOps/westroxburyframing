@@ -98,6 +98,7 @@ export async function sendPickupReminderSMS(params: {
   const message = `Hello, this is West Roxbury Framing. Your work is all set and ready for pickup. If you can't make it during business hours, please let us know and we can make you an appointment.
 
 Hours: M-F: 10-6, Sunday: 10:30am-4:30pm
+617-327-3890
 
 Thank you.`;
 

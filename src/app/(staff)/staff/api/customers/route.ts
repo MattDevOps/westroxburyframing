@@ -57,19 +57,18 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
       select: { entityId: true, action: true, createdAt: true },
     });
-    const lastByCustomer = new Map<string, { at: Date; method: string }>();
+    const byCustomer = new Map<string, Array<{ at: string; method: "sms" | "email" }>>();
     for (const log of notifyLogs) {
-      if (!lastByCustomer.has(log.entityId)) {
-        lastByCustomer.set(log.entityId, {
-          at: log.createdAt,
-          method: log.action === "pickup_sms_sent" ? "sms" : "email",
-        });
-      }
+      const method = log.action === "pickup_sms_sent" ? "sms" : "email";
+      const list = byCustomer.get(log.entityId) ?? [];
+      list.push({ at: log.createdAt.toISOString(), method });
+      byCustomer.set(log.entityId, list);
     }
     for (const c of customers) {
-      const info = lastByCustomer.get(c.id);
-      c.lastNotifiedAt = info ? info.at.toISOString() : null;
-      c.lastNotifiedMethod = info ? info.method : null;
+      const list = byCustomer.get(c.id) ?? [];
+      c.notifications = list;
+      c.lastNotifiedAt = list[0]?.at ?? null;
+      c.lastNotifiedMethod = list[0]?.method ?? null;
     }
   }
 
