@@ -191,6 +191,61 @@ Thank you for choosing West Roxbury Framing!`;
   return result;
 }
 
+/* ─── Email: Pickup Ready (customer-level, matches SMS) ──────────── */
+
+export async function sendPickupReadyCustomerEmail(params: {
+  to: string;
+  customerName: string;
+}) {
+  const subject = "Your work is ready for pickup — West Roxbury Framing";
+
+  const text = `Hello ${params.customerName},
+
+This is West Roxbury Framing. Your work is all set and ready for pickup. We are open Sundays. If you can't make it during business hours, please let us know and we can make you an appointment.
+
+Hours:
+Mon–Fri: 10am – 6pm
+Saturday: 10am – 4pm
+Sunday: 10:30am – 4:30pm
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+
+Thank you.`;
+
+  const html = emailLayout({
+    preheader: "Your work is all set and ready for pickup at West Roxbury Framing.",
+    heading: "Your Work Is Ready for Pickup",
+    body: `
+      <p>Hello ${params.customerName},</p>
+      <p>Your work is all set and ready for pickup here at West Roxbury Framing.</p>
+      <p><strong>We are open Sundays.</strong> If you can't make it during business hours, please let us know and we'd be happy to set up an appointment that works for you.</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;width:100%">
+        <tr><td style="padding:18px 20px;font-size:14px;color:#404040;line-height:1.7">
+          <strong style="color:#1a1a1a;font-size:15px">West Roxbury Framing</strong><br>
+          1741 Centre Street, West Roxbury, MA 02132<br>
+          <a href="tel:+16173273890" style="color:#b8860b;text-decoration:none">(617) 327-3890</a><br><br>
+          <strong style="color:#1a1a1a">Hours</strong><br>
+          Mon–Fri: 10am – 6pm<br>
+          Saturday: 10am – 4pm<br>
+          Sunday: 10:30am – 4:30pm
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">Thank you — we look forward to seeing you!</p>
+    `,
+    footer: "Thank you for choosing West Roxbury Framing.",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
 /* ─── Email: Contact Form (to staff) ─────────────────────────────── */
 
 export async function sendContactFormEmail(params: {

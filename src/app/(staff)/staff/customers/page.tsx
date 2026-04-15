@@ -64,6 +64,7 @@ export default function CustomersPage() {
 
   // Pickup SMS state
   const [sendingPickupId, setSendingPickupId] = useState<string | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [pickupFlash, setPickupFlash] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   // Add customer state
@@ -317,6 +318,31 @@ export default function CustomersPage() {
       setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
     } finally {
       setSendingPickupId(null);
+    }
+  }
+
+  async function sendPickupEmail(customer: Customer) {
+    const name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "this customer";
+    if (!customer.email) {
+      setPickupFlash({ kind: "err", text: `${name} has no email address on file.` });
+      return;
+    }
+    if (!confirm(`Send pickup-ready email to ${name} (${customer.email})?`)) return;
+
+    setSendingEmailId(customer.id);
+    setPickupFlash(null);
+    try {
+      const res = await fetch(`/staff/api/customers/${customer.id}/notify-pickup-email`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      setPickupFlash({ kind: "ok", text: `Email sent to ${name} at ${customer.email}` });
+    } catch (e: any) {
+      setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
+    } finally {
+      setSendingEmailId(null);
     }
   }
 
@@ -852,8 +878,7 @@ export default function CustomersPage() {
               <ArrowUpDown size={11} className="text-neutral-400" />
             )}
           </button>
-          <div className="col-span-1">Preferred</div>
-          <div className="col-span-1 text-right">Pickup SMS</div>
+          <div className="col-span-2 text-right">Notify Pickup</div>
         </div>
 
         {loading ? (
@@ -904,10 +929,7 @@ export default function CustomersPage() {
                 <div className="col-span-2 text-neutral-600">
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
                 </div>
-                <div className="col-span-1 text-neutral-600">
-                  {c.preferredContact === "call" ? "Call" : "Email"}
-                </div>
-                <div className="col-span-1 text-right">
+                <div className="col-span-2 text-right flex items-center justify-end gap-1.5">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -918,7 +940,19 @@ export default function CustomersPage() {
                     className="rounded-lg bg-black text-white px-2.5 py-1 text-xs font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
                     title={hasPhone ? "Send pickup-ready SMS" : "No phone number on file"}
                   >
-                    {sendingPickupId === c.id ? "Sending…" : "Send SMS"}
+                    {sendingPickupId === c.id ? "Sending…" : "SMS"}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      sendPickupEmail(c);
+                    }}
+                    disabled={!c.email || sendingEmailId === c.id}
+                    className="rounded-lg border border-neutral-300 bg-white text-neutral-900 px-2.5 py-1 text-xs font-medium hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={c.email ? "Send pickup-ready email" : "No email address on file"}
+                  >
+                    {sendingEmailId === c.id ? "Sending…" : "Email"}
                   </button>
                 </div>
               </Link>
