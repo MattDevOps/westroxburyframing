@@ -20,8 +20,7 @@ const STAFF_NAV: Array<{
   { href: "/staff/orders/new", label: "Quick Order" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
-  { href: "/staff/customers", label: "Customers" },
-  { href: "/staff/pickup-notify", label: "Pickup Notify", highlight: "orange" },
+  { href: "/staff/customers", label: "Customers", highlight: "orange" },
   { href: "/staff/gift-certificates", label: "Gift Certs" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },
@@ -69,7 +68,7 @@ function NavLink({
 
   const highlightClasses =
     highlight === "orange"
-      ? "bg-orange-500 text-white hover:bg-orange-600 font-medium"
+      ? "bg-orange-100 text-orange-900 hover:bg-orange-200 font-medium"
       : highlight === "blue"
       ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
       : "";

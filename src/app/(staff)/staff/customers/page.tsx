@@ -62,6 +62,10 @@ export default function CustomersPage() {
   const [sortBy, setSortBy] = useState<"name" | "dateAdded">("dateAdded");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
+  // Pickup SMS state
+  const [sendingPickupId, setSendingPickupId] = useState<string | null>(null);
+  const [pickupFlash, setPickupFlash] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
   // Add customer state
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCustomerFirstName, setNewCustomerFirstName] = useState("");
@@ -288,6 +292,31 @@ export default function CustomersPage() {
       setCustomerError(e.message || "Failed to create customer");
     } finally {
       setSavingCustomer(false);
+    }
+  }
+
+  async function sendPickup(customer: Customer) {
+    const name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "this customer";
+    if (!customer.phone) {
+      setPickupFlash({ kind: "err", text: `${name} has no phone number on file.` });
+      return;
+    }
+    if (!confirm(`Send pickup-ready SMS to ${name} (${customer.phone})?`)) return;
+
+    setSendingPickupId(customer.id);
+    setPickupFlash(null);
+    try {
+      const res = await fetch(`/staff/api/customers/${customer.id}/notify-pickup`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      setPickupFlash({ kind: "ok", text: `SMS sent to ${name} at ${customer.phone}` });
+    } catch (e: any) {
+      setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
+    } finally {
+      setSendingPickupId(null);
     }
   }
 
@@ -654,6 +683,22 @@ export default function CustomersPage() {
         </div>
       )}
 
+      {/* Pickup SMS status message */}
+      {pickupFlash && (
+        <div
+          className={`rounded-xl border px-4 py-2.5 text-sm ${
+            pickupFlash.kind === "ok"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
+          {pickupFlash.text}
+          <button onClick={() => setPickupFlash(null)} className="ml-2 underline text-xs">
+            dismiss
+          </button>
+        </div>
+      )}
+
       {/* Backup status message */}
       {backupMsg && (
         <div className={`rounded-xl border px-4 py-2.5 text-sm ${backupMsg.includes("failed") ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
@@ -808,7 +853,7 @@ export default function CustomersPage() {
             )}
           </button>
           <div className="col-span-1">Preferred</div>
-          <div className="col-span-1 text-right">Opt-in</div>
+          <div className="col-span-1 text-right">Pickup SMS</div>
         </div>
 
         {loading ? (
@@ -819,11 +864,12 @@ export default function CustomersPage() {
           filtered.map((c) => {
             const name = `${c.firstName || ""} ${c.lastName || ""}`.trim() || "Unnamed";
             const orderCount = c._count?.orders ?? 0;
+            const hasPhone = Boolean(c.phone);
             return (
               <Link
                 key={c.id}
                 href={`/staff/customers/${c.id}`}
-                className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50"
+                className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50 items-center"
               >
                 <div className="col-span-2 font-medium">{name}</div>
                 <div className="col-span-2 text-neutral-600 truncate">{c.email || "—"}</div>
@@ -861,8 +907,19 @@ export default function CustomersPage() {
                 <div className="col-span-1 text-neutral-600">
                   {c.preferredContact === "call" ? "Call" : "Email"}
                 </div>
-                <div className="col-span-1 text-right text-neutral-600">
-                  {Boolean(c.marketingOptIn) ? "Yes" : "No"}
+                <div className="col-span-1 text-right">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      sendPickup(c);
+                    }}
+                    disabled={!hasPhone || sendingPickupId === c.id}
+                    className="rounded-lg bg-black text-white px-2.5 py-1 text-xs font-medium hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={hasPhone ? "Send pickup-ready SMS" : "No phone number on file"}
+                  >
+                    {sendingPickupId === c.id ? "Sending…" : "Send SMS"}
+                  </button>
                 </div>
               </Link>
             );
