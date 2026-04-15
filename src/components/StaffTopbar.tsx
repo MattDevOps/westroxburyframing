@@ -10,18 +10,18 @@ const STAFF_NAV: Array<{
   label: string;
   shortcut?: string;
   badge?: boolean;
-  highlight?: boolean;
+  highlight?: "blue" | "orange";
 }> = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
-  { href: "/staff/orders/intake", label: "New Order", highlight: true },
+  { href: "/staff/orders/intake", label: "New Order", highlight: "blue" },
   { href: "/staff/orders/new", label: "Quick Order" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
-  { href: "/staff/pickup-notify", label: "Pickup Notify" },
+  { href: "/staff/pickup-notify", label: "Pickup Notify", highlight: "orange" },
   { href: "/staff/gift-certificates", label: "Gift Certs" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },
@@ -50,7 +50,7 @@ function NavLink({
   onClick?: () => void;
   badge?: boolean;
   badgeCount?: number;
-  highlight?: boolean;
+  highlight?: "blue" | "orange";
 }) {
   const pathname = usePathname();
 
@@ -67,6 +67,13 @@ function NavLink({
      !href.startsWith("/staff/orders") && !href.startsWith("/staff/invoices") &&
      pathname.startsWith(href));
 
+  const highlightClasses =
+    highlight === "orange"
+      ? "bg-orange-500 text-white hover:bg-orange-600 font-medium"
+      : highlight === "blue"
+      ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
+      : "";
+
   return (
     <a
       href={href}
@@ -76,7 +83,7 @@ function NavLink({
         active
           ? "bg-neutral-900 text-white"
           : highlight
-          ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
+          ? highlightClasses
           : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100",
       ].join(" ")}
     >

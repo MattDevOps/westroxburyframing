@@ -11,8 +11,11 @@ type Customer = {
   phone: string | null;
 };
 
-const PICKUP_MESSAGE_PREVIEW =
-  "Hello, this is West Roxbury Framing. Just letting you know your work is all set and ready for pickup. If you would like to come on the weekend, Sunday is the best time. Hours: Mon-Fri 10am-6pm, Sat 10am-4pm, Sun 10:30am-4:30pm. Thank you.";
+const PICKUP_MESSAGE_PREVIEW = `Hello, this is West Roxbury Framing. Your work is all set and ready for pickup. If you would like to come on the weekend, Sunday is the best time.
+
+Hours: M-F: 10-6, Sunday: 10:30am-4:30pm
+
+Thank you.`;
 
 export default function PickupNotifyPage() {
   const [q, setQ] = useState("");
@@ -84,7 +87,7 @@ export default function PickupNotifyPage() {
 
       <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
         <div className="font-medium text-neutral-900 mb-1">Message that will be sent:</div>
-        <div className="italic">&ldquo;{PICKUP_MESSAGE_PREVIEW}&rdquo;</div>
+        <div className="italic whitespace-pre-line">{PICKUP_MESSAGE_PREVIEW}</div>
       </div>
 
       {flash && (
