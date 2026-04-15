@@ -21,6 +21,7 @@ const STAFF_NAV: Array<{
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers" },
+  { href: "/staff/pickup-notify", label: "Pickup Notify" },
   { href: "/staff/gift-certificates", label: "Gift Certs" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },

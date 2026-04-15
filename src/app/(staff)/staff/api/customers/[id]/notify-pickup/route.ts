@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { sendPickupReminderSMS } from "@/lib/sms";
+
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function POST(req: Request, ctx: Ctx) {
+  const userId = getStaffUserIdFromRequest(req);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await ctx.params;
+
+  const customer = await prisma.customer.findUnique({ where: { id } });
+  if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+
+  if (!customer.phone) {
+    return NextResponse.json(
+      { error: "Customer has no phone number on file." },
+      { status: 400 }
+    );
+  }
+
+  const customerName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Customer";
+
+  const smsResult = await sendPickupReminderSMS({
+    to: customer.phone,
+    orderNumber: "",
+    customerName,
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      entityType: "customer",
+      entityId: customer.id,
+      action: smsResult.ok ? "pickup_sms_sent" : "pickup_sms_failed",
+      actorUserId: userId,
+      metadata: {
+        phone: customer.phone,
+        messageSid: smsResult.messageSid || null,
+        error: smsResult.error || null,
+      } as any,
+    },
+  });
+
+  if (!smsResult.ok) {
+    return NextResponse.json(
+      { error: smsResult.error || "Failed to send pickup SMS" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    phone: customer.phone,
+    messageSid: smsResult.messageSid,
+  });
+}

@@ -47,8 +47,35 @@ export default function CustomerDetailPage({
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [sendingPickup, setSendingPickup] = useState(false);
   const { isAdmin } = useUserRole();
   const router = useRouter();
+
+  async function sendPickupSMS() {
+    if (!customer) return;
+    if (!customer.phone) {
+      setErr("This customer has no phone number on file.");
+      return;
+    }
+    const name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "this customer";
+    if (!confirm(`Send pickup-ready SMS to ${name} (${customer.phone})?`)) return;
+
+    setSendingPickup(true);
+    setMsg(null);
+    setErr(null);
+    try {
+      const res = await fetch(`/staff/api/customers/${id}/notify-pickup`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      setMsg(`Pickup SMS sent to ${customer.phone}`);
+    } catch (e: any) {
+      setErr(e?.message || "Failed to send pickup SMS");
+    } finally {
+      setSendingPickup(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -242,6 +269,14 @@ export default function CustomerDetailPage({
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
           >
             {tags.length > 0 ? "Manage Tags" : "+ Add Tag"}
+          </button>
+          <button
+            onClick={sendPickupSMS}
+            disabled={sendingPickup || !customer.phone}
+            className="rounded-xl border border-blue-300 bg-blue-50 text-blue-800 px-4 py-2 text-sm font-medium hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={customer.phone ? "Send pickup-ready SMS to this customer" : "No phone number on file"}
+          >
+            {sendingPickup ? "Sending…" : "Send Pickup SMS"}
           </button>
           <a
             href={`/staff/orders/new?customerId=${customer.id}`}

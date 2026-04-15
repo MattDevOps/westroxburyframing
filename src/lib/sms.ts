@@ -95,7 +95,7 @@ export async function sendPickupReminderSMS(params: {
   orderNumber: string;
   customerName: string;
 }): Promise<SendSMSResult> {
-  const message = `Hi ${params.customerName}, your framing order ${params.orderNumber} is ready for pickup at West Roxbury Framing, 1741 Centre Street. Hours: Mon-Fri 10am-6pm, Sat 10am-4pm. Thank you!`;
+  const message = `Hello, this is West Roxbury Framing. Just letting you know your work is all set and ready for pickup. If you would like to come on the weekend, Sunday is the best time. Hours: Mon-Fri 10am-6pm, Sat 10am-4pm, Sun 10:30am-4:30pm. Thank you.`;
 
   return sendSMS({
     to: params.to,
