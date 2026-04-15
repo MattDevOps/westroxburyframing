@@ -201,7 +201,7 @@ export async function sendPickupReadyCustomerEmail(params: {
 
   const text = `Hello ${params.customerName},
 
-This is West Roxbury Framing. Your work is all set and ready for pickup. We are open Sundays. If you can't make it during business hours, please let us know and we can make you an appointment.
+This is West Roxbury Framing. Your work is all set and ready for pickup. If you can't make it during business hours, please let us know and we can make you an appointment.
 
 Hours:
 Mon–Fri: 10am – 6pm

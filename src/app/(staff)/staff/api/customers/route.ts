@@ -45,6 +45,34 @@ export async function GET(req: Request) {
     };
   }
 
+  async function attachLastNotified(customers: any[]) {
+    if (customers.length === 0) return;
+    const customerIds = customers.map((c) => c.id);
+    const notifyLogs = await prisma.activityLog.findMany({
+      where: {
+        entityType: "customer",
+        entityId: { in: customerIds },
+        action: { in: ["pickup_sms_sent", "pickup_email_sent"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { entityId: true, action: true, createdAt: true },
+    });
+    const lastByCustomer = new Map<string, { at: Date; method: string }>();
+    for (const log of notifyLogs) {
+      if (!lastByCustomer.has(log.entityId)) {
+        lastByCustomer.set(log.entityId, {
+          at: log.createdAt,
+          method: log.action === "pickup_sms_sent" ? "sms" : "email",
+        });
+      }
+    }
+    for (const c of customers) {
+      const info = lastByCustomer.get(c.id);
+      c.lastNotifiedAt = info ? info.at.toISOString() : null;
+      c.lastNotifiedMethod = info ? info.method : null;
+    }
+  }
+
   try {
     // Try to include tagAssignments, but fall back if Prisma client isn't updated yet
     const includeOptions: any = {
@@ -94,6 +122,8 @@ export async function GET(req: Request) {
       }
     }
 
+    await attachLastNotified(customers);
+
     return NextResponse.json({ customers });
   } catch (error: any) {
     console.error("Error fetching customers:", error);
@@ -128,6 +158,8 @@ export async function GET(req: Request) {
         for (const customer of customers) {
           (customer as any).tagAssignments = assignmentsByCustomer.get(customer.id) || [];
         }
+
+        await attachLastNotified(customers);
 
         return NextResponse.json({ customers });
       } catch (fallbackError: any) {

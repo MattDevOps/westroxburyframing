@@ -24,6 +24,8 @@ type Customer = {
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
   createdAt?: string;
+  lastNotifiedAt?: string | null;
+  lastNotifiedMethod?: "sms" | "email" | null;
   _count?: { orders: number };
 };
 
@@ -859,9 +861,9 @@ export default function CustomersPage() {
           <div className="col-span-2">Email</div>
           <div className="col-span-1">Phone</div>
           <div className="col-span-1">Orders</div>
-          <div className="col-span-2">Tags</div>
+          <div className="col-span-1">Tags</div>
           <button
-            className={`col-span-2 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
+            className={`col-span-1 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
               sortBy === "dateAdded"
                 ? "text-neutral-900 font-semibold"
                 : "hover:text-neutral-900 underline decoration-dotted underline-offset-4 decoration-neutral-400"
@@ -871,13 +873,14 @@ export default function CustomersPage() {
               else { setSortBy("dateAdded"); setSortDir("desc"); }
             }}
           >
-            Date Added
+            Added
             {sortBy === "dateAdded" ? (
               sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
             ) : (
               <ArrowUpDown size={11} className="text-neutral-400" />
             )}
           </button>
+          <div className="col-span-2">Last Notified</div>
           <div className="col-span-2 text-right">Notify Pickup</div>
         </div>
 
@@ -900,9 +903,9 @@ export default function CustomersPage() {
                 <div className="col-span-2 text-neutral-600 truncate">{c.email || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{c.phone || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{orderCount}</div>
-                <div className="col-span-2">
+                <div className="col-span-1">
                   <div className="flex flex-wrap gap-1">
-                    {(c as any).tagAssignments?.slice(0, 2).map((assignment: any) => (
+                    {(c as any).tagAssignments?.slice(0, 1).map((assignment: any) => (
                       <span
                         key={assignment.tag.id}
                         className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium border"
@@ -919,15 +922,27 @@ export default function CustomersPage() {
                         {assignment.tag.name}
                       </span>
                     ))}
-                    {(c as any).tagAssignments?.length > 2 && (
+                    {(c as any).tagAssignments?.length > 1 && (
                       <span className="text-xs text-neutral-500">
-                        +{((c as any).tagAssignments?.length || 0) - 2}
+                        +{((c as any).tagAssignments?.length || 0) - 1}
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="col-span-2 text-neutral-600">
+                <div className="col-span-1 text-neutral-600">
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
+                </div>
+                <div className="col-span-2 text-neutral-600 text-xs">
+                  {c.lastNotifiedAt ? (
+                    <>
+                      <div>{new Date(c.lastNotifiedAt).toLocaleString()}</div>
+                      <div className="text-neutral-400 uppercase tracking-wide">
+                        via {c.lastNotifiedMethod}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-neutral-400">Never</span>
+                  )}
                 </div>
                 <div className="col-span-2 text-right flex items-center justify-end gap-1.5">
                   <button
