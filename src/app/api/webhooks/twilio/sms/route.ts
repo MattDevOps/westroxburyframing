@@ -88,11 +88,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Default: Acknowledge receipt (no reply sent)
-    // This prevents Twilio from retrying
+    // Default: auto-reply directing customers to call the store
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?>
-      <Response />`,
+      <Response>
+        <Message>This inbox is not monitored. Our store number is 617-327-3890 - please call for any questions.</Message>
+      </Response>`,
       {
         headers: { "Content-Type": "text/xml" },
       }
