@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock } from "lucide-react";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
@@ -53,9 +53,14 @@ const SERVICES = [
     body: "Archival-quality framing for valuable artwork, antiques, diplomas, ketubahs, and documents. We use only acid-free materials, UV-filtering glazing, and reversible mounting techniques that meet museum conservation standards to protect your investment for generations.",
   },
   {
+    icon: Clock,
+    title: "Rush & Same-Day Framing",
+    body: "Need a frame fast? We offer rush same-day custom framing for customers across Boston and the surrounding area — perfect for last-minute gifts, graduation parties, gallery openings, and memorial services. Call ahead or walk in and we'll do everything we can to get your piece framed the same day.",
+  },
+  {
     icon: PaintBucket,
     title: "Specialty Services",
-    body: "Mirror framing and tabletop glass, oval and circle-shaped frames and mats, custom engraved plaques and name tags, scanning and digital reproduction services, and rush same-day framing when you need it fast.",
+    body: "Mirror framing and tabletop glass, oval and circle-shaped frames and mats, custom engraved plaques and name tags, and scanning and digital reproduction services.",
   },
   {
     icon: DollarSign,
@@ -72,6 +77,10 @@ const FAQS = [
   {
     q: "How long does custom framing take?",
     a: "Most standard orders are ready within 5–7 business days. Rush same-day service is available for an additional fee. We'll give you an exact timeline when you place your order.",
+  },
+  {
+    q: "Do you offer rush or same-day framing?",
+    a: "Yes — we offer rush same-day framing for customers in Boston and the surrounding area who need a frame fast. Great for last-minute gifts, graduations, gallery deadlines, and memorial services. Call us at (617) 327-3890 or walk in to confirm availability and pricing for rush jobs.",
   },
   {
     q: "Do you frame sports jerseys and memorabilia?",
@@ -137,8 +146,8 @@ export default function ServicesContent() {
           </motion.h1>
           <p className="text-muted-foreground max-w-3xl mx-auto text-lg leading-relaxed">
             West Roxbury Framing has been serving Boston and the surrounding communities for over 40 years.
-            From custom picture frames and shadow boxes to photo restoration and conservation framing — everything
-            is built by hand in our West Roxbury shop.
+            From custom picture frames and shadow boxes to photo restoration, conservation framing, and
+            rush same-day framing when you need it fast — everything is built by hand in our West Roxbury shop.
           </p>
         </div>
       </section>

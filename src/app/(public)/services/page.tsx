@@ -2,15 +2,27 @@ import { Metadata } from "next";
 import ServicesContent from "./ServicesContent";
 
 export const metadata: Metadata = {
-  title: "Framing Services — Custom Frame Shop in West Roxbury, MA",
+  title: "Framing Services & Rush Same-Day Framing — West Roxbury, MA",
   description:
-    "Full-service framer in West Roxbury, MA. Custom picture frames, matting, shadow boxes, canvas stretching, photo restoration, museum glass, conservation framing & more. Your local frame shop serving Boston since 1981. Walk-ins welcome.",
+    "Full-service framer in West Roxbury, MA offering rush same-day custom framing, matting, shadow boxes, canvas stretching, photo restoration, museum glass & conservation framing. Your local frame shop serving Boston since 1981. Walk-ins welcome.",
   keywords: [
     "framer",
     "frame",
     "frame shop",
     "framer near me",
     "frame shop near me",
+    "rush framing",
+    "rush framing near me",
+    "rush framing Boston",
+    "same day framing",
+    "same-day framing near me",
+    "same day picture framing Boston",
+    "fast framing West Roxbury",
+    "emergency framing Boston",
+    "urgent framing near me",
+    "last minute framing Boston",
+    "overnight framing Boston",
+    "quick framing near me",
     "custom framing services West Roxbury",
     "picture framing Boston",
     "shadow box framing near me",
@@ -25,9 +37,9 @@ export const metadata: Metadata = {
     "affordable custom framing Boston",
   ],
   openGraph: {
-    title: "Frame Shop & Custom Framing Services | West Roxbury Framing",
+    title: "Frame Shop & Rush Same-Day Framing | West Roxbury Framing",
     description:
-      "Your local framer — custom picture frames, shadow boxes, photo restoration, museum glass & more. Family-owned frame shop in West Roxbury since 1981.",
+      "Your local framer — rush same-day framing, custom picture frames, shadow boxes, photo restoration, museum glass & more. Family-owned frame shop in West Roxbury since 1981.",
     url: "https://westroxburyframing.com/services",
     images: [
       {
@@ -61,6 +73,14 @@ const faqSchema = {
       acceptedAnswer: {
         "@type": "Answer",
         text: "Most standard orders are ready within 5–7 business days. Rush same-day service is available for an additional fee.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do you offer rush or same-day framing?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes — we offer rush same-day framing for customers in Boston and the surrounding area who need a frame fast. Great for last-minute gifts, graduations, gallery deadlines, and memorial services. Call us at (617) 327-3890 or walk in to confirm availability and pricing for rush jobs.",
       },
     },
     {
