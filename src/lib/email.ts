@@ -1004,3 +1004,153 @@ Log in to the staff app to review and price this order.
   }
   return result;
 }
+
+/* ─── Email: Mail-In Invoice (pay by check) ──────────────────────── */
+
+export async function sendMailInInvoiceEmail(params: {
+  to: string;
+  customerName: string;
+  orderNumber: string;
+  orderDate: string;
+  itemType?: string | null;
+  itemDescription?: string | null;
+  size?: string;
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: string;
+    lineTotal: string;
+  }>;
+  subtotal: string;
+  discountAmount?: string;
+  subtotalAfterDiscount: string;
+  tax: string;
+  total: string;
+  amountDue: string;
+  invoiceUrl: string;
+  notes?: string;
+}) {
+  const subject = `Invoice ${params.orderNumber} — West Roxbury Framing`;
+  const payableTo = "West Roxbury Framing";
+  const remitAddress = "1741 Centre Street, West Roxbury, MA 02132";
+
+  const itemsTextBlock = params.lineItems
+    .map((i) => `  - ${i.description} (x${i.quantity}) — ${i.lineTotal}`)
+    .join("\n");
+
+  const text = `Hi ${params.customerName},
+
+Thank you for choosing West Roxbury Framing. Your invoice for order ${params.orderNumber} is ready.
+
+Order Date: ${params.orderDate}
+${params.itemType ? `Item: ${params.itemType}${params.itemDescription ? ` — ${params.itemDescription}` : ""}\n` : ""}${params.size ? `Size: ${params.size}\n` : ""}
+Items:
+${itemsTextBlock}
+
+Subtotal: ${params.subtotal}
+${params.discountAmount ? `Discount: -${params.discountAmount}\n` : ""}Tax: ${params.tax}
+Total: ${params.total}
+Amount Due: ${params.amountDue}
+
+──────────────────────────
+HOW TO PAY
+──────────────────────────
+Pay by Check
+  Make check payable to: ${payableTo}
+  Memo line: Order ${params.orderNumber}
+  Mail to: West Roxbury Framing, ${remitAddress}
+
+Prefer PayPal?
+  Send to: westyframing@gmail.com
+  Include Order ${params.orderNumber} in the note.
+
+View or print a copy of your invoice:
+${params.invoiceUrl}
+
+${params.notes ? `Notes: ${params.notes}\n` : ""}
+Questions? Reply to this email or call (617) 327-3890.
+
+Thank you!
+West Roxbury Framing`;
+
+  const itemRowsHtml = params.lineItems
+    .map(
+      (i) => `
+        <tr>
+          <td style="padding:8px 0;font-size:13px;color:#404040;border-bottom:1px solid #eee">${i.description}</td>
+          <td style="padding:8px 0;font-size:13px;color:#404040;text-align:center;border-bottom:1px solid #eee">${i.quantity}</td>
+          <td style="padding:8px 0;font-size:13px;color:#404040;text-align:right;border-bottom:1px solid #eee">${i.lineTotal}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = emailLayout({
+    preheader: `Invoice ${params.orderNumber} — Amount Due ${params.amountDue}. Pay by check or view online.`,
+    heading: "Your Invoice Is Ready",
+    body: `
+      <p>Hi ${params.customerName},</p>
+      <p>Thank you for choosing West Roxbury Framing! Your invoice for order <strong>${params.orderNumber}</strong> is ready. You can mail a check using the instructions below, or view/print the full invoice online.</p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 8px;border-collapse:collapse">
+        <tr>
+          <th style="padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#737373;text-align:left;border-bottom:2px solid #ddd">Item</th>
+          <th style="padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#737373;text-align:center;border-bottom:2px solid #ddd">Qty</th>
+          <th style="padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#737373;text-align:right;border-bottom:2px solid #ddd">Total</th>
+        </tr>
+        ${itemRowsHtml}
+      </table>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px">
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#737373;text-align:right">Subtotal:</td>
+          <td style="padding:4px 0;font-size:13px;color:#1a1a1a;text-align:right;width:100px">${params.subtotal}</td>
+        </tr>
+        ${params.discountAmount ? `<tr>
+          <td style="padding:4px 0;font-size:13px;color:#737373;text-align:right">Discount:</td>
+          <td style="padding:4px 0;font-size:13px;color:#d32f2f;text-align:right">-${params.discountAmount}</td>
+        </tr>` : ""}
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#737373;text-align:right">Tax:</td>
+          <td style="padding:4px 0;font-size:13px;color:#1a1a1a;text-align:right">${params.tax}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0 4px;font-size:14px;color:#1a1a1a;text-align:right;font-weight:700;border-top:2px solid #222">Total:</td>
+          <td style="padding:8px 0 4px;font-size:14px;color:#1a1a1a;text-align:right;font-weight:700;border-top:2px solid #222">${params.total}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#737373;text-align:right">Amount Due:</td>
+          <td style="padding:4px 0;font-size:18px;color:#b8860b;text-align:right;font-weight:700">${params.amountDue}</td>
+        </tr>
+      </table>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fffbe6;border:1px solid #f5deb3;border-radius:6px;margin:20px 0">
+        <tr><td style="padding:20px">
+          <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a1a1a">How to Pay</p>
+
+          <p style="margin:0 0 6px;font-size:13px;color:#1a1a1a;font-weight:600">Pay by Check</p>
+          <p style="margin:0 0 14px;font-size:13px;color:#404040;line-height:1.6">
+            Make payable to <strong>West Roxbury Framing</strong><br>
+            Memo line: <strong>Order ${params.orderNumber}</strong><br>
+            Mail to: West Roxbury Framing, ${remitAddress}
+          </p>
+
+          <p style="margin:0 0 6px;font-size:13px;color:#1a1a1a;font-weight:600">Prefer PayPal?</p>
+          <p style="margin:0;font-size:13px;color:#404040;line-height:1.6">
+            Send to <strong>westyframing@gmail.com</strong><br>
+            Include <strong>Order ${params.orderNumber}</strong> in the note.
+          </p>
+        </td></tr>
+      </table>
+
+      <p style="font-size:14px;color:#737373">Click below to view or print your full invoice:</p>
+    `,
+    cta: { label: "View & Print Invoice", url: params.invoiceUrl },
+    footer: "Questions about this invoice? Reply to this email or call (617) 327-3890.",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}

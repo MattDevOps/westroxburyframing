@@ -441,6 +441,36 @@ export default function OrderDetailPage() {
               📧 Email Receipt
             </button>
           )}
+          {order.customer?.email && (
+            <button
+              onClick={async () => {
+                if (
+                  !confirm(
+                    `Email a mail-in invoice to ${order.customer?.email}?\n\nIncludes pay-by-check and PayPal instructions.`
+                  )
+                )
+                  return;
+                try {
+                  const res = await fetch(
+                    `/staff/api/orders/${order.id}/email-mail-invoice`,
+                    { method: "POST" }
+                  );
+                  const result = await res.json();
+                  if (res.ok) {
+                    alert(`Mail-in invoice emailed to ${order.customer?.email}`);
+                  } else {
+                    alert(result.error || "Failed to email invoice");
+                  }
+                } catch (e: any) {
+                  alert("Failed to email invoice: " + e.message);
+                }
+              }}
+              className="rounded-xl bg-amber-600 text-white px-4 py-2 text-sm hover:bg-amber-700 transition-colors"
+              title="Email Mail-In Invoice (Pay by Check / PayPal)"
+            >
+              📬 Mail-In Invoice
+            </button>
+          )}
           <a
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
             href="/staff/orders"
