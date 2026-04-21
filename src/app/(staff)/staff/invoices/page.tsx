@@ -128,12 +128,26 @@ function InvoicesListPage() {
             </span>
           </div>
         </div>
-        <Link
-          href="/staff/invoices/new"
-          className="rounded-xl bg-black text-white px-5 py-2.5 text-sm text-center"
-        >
-          + New Invoice
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/staff/orders/intake"
+            className="rounded-xl bg-blue-600 text-white px-5 py-2.5 text-sm text-center hover:bg-blue-700"
+          >
+            + New Order
+          </Link>
+          <Link
+            href="/staff/orders/new"
+            className="rounded-xl border border-neutral-300 text-neutral-800 px-5 py-2.5 text-sm text-center hover:bg-neutral-50"
+          >
+            + Quick Order
+          </Link>
+          <Link
+            href="/staff/invoices/new"
+            className="rounded-xl bg-black text-white px-5 py-2.5 text-sm text-center"
+          >
+            + New Invoice
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

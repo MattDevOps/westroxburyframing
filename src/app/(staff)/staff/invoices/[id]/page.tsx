@@ -61,6 +61,11 @@ export default function InvoiceDetailPage({
   const [emailMsg, setEmailMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // PDF style selector: "invoice" = existing invoice PDF,
+  // "mailin:<orderId>" = public mail-in PDF keyed by order
+  const [pdfStyle, setPdfStyle] = useState("invoice");
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+
   async function loadInvoice() {
     setLoading(true);
     setError(null);
@@ -312,13 +317,39 @@ export default function InvoiceDetailPage({
           >
             Delete
           </button>
-          <a
-            href={`/staff/api/invoices/${id}/pdf`}
-            target="_blank"
-            className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800 transition-colors"
-          >
-            Download PDF
-          </a>
+          <div className="flex items-stretch">
+            <select
+              value={pdfStyle}
+              onChange={(e) => setPdfStyle(e.target.value)}
+              className="rounded-l-xl border border-r-0 border-neutral-300 bg-white px-3 py-2 text-sm focus:outline-none"
+              aria-label="PDF style"
+            >
+              <option value="invoice">Invoice PDF</option>
+              {invoice.orders?.map((o: any) => (
+                <option key={o.id} value={`mailin:${o.id}`}>
+                  Mail-In: {o.orderNumber}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setPdfPreviewOpen(true)}
+              className="border border-r-0 border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-800 hover:bg-neutral-50"
+            >
+              Preview
+            </button>
+            <a
+              href={
+                pdfStyle.startsWith("mailin:")
+                  ? `/api/invoice/${pdfStyle.slice("mailin:".length)}`
+                  : `/staff/api/invoices/${id}/pdf`
+              }
+              target="_blank"
+              className="rounded-r-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800 transition-colors inline-flex items-center"
+            >
+              Download
+            </a>
+          </div>
           <button
             onClick={syncToQBO}
             disabled={syncingQBO || invoice.status === "draft"}
@@ -555,9 +586,25 @@ export default function InvoiceDetailPage({
 
       {/* Linked Orders */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
-        <h3 className="font-semibold text-neutral-900">
-          Linked Orders ({invoice.orders?.length || 0})
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-semibold text-neutral-900">
+            Linked Orders ({invoice.orders?.length || 0})
+          </h3>
+          <div className="flex gap-2">
+            <Link
+              href={`/staff/orders/intake?customerId=${invoice.customer.id}`}
+              className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
+            >
+              + New Order
+            </Link>
+            <Link
+              href={`/staff/orders/new?customerId=${invoice.customer.id}`}
+              className="rounded-lg border border-neutral-300 text-neutral-700 px-3 py-1.5 text-xs hover:bg-neutral-50"
+            >
+              + Quick Order
+            </Link>
+          </div>
+        </div>
 
         {(!invoice.orders || invoice.orders.length === 0) ? (
           <p className="text-sm text-neutral-500">No orders linked to this invoice.</p>
@@ -637,6 +684,54 @@ export default function InvoiceDetailPage({
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <h3 className="font-semibold text-neutral-900 mb-2">Notes</h3>
           <p className="text-sm text-neutral-600 whitespace-pre-wrap">{invoice.notes}</p>
+        </div>
+      )}
+
+      {/* PDF Preview Modal */}
+      {pdfPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setPdfPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200">
+              <h3 className="font-semibold text-neutral-900">
+                {pdfStyle.startsWith("mailin:") ? "Mail-In Invoice Preview" : "Invoice PDF Preview"}
+              </h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={
+                    pdfStyle.startsWith("mailin:")
+                      ? `/api/invoice/${pdfStyle.slice("mailin:".length)}`
+                      : `/staff/api/invoices/${id}/pdf`
+                  }
+                  target="_blank"
+                  className="rounded-lg bg-neutral-900 text-white px-3 py-1.5 text-xs hover:bg-neutral-800"
+                >
+                  Open in new tab
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPdfPreviewOpen(false)}
+                  className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <iframe
+              title="Invoice preview"
+              src={
+                pdfStyle.startsWith("mailin:")
+                  ? `/api/invoice/${pdfStyle.slice("mailin:".length)}`
+                  : `/staff/api/invoices/${id}/pdf`
+              }
+              className="flex-1 w-full border-0"
+            />
+          </div>
         </div>
       )}
     </div>

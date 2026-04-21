@@ -70,9 +70,9 @@ export default function OrdersBoardPage() {
     ]).catch(console.error);
   }, []);
 
-  async function load() {
+  async function load({ silent = false }: { silent?: boolean } = {}) {
     setErr(null);
-    setLoading(true);
+    if (!silent) setLoading(true);
     const params = new URLSearchParams({ limit: "200" });
     if (searchQ.trim()) params.set("q", searchQ.trim());
     if (dateFrom) params.set("from", dateFrom);
@@ -91,13 +91,13 @@ export default function OrdersBoardPage() {
       }
       setOrders(out.orders || []);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 8000);
+    const t = setInterval(() => load({ silent: true }), 30000);
     return () => clearInterval(t);
   }, [searchQ, dateFrom, dateTo, filterItemType, filterStatus, filterStaff, filterLocation]);
 

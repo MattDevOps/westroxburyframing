@@ -87,6 +87,10 @@ export default function OrderForm() {
   const [discountType, setDiscountType] = useState<"none" | "percent" | "fixed">("none");
   const [discountValue, setDiscountValue] = useState<number>(0);
 
+  // Job notes
+  const [notesInternal, setNotesInternal] = useState("");
+  const [notesCustomer, setNotesCustomer] = useState("");
+
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -232,6 +236,8 @@ export default function OrderForm() {
       discount_type: discountType,
       discount_value: discountValue,
       tax_rate: 0.0625,
+      notes_internal: notesInternal.trim() || null,
+      notes_customer: notesCustomer.trim() || null,
     };
 
     if (useComponents && components.length > 0) {
@@ -663,6 +669,29 @@ export default function OrderForm() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Notes */}
+      <div className="space-y-2">
+        <div className="text-lg font-semibold">Notes</div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Internal notes" hint="Staff-only. Not shown to the customer.">
+            <textarea
+              className="rounded-xl border p-3 min-h-[80px]"
+              placeholder="e.g. Use extra tape on backing, customer prefers deep matte finish"
+              value={notesInternal}
+              onChange={(e) => setNotesInternal(e.target.value)}
+            />
+          </Field>
+          <Field label="Customer-visible notes" hint="May appear on receipts and customer communications.">
+            <textarea
+              className="rounded-xl border p-3 min-h-[80px]"
+              placeholder="e.g. Rush job — ready by Friday"
+              value={notesCustomer}
+              onChange={(e) => setNotesCustomer(e.target.value)}
+            />
+          </Field>
+        </div>
       </div>
 
       {info && (

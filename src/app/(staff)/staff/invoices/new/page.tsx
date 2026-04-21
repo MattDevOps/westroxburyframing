@@ -158,12 +158,26 @@ function NewInvoicePage() {
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-neutral-900">Create Invoice</h1>
-        <a
-          href="/staff/invoices"
-          className="text-sm text-neutral-600 hover:text-neutral-900"
-        >
-          ← Back to invoices
-        </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="/staff/orders/intake"
+            className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
+          >
+            + New Order
+          </a>
+          <a
+            href="/staff/orders/new"
+            className="rounded-lg border border-neutral-300 text-neutral-700 px-3 py-1.5 text-xs hover:bg-neutral-50"
+          >
+            + Quick Order
+          </a>
+          <a
+            href="/staff/invoices"
+            className="text-sm text-neutral-600 hover:text-neutral-900"
+          >
+            ← Back to invoices
+          </a>
+        </div>
       </div>
 
       {error && (
@@ -246,12 +260,23 @@ function NewInvoicePage() {
           {loadingOrders ? (
             <p className="text-sm text-neutral-500">Loading orders…</p>
           ) : orders.length === 0 ? (
-            <p className="text-sm text-neutral-500">
-              No active orders for this customer.{" "}
-              <a href={`/staff/orders/new?customerId=${selectedCustomer.id}`} className="text-blue-600 hover:underline">
-                Create one
-              </a>
-            </p>
+            <div className="text-sm text-neutral-500 space-y-2">
+              <p>No active orders for this customer.</p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`/staff/orders/intake?customerId=${selectedCustomer.id}`}
+                  className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
+                >
+                  + New Order
+                </a>
+                <a
+                  href={`/staff/orders/new?customerId=${selectedCustomer.id}`}
+                  className="rounded-lg border border-neutral-300 text-neutral-700 px-3 py-1.5 text-xs hover:bg-neutral-50"
+                >
+                  + Quick Order
+                </a>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2">
               {orders.map((o) => {
