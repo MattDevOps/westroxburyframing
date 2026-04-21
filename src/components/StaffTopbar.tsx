@@ -16,8 +16,8 @@ const STAFF_NAV: Array<{
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/incomplete", label: "Incomplete" },
-  { href: "/staff/orders/intake", label: "New Order", highlight: "blue" },
-  { href: "/staff/orders/new", label: "Quick Order" },
+  { href: "/staff/orders/intake", label: "New Order" },
+  { href: "/staff/orders/new", label: "Quick Order", highlight: "blue" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appts" },
   { href: "/staff/customers", label: "Customers", highlight: "orange" },
@@ -216,8 +216,8 @@ export default function StaffTopbar() {
                   ? [
                       { href: "/staff/welcome", label: "Welcome" },
                       { href: "/staff/customer-form", label: "Customer Form" },
-                      { href: "/staff/orders/intake", label: "New Order", highlight: "blue" as const },
-                      { href: "/staff/orders/new", label: "Quick Order" },
+                      { href: "/staff/orders/intake", label: "New Order" },
+                      { href: "/staff/orders/new", label: "Quick Order", highlight: "blue" as const },
                     ]
                   : STAFF_NAV;
                 return navItems.map((link) => (
