@@ -178,7 +178,7 @@ export async function GET(_req: Request, ctx: Ctx) {
           <strong>Order #:</strong> ${h(order.orderNumber)}<br />
           <strong>Date:</strong> ${orderDate}<br />
           ${order.itemType ? `<strong>Item:</strong> ${h(order.itemType)}<br />` : ""}
-          ${order.width && order.height ? `<strong>Size:</strong> ${order.width}" × ${order.height}"` : ""}
+          <strong>Quantity:</strong> 1
         </p>
       </div>
     </div>
