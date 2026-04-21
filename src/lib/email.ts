@@ -1064,6 +1064,9 @@ Prefer PayPal?
   Send to: westyframing@gmail.com
   Include Order ${params.orderNumber} in the note.
 
+Pay by Phone
+  Call us at (617) 327-3890 — we accept credit cards over the phone.
+
 View or print a copy of your invoice:
 ${params.invoiceUrl}
 
@@ -1135,9 +1138,14 @@ West Roxbury Framing`;
           </p>
 
           <p style="margin:0 0 6px;font-size:13px;color:#1a1a1a;font-weight:600">Prefer PayPal?</p>
-          <p style="margin:0;font-size:13px;color:#404040;line-height:1.6">
+          <p style="margin:0 0 14px;font-size:13px;color:#404040;line-height:1.6">
             Send to <strong>westyframing@gmail.com</strong><br>
             Include <strong>Order ${params.orderNumber}</strong> in the note.
+          </p>
+
+          <p style="margin:0 0 6px;font-size:13px;color:#1a1a1a;font-weight:600">Pay by Phone</p>
+          <p style="margin:0;font-size:13px;color:#404040;line-height:1.6">
+            Call us at <strong>(617) 327-3890</strong> — we accept credit cards over the phone.
           </p>
         </td></tr>
       </table>

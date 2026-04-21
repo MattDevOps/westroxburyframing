@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import OrdersTabsNav from "@/components/OrdersTabsNav";
 
 interface Invoice {
   id: string;
@@ -115,6 +116,8 @@ function InvoicesListPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-6">
+      <OrdersTabsNav current="invoices-pending" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

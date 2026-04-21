@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import OrdersTabsNav from "@/components/OrdersTabsNav";
 
 type OrderCard = {
   id: string;
@@ -68,13 +69,9 @@ export default function CompletedOrdersPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-neutral-900">Completed Orders</h1>
-        <Link
-          href="/staff/orders"
-          className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
-        >
-          ← Back to Orders
-        </Link>
       </div>
+
+      <OrdersTabsNav current="completed" />
 
       {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</div>}
 

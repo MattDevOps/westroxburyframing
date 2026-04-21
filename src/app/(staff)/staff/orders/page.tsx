@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import OrdersTabsNav from "@/components/OrdersTabsNav";
 
 type OrderCard = {
   id: string;
@@ -41,10 +43,22 @@ const ALL_COLUMNS: { key: string; title: string }[] = [
 
 type TabType = "active" | "estimates" | "all";
 
-export default function OrdersBoardPage() {
+export default function OrdersBoardPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-6 text-neutral-500 text-sm">Loading…</div>}>
+      <OrdersBoardPage />
+    </Suspense>
+  );
+}
+
+function OrdersBoardPage() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "active";
   const [orders, setOrders] = useState<OrderCard[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>("active");
+  const [activeTab, setActiveTab] = useState<TabType>(
+    initialTab === "estimates" || initialTab === "all" || initialTab === "active" ? initialTab : "active"
+  );
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -435,52 +449,11 @@ export default function OrdersBoardPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-neutral-300">
-        <button
-          onClick={() => setActiveTab("active")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "active"
-            ? "text-neutral-900 border-b-2 border-neutral-900"
-            : "text-neutral-600 hover:text-neutral-900"
-            }`}
-        >
-          Active Orders
-        </button>
-        <button
-          onClick={() => setActiveTab("estimates")}
-          className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === "estimates"
-            ? "text-neutral-900 border-b-2 border-neutral-900"
-            : "text-neutral-600 hover:text-neutral-900"
-            }`}
-        >
-          Estimates
-          {estimateCount > 0 && (
-            <span className="rounded-full bg-red-100 text-red-700 text-xs px-2 py-0.5 font-semibold">
-              {estimateCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === "all"
-            ? "text-neutral-900 border-b-2 border-neutral-900"
-            : "text-neutral-600 hover:text-neutral-900"
-            }`}
-        >
-          All Orders
-        </button>
-        <a
-          href="/staff/orders/completed"
-          className="px-4 py-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
-        >
-          Completed Orders
-        </a>
-        <a
-          href="/staff/invoices?status=pending"
-          className="px-4 py-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
-        >
-          Pending Invoices
-        </a>
-      </div>
+      <OrdersTabsNav
+        current={activeTab}
+        estimateCount={estimateCount}
+        onLocalTabChange={(t) => setActiveTab(t)}
+      />
 
       <div className={`grid gap-4 overflow-x-auto pb-4 ${gridCols}`} style={activeTab === "all" ? { gridTemplateColumns: `repeat(${currentColumns.length}, minmax(220px, 1fr))` } : { gridAutoColumns: "minmax(240px, 1fr)", gridAutoFlow: activeTab === "estimates" ? undefined : "column" }}>
         {currentColumns.map((col) => (
