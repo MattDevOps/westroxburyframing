@@ -143,6 +143,7 @@ model Order {
   dueDate         DateTime?
   itemType        String
   itemDescription String?
+  quantity        Int           @default(1)
   width           Decimal?
   height          Decimal?
   units           String        @default("in") // "in" | "cm"

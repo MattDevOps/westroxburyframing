@@ -250,6 +250,7 @@ export default function OrderDetailPage() {
       dueDate: order.dueDate ? new Date(order.dueDate).toISOString().slice(0, 10) : "",
       itemType: order.itemType,
       itemDescription: order.itemDescription || "",
+      quantity: order.quantity ?? 1,
       width: order.width ? Number(order.width) : "",
       height: order.height ? Number(order.height) : "",
       units: order.units || "in",
@@ -298,6 +299,7 @@ export default function OrderDetailPage() {
         dueDate: editData.dueDate || null,
         itemType: editData.itemType,
         itemDescription: editData.itemDescription || null,
+        quantity: editData.quantity ? Number(editData.quantity) : 1,
         width: editData.width ? Number(editData.width) : null,
         height: editData.height ? Number(editData.height) : null,
         units: editData.units,
@@ -529,6 +531,10 @@ export default function OrderDetailPage() {
           <div>
             <span className="font-medium text-neutral-600">Item:</span>{" "}
             <span className="text-neutral-900">{order.itemType}</span>
+          </div>
+          <div>
+            <span className="font-medium text-neutral-600">Qty:</span>{" "}
+            <span className="text-neutral-900">{order.quantity ?? 1}</span>
           </div>
           <div>
             <span className="font-medium text-neutral-600">Subtotal:</span>{" "}
@@ -1443,6 +1449,18 @@ export default function OrderDetailPage() {
                     value={editData.itemType}
                     onChange={(e) => setEditData({ ...editData, itemType: e.target.value })}
                     placeholder="e.g. art, photo, diploma"
+                  />
+                </Field>
+
+                <Field label="Quantity">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+                    value={editData.quantity}
+                    onChange={(e) => setEditData({ ...editData, quantity: e.target.value })}
+                    placeholder="1"
                   />
                 </Field>
 

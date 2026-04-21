@@ -225,6 +225,10 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if ("itemType" in body) data.itemType = body.itemType ?? null;
   if ("itemDescription" in body) data.itemDescription = body.itemDescription ?? null;
+  if ("quantity" in body) {
+    const q = Number(body.quantity);
+    data.quantity = Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
+  }
 
   if ("width" in body) data.width = body.width === "" || body.width == null ? null : Number(body.width);
   if ("height" in body) data.height = body.height === "" || body.height == null ? null : Number(body.height);
