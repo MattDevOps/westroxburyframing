@@ -238,7 +238,7 @@ function OrdersBoardPage() {
           </a>
           <button
             className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
-            onClick={load}
+            onClick={() => load()}
           >
             Refresh
           </button>
