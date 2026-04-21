@@ -26,17 +26,6 @@ export async function GET(_req: Request, ctx: Ctx) {
           zip: true,
         },
       },
-      components: {
-        include: {
-          priceCode: true,
-          vendorItem: {
-            include: {
-              vendor: { select: { name: true, code: true } },
-            },
-          },
-        },
-        orderBy: { position: "asc" },
-      },
       payments: {
         where: { status: "paid" },
         select: { amount: true },
@@ -82,24 +71,6 @@ export async function GET(_req: Request, ctx: Ctx) {
   ]
     .filter(Boolean)
     .join(", ");
-
-  const componentRows = order.components
-    .map((comp) => {
-      const name =
-        comp.description ||
-        comp.vendorItem?.description ||
-        comp.priceCode?.name ||
-        comp.category ||
-        "";
-      return `
-    <tr>
-      <td>${h(name)}</td>
-      <td style="text-align:center">${comp.quantity || ""}</td>
-      <td style="text-align:right">${fmt(comp.unitPrice)}</td>
-      <td style="text-align:right">${fmt(comp.lineTotal)}</td>
-    </tr>`;
-    })
-    .join("");
 
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
@@ -212,33 +183,17 @@ export async function GET(_req: Request, ctx: Ctx) {
       </div>
     </div>
 
-    ${order.components.length > 0 ? `
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th>Description</th>
-          <th style="text-align:center">Qty</th>
-          <th style="text-align:right">Unit Price</th>
-          <th style="text-align:right">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${componentRows}
-      </tbody>
-    </table>
-    ` : `
     <table class="items-table">
       <thead>
         <tr><th>Description</th><th style="text-align:right">Total</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>${h(order.itemType || "Custom framing")}${order.itemDescription ? ` — ${h(order.itemDescription)}` : ""}</td>
+          <td>${h(order.notesCustomer || "Custom framing")}</td>
           <td style="text-align:right">${fmt(order.subtotalAmount)}</td>
         </tr>
       </tbody>
     </table>
-    `}
 
     <div class="totals">
       <table class="totals-table">

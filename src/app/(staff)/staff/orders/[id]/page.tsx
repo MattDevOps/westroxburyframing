@@ -560,7 +560,7 @@ export default function OrderDetailPage() {
           <div>
             <span className="font-medium text-neutral-600">Channel:</span>{" "}
             <span className="text-neutral-900">
-              {order.intakeChannel === "walk_in" ? "Walk-in" : order.intakeChannel === "appointment" ? "Appointment" : "Web Lead"}
+              {order.intakeChannel === "walk_in" ? "Walk-in" : order.intakeChannel === "appointment" ? "Appointment" : order.intakeChannel === "phone" ? "Phone" : "Web Lead"}
             </span>
           </div>
           {(order.width || order.height) && (
@@ -1432,6 +1432,7 @@ export default function OrderDetailPage() {
                   >
                     <option value="walk_in">Walk-in</option>
                     <option value="appointment">Appointment</option>
+                    <option value="phone">Phone</option>
                     <option value="web_lead">Web Lead</option>
                   </select>
                 </Field>
