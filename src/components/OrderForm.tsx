@@ -360,6 +360,11 @@ export default function OrderForm() {
               <option value="diploma">Diploma / Certificate</option>
               <option value="object">Object / Shadowbox</option>
               <option value="memorabilia">Memorabilia / Jersey</option>
+              <option value="canvas">Canvas</option>
+              <option value="map">Map</option>
+              <option value="jersey">Jersey</option>
+              <option value="medals">Medals</option>
+              <option value="restoration">Restoration</option>
             </select>
           </Field>
 

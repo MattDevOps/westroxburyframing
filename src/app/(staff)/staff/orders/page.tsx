@@ -321,6 +321,9 @@ function OrdersBoardPage() {
             <option value="memorabilia">Memorabilia / Jersey</option>
             <option value="mirror">Mirror</option>
             <option value="canvas">Canvas</option>
+            <option value="map">Map</option>
+            <option value="jersey">Jersey</option>
+            <option value="medals">Medals</option>
             <option value="restoration">Restoration</option>
             <option value="other">Other</option>
           </select>
