@@ -78,6 +78,8 @@ export default function OrderDetailPage() {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string } | null>(null);
   const [showCustomerArtwork, setShowCustomerArtwork] = useState(false);
   const [attachingArtwork, setAttachingArtwork] = useState<string | null>(null);
+  const [mailInPreviewOpen, setMailInPreviewOpen] = useState(false);
+  const [sendingMailIn, setSendingMailIn] = useState(false);
 
   async function refresh() {
     if (!id) return;
@@ -361,122 +363,113 @@ export default function OrderDetailPage() {
             {order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : "No Customer"}
           </div>
         </div>
-        <div className="flex gap-2 print:hidden">
-          {isEstimate && (
-            <button
-              className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm hover:bg-emerald-700"
-              onClick={() => {
-                if (confirm("Activate this estimate? It will become an active order.")) {
-                  setStatus("new_design");
-                }
-              }}
-            >
-              Activate Estimate
-            </button>
-          )}
-          <button
-            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
-            onClick={startEdit}
-          >
-            Edit Order
-          </button>
-          <button
-            className="rounded-xl bg-red-600 text-white px-4 py-2 text-sm hover:bg-red-700"
-            onClick={async () => {
-              if (!confirm("Permanently delete this order? This cannot be undone.")) return;
-              try {
-                const res = await fetch(`/staff/api/orders/${id}`, { method: "DELETE" });
-                const d = await res.json();
-                if (!res.ok) { alert(d.error || "Failed to delete"); return; }
-                router.push("/staff/orders");
-              } catch { alert("Error deleting order"); }
-            }}
-          >
-            Delete Order
-          </button>
-          <button
-            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
-            onClick={handlePrint}
-            title="Print work order"
-          >
-            🖨️ Print
-          </button>
-          <a
-            href={`/staff/api/orders/${order.id}/pdf${blindPrint ? "?blind=true" : ""}`}
-            target="_blank"
-            className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800 transition-colors"
-            title="Download PDF"
-          >
-            📄 PDF
-          </a>
-          <a
-            href={`/staff/api/orders/${order.id}/receipt`}
-            target="_blank"
-            className="rounded-xl bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 transition-colors"
-            title="Print Customer Receipt"
-          >
-            🧾 Receipt
-          </a>
-          {order.customer?.email && (
-            <button
-              onClick={async () => {
-                if (!confirm(`Email receipt to ${order.customer?.email}?`)) return;
-                try {
-                  const res = await fetch(`/staff/api/orders/${order.id}/email-receipt`, {
-                    method: "POST",
-                  });
-                  const result = await res.json();
-                  if (res.ok) {
-                    alert(`Receipt emailed to ${order.customer?.email}`);
-                  } else {
-                    alert(result.error || "Failed to email receipt");
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 print:hidden">
+          {/* Group 1: Status / Edit */}
+          <div className="flex flex-wrap items-center gap-2">
+            {isEstimate && (
+              <button
+                className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm hover:bg-emerald-700"
+                onClick={() => {
+                  if (confirm("Activate this estimate? It will become an active order.")) {
+                    setStatus("new_design");
                   }
-                } catch (e: any) {
-                  alert("Failed to email receipt: " + e.message);
-                }
-              }}
-              className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
-              title="Email Receipt to Customer"
-            >
-              📧 Email Receipt
-            </button>
-          )}
-          {order.customer?.email && (
+                }}
+              >
+                Activate Estimate
+              </button>
+            )}
             <button
-              onClick={async () => {
-                if (
-                  !confirm(
-                    `Email a mail-in invoice to ${order.customer?.email}?\n\nIncludes pay-by-check and PayPal instructions.`
-                  )
-                )
-                  return;
-                try {
-                  const res = await fetch(
-                    `/staff/api/orders/${order.id}/email-mail-invoice`,
-                    { method: "POST" }
-                  );
-                  const result = await res.json();
-                  if (res.ok) {
-                    alert(`Mail-in invoice emailed to ${order.customer?.email}`);
-                  } else {
-                    alert(result.error || "Failed to email invoice");
-                  }
-                } catch (e: any) {
-                  alert("Failed to email invoice: " + e.message);
-                }
-              }}
-              className="rounded-xl bg-amber-600 text-white px-4 py-2 text-sm hover:bg-amber-700 transition-colors"
-              title="Email Mail-In Invoice (Pay by Check / PayPal)"
+              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+              onClick={startEdit}
             >
-              📬 Mail-In Invoice
+              Edit Order
             </button>
-          )}
-          <a
-            className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
-            href="/staff/orders"
-          >
-            Back to orders
-          </a>
+          </div>
+
+          <div className="hidden sm:block h-6 w-px bg-neutral-200" aria-hidden />
+
+          {/* Group 2: Work Order documents (internal) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+              onClick={handlePrint}
+              title="Print work order (internal)"
+            >
+              🖨️ Print
+            </button>
+            <a
+              href={`/staff/api/orders/${order.id}/pdf${blindPrint ? "?blind=true" : ""}`}
+              target="_blank"
+              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+              title="Download work order PDF (internal)"
+            >
+              📄 Work Order PDF
+            </a>
+          </div>
+
+          <div className="hidden sm:block h-6 w-px bg-neutral-200" aria-hidden />
+
+          {/* Group 3: Customer Receipt (post-payment) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`/staff/api/orders/${order.id}/receipt`}
+              target="_blank"
+              className="rounded-xl bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 transition-colors"
+              title="Print Customer Receipt"
+            >
+              🧾 Print Receipt
+            </a>
+            {order.customer?.email && (
+              <button
+                onClick={async () => {
+                  if (!confirm(`Email receipt to ${order.customer?.email}?`)) return;
+                  try {
+                    const res = await fetch(`/staff/api/orders/${order.id}/email-receipt`, {
+                      method: "POST",
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                      alert(`Receipt emailed to ${order.customer?.email}`);
+                    } else {
+                      alert(result.error || "Failed to email receipt");
+                    }
+                  } catch (e: any) {
+                    alert("Failed to email receipt: " + e.message);
+                  }
+                }}
+                className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
+                title="Email Receipt to Customer"
+              >
+                📧 Email Receipt
+              </button>
+            )}
+          </div>
+
+          <div className="hidden sm:block h-6 w-px bg-neutral-200" aria-hidden />
+
+          {/* Group 4: Destructive / Nav */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="rounded-xl bg-red-600 text-white px-4 py-2 text-sm hover:bg-red-700"
+              onClick={async () => {
+                if (!confirm("Permanently delete this order? This cannot be undone.")) return;
+                try {
+                  const res = await fetch(`/staff/api/orders/${id}`, { method: "DELETE" });
+                  const d = await res.json();
+                  if (!res.ok) { alert(d.error || "Failed to delete"); return; }
+                  router.push("/staff/orders");
+                } catch { alert("Error deleting order"); }
+              }}
+            >
+              Delete Order
+            </button>
+            <a
+              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100"
+              href="/staff/orders"
+            >
+              ← Back to orders
+            </a>
+          </div>
         </div>
       </div>
 
@@ -1153,10 +1146,15 @@ export default function OrderDetailPage() {
         )}
       </div>
 
-      {/* Payment */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3 print:hidden">
+      {/* Billing & Invoices */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-5 print:hidden">
         <div className="flex items-center justify-between">
-          <div className="text-neutral-900 font-semibold">Square Payment</div>
+          <div>
+            <div className="text-neutral-900 font-semibold text-lg">Billing & Invoices</div>
+            <div className="text-xs text-neutral-500 mt-0.5">
+              Send the customer a payable invoice.
+            </div>
+          </div>
           {order.squareInvoiceId && (
             <span
               className={`text-sm px-2 py-1 rounded-lg border ${order.squareInvoiceStatus?.toUpperCase() === "PAID"
@@ -1175,7 +1173,69 @@ export default function OrderDetailPage() {
           )}
         </div>
 
-        <SquareInvoiceButtons orderId={order.id} existingInvoiceId={order.squareInvoiceId || undefined} />
+        {/* Option A: Square (card) */}
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-neutral-900">
+                💳 Card Payment — via Square
+              </div>
+              <div className="text-xs text-neutral-600 mt-0.5">
+                Customer receives an email from Square with a secure pay-by-card link.
+                Preview before sending.
+              </div>
+            </div>
+          </div>
+          <SquareInvoiceButtons
+            orderId={order.id}
+            existingInvoiceId={order.squareInvoiceId || undefined}
+            customerName={
+              order.customer
+                ? `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim()
+                : undefined
+            }
+            customerEmail={order.customer?.email || undefined}
+            totalCents={order.totalAmount}
+          />
+        </div>
+
+        {/* Option B: Mail-In (check / PayPal) */}
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-neutral-900">
+                📬 Mail-In Invoice — Check or PayPal
+              </div>
+              <div className="text-xs text-neutral-600 mt-0.5">
+                Sends a PDF-style invoice with pay-by-check and PayPal instructions.
+                Preview what the customer will see before emailing.
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
+              onClick={() => setMailInPreviewOpen(true)}
+              title="Preview the mail-in invoice in a new window"
+            >
+              Preview Mail-In Invoice
+            </button>
+            {order.customer?.email ? (
+              <button
+                className="rounded-xl bg-amber-600 text-white px-3 py-2 text-sm hover:bg-amber-700 disabled:opacity-50"
+                disabled={sendingMailIn}
+                onClick={() => setMailInPreviewOpen(true)}
+                title={`Preview then email to ${order.customer?.email}`}
+              >
+                {sendingMailIn ? "Sending…" : `Email Mail-In Invoice`}
+              </button>
+            ) : (
+              <span className="text-xs text-amber-700">
+                Add a customer email to enable sending.
+              </span>
+            )}
+          </div>
+        </div>
 
         {order.squareInvoiceId && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 mt-2">
@@ -1559,6 +1619,101 @@ export default function OrderDetailPage() {
               <button className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm hover:bg-neutral-800" onClick={saveEdit}>
                 Save Changes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mail-In Invoice Preview Modal */}
+      {mailInPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:hidden"
+          onClick={() => !sendingMailIn && setMailInPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200">
+              <div>
+                <h3 className="font-semibold text-neutral-900">
+                  Mail-In Invoice Preview
+                </h3>
+                <div className="text-xs text-neutral-500">
+                  Pay-by-check / PayPal invoice — this is exactly what the customer
+                  will receive.
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/api/invoice/${order.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-800 hover:bg-neutral-50"
+                >
+                  Open in new tab ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setMailInPreviewOpen(false)}
+                  disabled={sendingMailIn}
+                  className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <iframe
+              title="Mail-in invoice preview"
+              src={`/api/invoice/${order.id}`}
+              className="flex-1 w-full border-0 bg-neutral-100"
+            />
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-neutral-200 bg-neutral-50">
+              <div className="text-sm text-neutral-600">
+                {order.customer?.email ? (
+                  <>Will email to <span className="font-semibold text-neutral-900">{order.customer.email}</span></>
+                ) : (
+                  <span className="text-amber-700">No customer email on file.</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMailInPreviewOpen(false)}
+                  disabled={sendingMailIn}
+                  className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-800 hover:bg-neutral-100 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!order.customer?.email || sendingMailIn}
+                  onClick={async () => {
+                    if (!order.customer?.email) return;
+                    setSendingMailIn(true);
+                    try {
+                      const res = await fetch(
+                        `/staff/api/orders/${order.id}/email-mail-invoice`,
+                        { method: "POST" }
+                      );
+                      const result = await res.json();
+                      if (res.ok) {
+                        alert(`Mail-in invoice emailed to ${order.customer?.email}`);
+                        setMailInPreviewOpen(false);
+                      } else {
+                        alert(result.error || "Failed to email invoice");
+                      }
+                    } catch (e: any) {
+                      alert("Failed to email invoice: " + e.message);
+                    } finally {
+                      setSendingMailIn(false);
+                    }
+                  }}
+                  className="rounded-xl bg-amber-600 text-white px-4 py-2 text-sm font-semibold hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {sendingMailIn ? "Sending…" : "Send Invoice"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
