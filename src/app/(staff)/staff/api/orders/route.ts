@@ -183,7 +183,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // Validate required fields
-    validateRequired(body, ["customer_id", "item_type"]);
+    validateRequired(body, ["customer_id"]);
 
     // Validate dimensions if provided
     if (body.width !== undefined || body.height !== undefined) {
@@ -393,7 +393,7 @@ export async function POST(req: Request) {
       status: requestedStatus as any,
       intakeChannel: body.intake_channel || "walk_in",
       dueDate: body.due_date ? new Date(body.due_date) : null,
-      itemType: body.item_type,
+      itemType: body.item_type || "",
       itemDescription: body.item_description || null,
       width: body.width ?? null,
       height: body.height ?? null,

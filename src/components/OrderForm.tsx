@@ -53,7 +53,7 @@ export default function OrderForm() {
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
 
-  const [itemType, setItemType] = useState("art");
+  const [itemType, setItemType] = useState("");
   const [width, setW] = useState<number>(0);
   const [height, setH] = useState<number>(0);
 
@@ -349,12 +349,13 @@ export default function OrderForm() {
       <div className="space-y-2">
         <div className="text-lg font-semibold">Item</div>
         <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Item type" hint="What are we framing?">
+          <Field label="Item type" hint="Optional — usually filled in from notes">
             <select
               className="rounded-xl border p-3"
               value={itemType}
               onChange={(e) => setItemType(e.target.value)}
             >
+              <option value="">— none —</option>
               <option value="art">Art / Print</option>
               <option value="photo">Photo</option>
               <option value="diploma">Diploma / Certificate</option>

@@ -618,7 +618,7 @@ export default function InvoiceDetailPage({
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-neutral-900">{o.orderNumber}</span>
-                  <span className="text-xs text-neutral-500">{o.itemType}</span>
+                  {o.itemType && <span className="text-xs text-neutral-500">{o.itemType}</span>}
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${
                     o.status === "completed" || o.status === "picked_up"
                       ? "border-emerald-200 text-emerald-700 bg-emerald-50"

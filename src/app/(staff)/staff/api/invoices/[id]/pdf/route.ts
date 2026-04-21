@@ -39,6 +39,7 @@ export async function GET(req: Request, ctx: Ctx) {
           status: true,
           itemType: true,
           itemDescription: true,
+          notesCustomer: true,
           totalAmount: true,
           createdAt: true,
         },
@@ -83,13 +84,15 @@ export async function GET(req: Request, ctx: Ctx) {
     .filter(Boolean)
     .join(", ");
 
+  const showItemTypeCol = invoice.orders.some((o) => (o.itemType || "").trim() !== "");
+
   const orderRows = invoice.orders
     .map(
       (order) => `
     <tr>
       <td>${h(order.orderNumber)}</td>
-      <td>${h(order.itemType || "")}</td>
-      <td>${h(order.itemDescription || "")}</td>
+      ${showItemTypeCol ? `<td>${h(order.itemType || "")}</td>` : ""}
+      <td>${h(order.notesCustomer || "")}</td>
       <td style="text-align:right">${fmt(order.totalAmount)}</td>
     </tr>`
     )
@@ -188,7 +191,7 @@ export async function GET(req: Request, ctx: Ctx) {
     <thead>
       <tr>
         <th>Order #</th>
-        <th>Item Type</th>
+        ${showItemTypeCol ? "<th>Item Type</th>" : ""}
         <th>Description</th>
         <th class="amount">Amount</th>
       </tr>

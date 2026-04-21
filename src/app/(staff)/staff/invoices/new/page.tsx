@@ -305,7 +305,7 @@ function NewInvoicePage() {
                           className="rounded"
                         />
                         <span className="text-sm font-medium">{o.orderNumber}</span>
-                        <span className="text-xs text-neutral-500">{o.itemType}</span>
+                        {o.itemType && <span className="text-xs text-neutral-500">{o.itemType}</span>}
                         {alreadyInvoiced && (
                           <span className="text-xs text-amber-600">(already invoiced)</span>
                         )}

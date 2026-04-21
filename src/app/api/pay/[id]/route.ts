@@ -21,7 +21,7 @@ export async function GET(_req: Request, ctx: Ctx) {
         select: {
           orderNumber: true,
           itemType: true,
-          itemDescription: true,
+          notesCustomer: true,
           totalAmount: true,
         },
       },
@@ -76,7 +76,7 @@ export async function GET(_req: Request, ctx: Ctx) {
     orders: invoice.orders.map((o) => ({
       orderNumber: o.orderNumber,
       itemType: o.itemType,
-      description: o.itemDescription,
+      description: o.notesCustomer,
       amount: o.totalAmount,
     })),
     payments: invoice.payments.map((p) => ({

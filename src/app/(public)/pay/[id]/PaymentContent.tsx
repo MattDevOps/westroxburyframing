@@ -376,12 +376,18 @@ export default function PaymentContent() {
                     className="flex items-start justify-between"
                   >
                     <div>
-                      <p className="text-foreground text-sm font-medium">
-                        {order.itemType}
-                      </p>
-                      {order.description && (
-                        <p className="text-muted-foreground text-xs mt-0.5">
+                      {order.description ? (
+                        <p className="text-foreground text-sm font-medium">
                           {order.description}
+                        </p>
+                      ) : order.itemType ? (
+                        <p className="text-foreground text-sm font-medium">
+                          {order.itemType}
+                        </p>
+                      ) : null}
+                      {order.description && order.itemType && (
+                        <p className="text-muted-foreground text-xs mt-0.5">
+                          {order.itemType}
                         </p>
                       )}
                       <p className="text-muted-foreground text-xs mt-0.5">
