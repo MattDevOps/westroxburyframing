@@ -395,6 +395,10 @@ export async function POST(req: Request) {
       dueDate: body.due_date ? new Date(body.due_date) : null,
       itemType: body.item_type || "",
       itemDescription: body.item_description || null,
+      quantity: (() => {
+        const q = Number(body.quantity);
+        return Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
+      })(),
       width: body.width ?? null,
       height: body.height ?? null,
       units: body.units === "cm" ? "cm" : "in",

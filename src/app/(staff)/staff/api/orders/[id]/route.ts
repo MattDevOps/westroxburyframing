@@ -216,6 +216,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   const body = await req.json().catch(() => ({}));
 
+  try {
   const data: any = {};
 
   if ("orderNumber" in body) data.orderNumber = body.orderNumber ?? null;
@@ -324,16 +325,27 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   // Update customer info if provided
-  if (body.customerFirstName || body.customerLastName || body.customerPhone || body.customerEmail) {
+  if ("customerFirstName" in body || "customerLastName" in body || "customerPhone" in body || "customerEmail" in body) {
     const order_ = await prisma.order.findUnique({ where: { id }, select: { customerId: true } });
     if (order_ && order_.customerId) {
       const custData: Record<string, unknown> = {};
       if ("customerFirstName" in body) custData.firstName = String(body.customerFirstName || "");
       if ("customerLastName" in body) custData.lastName = String(body.customerLastName || "");
-      if ("customerPhone" in body && body.customerPhone) custData.phone = String(body.customerPhone);
-      if ("customerEmail" in body) custData.email = body.customerEmail ? String(body.customerEmail) : undefined;
+      if ("customerPhone" in body) custData.phone = body.customerPhone ? String(body.customerPhone) : null;
+      if ("customerEmail" in body) custData.email = body.customerEmail ? String(body.customerEmail) : null;
       if (Object.keys(custData).length > 0) {
-        await prisma.customer.update({ where: { id: order_.customerId }, data: custData });
+        try {
+          await prisma.customer.update({ where: { id: order_.customerId }, data: custData });
+        } catch (err: any) {
+          if (err?.code === "P2002") {
+            const field = Array.isArray(err.meta?.target) ? err.meta.target.join(", ") : "phone or email";
+            return NextResponse.json(
+              { error: `Another customer already has this ${field}.` },
+              { status: 409 }
+            );
+          }
+          throw err;
+        }
       }
     }
   }
@@ -483,6 +495,20 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   return NextResponse.json({ ok: true, order: updated });
+  } catch (err: any) {
+    console.error("Order PATCH failed:", { id, error: err });
+    if (err?.code === "P2002") {
+      const field = Array.isArray(err.meta?.target) ? err.meta.target.join(", ") : "field";
+      return NextResponse.json(
+        { error: `Unique constraint conflict on ${field}.` },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json(
+      { error: err?.message || "Failed to update order" },
+      { status: 500 }
+    );
+  }
 }
 
 /**

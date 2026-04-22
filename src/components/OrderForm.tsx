@@ -59,6 +59,7 @@ export default function OrderForm() {
   const [zip, setZip] = useState("");
 
   const [itemType, setItemType] = useState("");
+  const [quantity, setQuantity] = useState<number>(1);
   const [width, setW] = useState<number>(0);
   const [height, setH] = useState<number>(0);
 
@@ -239,6 +240,7 @@ export default function OrderForm() {
       customer_id: cOut.customer.id,
       intake_channel: "walk_in",
       item_type: itemType,
+      quantity,
       width,
       height,
       units: "in",
@@ -402,7 +404,7 @@ export default function OrderForm() {
       {/* Item */}
       <div className="space-y-2">
         <div className="text-lg font-semibold">Item</div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Field label="Item type" hint="Optional — usually filled in from notes">
             <select
               className="rounded-xl border p-3"
@@ -421,6 +423,18 @@ export default function OrderForm() {
               <option value="medals">Medals</option>
               <option value="restoration">Restoration</option>
             </select>
+          </Field>
+
+          <Field label="Quantity" hint="Does not affect price">
+            <input
+              className="rounded-xl border p-3"
+              type="number"
+              min={1}
+              step="1"
+              placeholder="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+            />
           </Field>
 
           <Field label="Width (inches)" hint="Visible art size (not frame outer size)">
