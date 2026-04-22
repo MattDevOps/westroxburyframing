@@ -78,6 +78,7 @@ model Customer {
   phone            String?   @unique
   email            String?   @unique
   passwordHash     String? // null = staff-created (no login), set = customer account
+  organization     String?
   addressLine1     String?
   addressLine2     String?
   city             String?

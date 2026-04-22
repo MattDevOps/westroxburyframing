@@ -50,8 +50,13 @@ export default function OrderForm() {
   const [phone, setPhone] = useState("");
   const [firstName, setFirst] = useState("");
   const [lastName, setLast] = useState("");
+  const [organization, setOrganization] = useState("");
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
+  const [addressLine1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [stateVal, setStateVal] = useState("");
+  const [zip, setZip] = useState("");
 
   const [itemType, setItemType] = useState("");
   const [width, setW] = useState<number>(0);
@@ -209,6 +214,11 @@ export default function OrderForm() {
         first_name: firstName,
         last_name: lastName,
         email,
+        organization,
+        address_line1: addressLine1,
+        city,
+        state: stateVal,
+        zip,
         preferred_contact: "email",
         marketing_opt_in: optIn,
       }),
@@ -335,6 +345,50 @@ export default function OrderForm() {
               placeholder="Last name"
               value={lastName}
               onChange={(e) => setLast(e.target.value)}
+            />
+          </Field>
+
+          <Field label="Organization" hint="Optional — e.g. Nobles School">
+            <input
+              className="rounded-xl border p-3"
+              placeholder="Organization / company"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          <Field label="Address">
+            <input
+              className="rounded-xl border p-3"
+              placeholder="Street address"
+              value={addressLine1}
+              onChange={(e) => setAddressLine1(e.target.value)}
+            />
+          </Field>
+          <Field label="City">
+            <input
+              className="rounded-xl border p-3"
+              placeholder="City"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+          </Field>
+          <Field label="State">
+            <input
+              className="rounded-xl border p-3"
+              placeholder="MA"
+              value={stateVal}
+              onChange={(e) => setStateVal(e.target.value)}
+            />
+          </Field>
+          <Field label="Zip">
+            <input
+              className="rounded-xl border p-3"
+              placeholder="Zip code"
+              value={zip}
+              onChange={(e) => setZip(e.target.value)}
             />
           </Field>
         </div>
@@ -563,6 +617,8 @@ export default function OrderForm() {
                   <option value="hinge">Hinge Mount</option>
                   <option value="shadow">Shadow Box</option>
                   <option value="stretch">Canvas Stretch</option>
+                  <option value="archival">Archival Mount</option>
+                  <option value="museum">Museum Mount</option>
                   <option value="none">None</option>
                 </select>
               </Field>

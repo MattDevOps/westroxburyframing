@@ -201,6 +201,7 @@ export async function POST(req: Request) {
   const firstName = String(body.first_name || "").trim();
   const lastName = String(body.last_name || "").trim();
   const marketing = Boolean(body.marketing_opt_in);
+  const organization = "organization" in body ? String(body.organization || "").trim() || null : undefined;
   const addressLine1 = "address_line1" in body ? String(body.address_line1 || "").trim() || null : undefined;
   const addressLine2 = "address_line2" in body ? String(body.address_line2 || "").trim() || null : undefined;
   const city = "city" in body ? String(body.city || "").trim() || null : undefined;
@@ -250,6 +251,7 @@ export async function POST(req: Request) {
     if (phone && !existing.phone) updateData.phone = phone;
     if (email && !existing.email) updateData.email = email;
     // Update address fields if provided
+    if (organization !== undefined) updateData.organization = organization;
     if (addressLine1 !== undefined) updateData.addressLine1 = addressLine1;
     if (addressLine2 !== undefined) updateData.addressLine2 = addressLine2;
     if (city !== undefined) updateData.city = city;
@@ -276,6 +278,7 @@ export async function POST(req: Request) {
       lastName,
       phone: phone ? phone : null,
       email: email ? email : null,
+      organization: organization || null,
       addressLine1: addressLine1 || null,
       addressLine2: addressLine2 || null,
       city: city || null,
