@@ -4,7 +4,6 @@ import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { getLocationFilter } from "@/lib/location";
 import { nextOrderNumber } from "@/lib/ids";
 import { calculateOrderPrice, type PricingComponent } from "@/lib/pricing";
-import { sendOrderReceivedEmail } from "@/lib/email";
 import { handleApiError, AppError, validateRequired } from "@/lib/apiErrorHandler";
 import { validateDimensions, validatePricing, validateDiscount, validateComponents } from "@/lib/validation";
 import { logOrderCreated } from "@/lib/activityLogger";
@@ -457,22 +456,6 @@ export async function POST(req: Request) {
     // Purchase Order Automation: Materials are automatically tracked via materials-needed endpoint
     // When order uses vendor items, they'll appear in the materials needed view
     // No additional action needed here - the materials-needed API calculates requirements dynamically
-
-    // Send order received email to customer (if email available and not an estimate)
-    if (order.customer?.email && requestedStatus !== "estimate") {
-      const estimatedTotal = finalTotal > 0 ? `$${(finalTotal / 100).toFixed(2)}` : undefined;
-      sendOrderReceivedEmail({
-        to: order.customer.email,
-        orderNumber: order.orderNumber,
-        customerName: order.customer ? `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer" : "Customer",
-        itemType: order.itemType || undefined,
-        itemDescription: order.itemDescription || undefined,
-        estimatedTotal,
-        dueDate: order.dueDate || undefined,
-      }).catch((err) => {
-        console.error("Failed to send order received email:", err);
-      });
-    }
 
     return NextResponse.json({
       order: { id: order.id, order_number: order.orderNumber, status: order.status },

@@ -4,7 +4,7 @@ import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { handleApiError, AppError } from "@/lib/apiErrorHandler";
 import { logStatusChange } from "@/lib/activityLogger";
 import { isValidOrderStatus, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
-import { sendReadyForPickupEmail } from "@/lib/email";
+import { sendReadyForPickupEmail, sendOrderInProductionEmail } from "@/lib/email";
 import { sendPickupReminderSMS, sendOrderStatusUpdateSMS, hasSMSOptIn } from "@/lib/sms";
 import { deductInventoryForOrder } from "@/lib/inventory";
 
@@ -48,6 +48,31 @@ export async function POST(req: Request, ctx: Ctx) {
       userId,
       reason: body.reason,
     });
+
+    // Send in-production email when order moves into in_production (if customer has email)
+    if (status === "in_production" && prev.status !== "in_production" && order.customer?.email) {
+      const customerName = `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim() || "Customer";
+      const estimatedTotal = order.totalAmount > 0 ? `$${(order.totalAmount / 100).toFixed(2)}` : undefined;
+      const emailResult = await sendOrderInProductionEmail({
+        to: order.customer.email,
+        orderNumber: order.orderNumber,
+        customerName,
+        itemType: order.itemType || undefined,
+        itemDescription: order.itemDescription || undefined,
+        estimatedTotal,
+        dueDate: order.dueDate || undefined,
+      });
+      if (!emailResult.ok) {
+        await prismaWithActivity.orderActivity.create({
+          data: {
+            orderId: order.id,
+            type: "note",
+            message: `In-production email failed: ${emailResult.error || "Unknown error"}`,
+            createdByUserId: userId,
+          },
+        });
+      }
+    }
 
     // Phase 4A: Auto-deduct inventory when order moves to in_production
     if (status === "in_production" && prev.status !== "in_production") {

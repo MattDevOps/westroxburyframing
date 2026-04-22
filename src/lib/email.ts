@@ -516,9 +516,9 @@ West Roxbury Framing
   return result;
 }
 
-/* ─── Email: Order Received (to customer) ─────────────────────────── */
+/* ─── Email: Order In Production (to customer) ────────────────────── */
 
-export async function sendOrderReceivedEmail(params: {
+export async function sendOrderInProductionEmail(params: {
   to: string;
   orderNumber: string;
   customerName: string;
@@ -528,11 +528,11 @@ export async function sendOrderReceivedEmail(params: {
   dueDate?: Date;
 }) {
   const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
-  const subject = `Order Confirmation — ${params.orderNumber}`;
+  const subject = `Your order is in production — ${params.orderNumber}`;
 
   const text = `Hi ${params.customerName},
 
-Thank you for your order! We've received your framing request and will begin working on it soon.
+Good news — your framing order is now in production. We've started working on it and will let you know when it's ready for pickup.
 
 Order Number: ${params.orderNumber}
 ${params.itemType ? `Item Type: ${params.itemType}` : ""}
@@ -548,11 +548,11 @@ West Roxbury Framing
 (617) 327-3890`;
 
   const html = emailLayout({
-    preheader: `Your order ${params.orderNumber} has been received and is being processed.`,
-    heading: "Order Received ✅",
+    preheader: `Your order ${params.orderNumber} is now in production.`,
+    heading: "Your Order Is In Production 🔨",
     body: `
       <p>Hi ${params.customerName},</p>
-      <p>Thank you for your order! We've received your framing request and will begin working on it soon.</p>
+      <p>Good news — your framing order is now in production. We've started working on it and will let you know when it's ready for pickup.</p>
 
       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
         <tr><td style="padding:20px">
