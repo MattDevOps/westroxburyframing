@@ -47,8 +47,13 @@ export async function getCurrentLocationId(req: Request): Promise<string | null>
       }
     }
 
-    // Admin with no override: return null to show all locations
-    return null;
+    // Admin with no override: fall back to the first active location
+    const firstLocation = await prisma.location.findFirst({
+      where: { active: true },
+      orderBy: { name: "asc" },
+      select: { id: true },
+    });
+    return firstLocation?.id || null;
   } catch (error) {
     console.error("Error getting current location:", error);
     return null;
