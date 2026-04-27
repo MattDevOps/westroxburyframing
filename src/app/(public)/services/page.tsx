@@ -64,7 +64,7 @@ const faqSchema = {
       name: "How much does custom framing cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Custom framing typically ranges from $80–$400+ depending on the frame moulding, mat, glass type, and size. We provide free quotes on the spot — just bring your piece in and we'll give you options at different price points.",
+        text: "Every framing job is custom — pricing depends on the moulding, mat, glass type, and size of your piece. Bring it in and we'll walk through your options together. Quotes are always free.",
       },
     },
     {

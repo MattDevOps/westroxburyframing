@@ -70,8 +70,31 @@ export default function FooterPublic() {
           </div>
         </div>
 
-        {/* Service Areas — internal links for local SEO */}
+        {/* Specialties — internal links for niche SEO */}
         <div className="border-t border-border mt-12 pt-8">
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-3 text-center">Specialties</h4>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            {[
+              { name: "Sports Memorabilia Framing", slug: "sports-memorabilia-framing" },
+              { name: "Diploma Framing", slug: "diploma-framing" },
+              { name: "Military Shadow Boxes", slug: "military-shadow-boxes" },
+              { name: "Canvas Stretching & Framing", slug: "canvas-stretching" },
+              { name: "Corporate Art Programs", slug: "corporate-art-programs" },
+              { name: "Wedding Keepsakes", slug: "wedding-keepsakes" },
+            ].map((s) => (
+              <Link
+                key={s.slug}
+                href={`/services/${s.slug}`}
+                className="text-muted-foreground text-xs hover:text-gold transition-colors"
+              >
+                {s.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Service Areas — internal links for local SEO */}
+        <div className="border-t border-border mt-8 pt-8">
           <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wide mb-3 text-center">Custom Framing Near You</h4>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
             {[

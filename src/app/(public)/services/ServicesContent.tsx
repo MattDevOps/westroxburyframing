@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { SERVICES as NICHE_SERVICES } from "./[slug]/serviceData";
 
 const SERVICES = [
   {
@@ -72,7 +74,7 @@ const SERVICES = [
 const FAQS = [
   {
     q: "How much does custom framing cost?",
-    a: "Custom framing typically ranges from $80–$400+ depending on the frame moulding, mat, glass type, and size. We provide free quotes on the spot — just bring your piece in and we'll give you options at different price points.",
+    a: "Every framing job is custom — pricing depends on the moulding, mat, glass type, and size of your piece. Bring it in and we'll walk through your options together. Quotes are always free.",
   },
   {
     q: "How long does custom framing take?",
@@ -182,8 +184,64 @@ export default function ServicesContent() {
         </div>
       </section>
 
+      {/* Specialties — niche landing pages */}
+      <section className="py-24 bg-secondary">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-serif text-3xl md:text-4xl font-bold text-foreground text-center mb-4"
+          >
+            Our <span className="text-gold">Specialties</span>
+          </motion.h2>
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-14">
+            Pieces that deserve more than a generic frame — built by hand for over 40 years.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {NICHE_SERVICES.map((s, i) => (
+              <motion.div
+                key={s.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <Link
+                  href={`/services/${s.slug}`}
+                  className="group block bg-card border border-border rounded-sm overflow-hidden hover:border-gold/50 transition-colors h-full"
+                >
+                  {s.heroImage && (
+                    <div className="aspect-video relative">
+                      <Image
+                        src={s.heroImage}
+                        alt={`${s.heroTitle} ${s.heroTitleAccent}`}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  )}
+                  <div className="p-7">
+                    <h3 className="font-serif text-xl font-semibold text-foreground mb-3">
+                      {s.heroTitle} {s.heroTitleAccent}
+                    </h3>
+                    <p className="text-muted-foreground text-sm line-clamp-4 mb-5 leading-relaxed">
+                      {s.heroDescription}
+                    </p>
+                    <span className="text-gold text-xs tracking-[0.2em] uppercase inline-flex items-center gap-1 font-semibold">
+                      Learn More <ArrowRight size={12} />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Why Choose Us */}
-      <section className="py-20 bg-secondary">
+      <section className="py-20">
         <div className="max-w-5xl mx-auto px-6">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}

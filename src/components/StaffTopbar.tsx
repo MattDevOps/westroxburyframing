@@ -5,35 +5,43 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+// Primary topbar — focused, frequently-used items only.
+// Everything else lives in StaffSidebar (categorized).
 const STAFF_NAV: Array<{
   href: string;
   label: string;
   shortcut?: string;
   badge?: boolean;
-  highlight?: "blue" | "orange";
+  highlight?: "blue" | "orange" | "purple";
 }> = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
   { href: "/staff/orders", label: "Orders" },
-  { href: "/staff/orders/incomplete", label: "Incomplete" },
-  { href: "/staff/orders/intake", label: "New Order" },
   { href: "/staff/orders/new", label: "Quick Order", highlight: "blue" },
-  { href: "/staff/invoices", label: "Invoices" },
-  { href: "/staff/appointments", label: "Appts" },
+  { href: "/staff/orders/intake", label: "New Order" },
   { href: "/staff/customers", label: "Customers", highlight: "orange" },
-  { href: "/staff/gift-certificates", label: "Gift Certs" },
+  { href: "/staff/marketing/leads", label: "B2B Leads", highlight: "purple" },
+];
+
+// Items moved to the sidebar — mobile hamburger menu still shows them
+// flat below the primary nav so phone users keep full access.
+const SECONDARY_NAV: Array<{ href: string; label: string }> = [
+  { href: "/staff/orders/incomplete", label: "Incomplete Orders" },
+  { href: "/staff/invoices", label: "Invoices" },
+  { href: "/staff/appointments", label: "Appointments" },
+  { href: "/staff/gift-certificates", label: "Gift Certificates" },
+  { href: "/staff/customer-form", label: "Customer Form" },
+  { href: "/staff/pricing", label: "Pricing" },
+  { href: "/staff/materials-needed", label: "Materials Needed" },
+  { href: "/staff/purchase-orders", label: "Purchase Orders" },
+  { href: "/staff/inventory", label: "Inventory" },
+  { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/marketing/email-blast", label: "Email Blast" },
   { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },
   { href: "/staff/marketing/utm-links", label: "UTM Links" },
-  { href: "/staff/pricing", label: "Pricing" },
-  { href: "/staff/materials-needed", label: "Materials" },
-  { href: "/staff/purchase-orders", label: "POs" },
-  { href: "/staff/inventory", label: "Inventory" },
-  { href: "/staff/gallery", label: "Gallery" },
   { href: "/staff/reports", label: "Reports" },
   { href: "/staff/users", label: "Users" },
-  { href: "/staff/settings/twilio", label: "Twilio" },
-  { href: "/staff/customer-form", label: "Customer Form" },
+  { href: "/staff/settings/twilio", label: "Twilio Settings" },
 ];
 
 function NavLink({
@@ -49,7 +57,7 @@ function NavLink({
   onClick?: () => void;
   badge?: boolean;
   badgeCount?: number;
-  highlight?: "blue" | "orange";
+  highlight?: "blue" | "orange" | "purple";
 }) {
   const pathname = usePathname();
 
@@ -71,6 +79,8 @@ function NavLink({
       ? "bg-orange-100 text-orange-900 hover:bg-orange-200 font-medium"
       : highlight === "blue"
       ? "bg-blue-600 text-white hover:bg-blue-700 font-medium"
+      : highlight === "purple"
+      ? "bg-purple-50 text-purple-800 hover:bg-purple-100 font-medium"
       : "";
 
   return (
@@ -340,35 +350,50 @@ export default function StaffTopbar() {
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3">
+        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3 max-h-[80vh] overflow-y-auto">
           <nav className="flex flex-col gap-1">
             {(() => {
-              // Wait for userRole to be loaded before filtering
-              if (userRole === null) {
-                return STAFF_NAV.map((link) => (
+              if (userRole === "receptionist") {
+                const items = [
+                  { href: "/staff/welcome", label: "Welcome" },
+                  { href: "/staff/customer-form", label: "Customer Form" },
+                ];
+                return items.map((link) => (
                   <NavLink
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    highlight={link.highlight}
                   >
                     {link.label}
                   </NavLink>
                 ));
               }
-              const navItems = userRole === "receptionist"
-                ? [{ href: "/staff/welcome", label: "Welcome" }, { href: "/staff/customer-form", label: "Customer Form" }]
-                : STAFF_NAV;
-              return navItems.map((link) => (
-                <NavLink
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  highlight={link.highlight}
-                >
-                  {link.label}
-                </NavLink>
-              ));
+              return (
+                <>
+                  {STAFF_NAV.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      highlight={link.highlight}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+                  <div className="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold mt-3 mb-1 px-3">
+                    More
+                  </div>
+                  {SECONDARY_NAV.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+                </>
+              );
             })()}
           </nav>
         </div>

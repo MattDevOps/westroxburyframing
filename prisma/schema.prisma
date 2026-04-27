@@ -69,6 +69,8 @@ model User {
   giftCertificatesIssued GiftCertificate[]
   sentMessages           StaffMessage[]    @relation("SentMessages")
   receivedMessages       StaffMessage[]    @relation("ReceivedMessages")
+  leadsAssigned          Lead[]            @relation("LeadAssignedTo")
+  leadEmailsSent         LeadEmail[]       @relation("LeadEmailSentBy")
 }
 
 model Customer {
@@ -92,6 +94,8 @@ model Customer {
   photoUrl         String?   // Photo of artwork captured at kiosk (legacy single)
   photoUrls        Json      @default("[]") // Array of artwork photo URLs captured at kiosk
   qboCustomerId   String?   // QuickBooks Online customer ID
+  lastCheckedInAt  DateTime?
+  checkInHistory   Json      @default("[]") // ISO timestamps of last 3 in-store kiosk check-ins, most recent first
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -101,6 +105,7 @@ model Customer {
   tagAssignments   CustomerTagAssignment[]
   giftCertificates GiftCertificate[]
   products         Product[]
+  convertedFromLeads Lead[]                @relation("LeadConvertedCustomer")
 
   @@index([phone])
   @@index([email])
@@ -630,4 +635,142 @@ model Product {
   @@index([category])
   @@index([type])
   @@index([artistId])
+}
+
+// ─── B2B Outreach Pipeline ──────────────────────────────────────────
+// Leads are prospects we're trying to convert (designers, law firms,
+// hospitals, etc.) — separate from Customer (paying customers).
+
+enum LeadVertical {
+  designer
+  law_firm
+  photographer
+  hospital
+  hotel
+  gallery
+  school
+  funeral_home
+  real_estate_stager
+  corporate
+  other
+}
+
+enum LeadStatus {
+  new
+  researching
+  ready_to_email
+  emailed
+  followed_up
+  replied_positive
+  replied_negative
+  no_reply
+  qualified
+  customer
+  unsubscribed
+  bounced
+}
+
+model Lead {
+  id String @id @default(uuid())
+
+  // Contact basics
+  firstName   String?
+  lastName    String?
+  email       String? @unique
+  phone       String?
+  title       String? // "Principal Designer", "Office Manager", etc.
+  companyName String?
+  website     String?
+  linkedinUrl String?
+
+  // Location
+  city         String?
+  state        String? @default("MA")
+  neighborhood String?
+
+  // Pipeline
+  vertical LeadVertical @default(designer)
+  status   LeadStatus   @default(new)
+  source   String? // "IIDA Boston", "Houzz", manual entry, etc.
+
+  // Internal
+  notes              String?
+  assignedToUserId   String?
+  assignedTo         User?   @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
+
+  // First outreach
+  emailSubject String?
+  emailBody    String?
+  emailedAt    DateTime?
+
+  // Reply tracking
+  repliedAt           DateTime?
+  replyText           String?
+  replyClassification String? // "positive" | "negative" | "neutral" | "needs_followup"
+
+  // Follow-ups
+  nextFollowUpAt DateTime?
+  followUpCount  Int       @default(0)
+  lastFollowUpAt DateTime?
+
+  // Auto-followup scheduling — set when sending initial email if user opts in.
+  // Cron looks for autoFollowupAt <= now AND status==emailed AND no reply yet.
+  autoFollowupAt   DateTime?
+  autoFollowupSent Boolean   @default(false)
+
+  // Conversion
+  convertedCustomerId String?
+  convertedCustomer   Customer? @relation("LeadConvertedCustomer", fields: [convertedCustomerId], references: [id])
+  convertedAt         DateTime?
+
+  // Full email history (one record per outbound or inbound email)
+  emails LeadEmail[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([vertical])
+  @@index([assignedToUserId])
+  @@index([nextFollowUpAt])
+  @@index([emailedAt])
+  @@index([autoFollowupAt])
+  @@index([createdAt])
+}
+
+enum LeadEmailDirection {
+  outbound
+  inbound
+}
+
+model LeadEmail {
+  id     String @id @default(uuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  direction LeadEmailDirection
+  subject   String
+  body      String  @db.Text
+
+  fromAddr String?
+  toAddr   String?
+
+  // Outbound-specific
+  sentByUserId      String?
+  sentBy            User?   @relation("LeadEmailSentBy", fields: [sentByUserId], references: [id])
+  postmarkMessageId String?
+  /// "first_touch" | "manual_followup" | "auto_followup" | "ai_drafted"
+  outboundKind      String?
+
+  // Inbound-specific
+  postmarkInboundId String?
+
+  // Auto-classification of inbound replies
+  classification String? // "positive" | "negative" | "neutral" | "needs_followup"
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([direction])
+  @@index([createdAt])
 }

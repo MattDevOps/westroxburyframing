@@ -29,6 +29,8 @@ type Customer = {
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
   createdAt?: string;
+  lastCheckedInAt?: string | null;
+  checkInHistory?: string[];
   lastNotifiedAt?: string | null;
   lastNotifiedMethod?: "sms" | "email" | null;
   notifications?: Notification[];
@@ -896,7 +898,8 @@ export default function CustomersPage() {
               <ArrowUpDown size={11} className="text-neutral-400" />
             )}
           </button>
-          <div className="col-span-2">Last Notified</div>
+          <div className="col-span-1">Checked In</div>
+          <div className="col-span-1">Last Notified</div>
           <div className="col-span-2 text-right">Notify Pickup</div>
         </div>
 
@@ -948,7 +951,25 @@ export default function CustomersPage() {
                 <div className="col-span-1 text-neutral-600">
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
                 </div>
-                <div className="col-span-2 text-neutral-600 text-xs">
+                <div className="col-span-1 text-neutral-600 text-xs">
+                  {c.lastCheckedInAt ? (
+                    <span
+                      title={
+                        (c.checkInHistory && c.checkInHistory.length > 0
+                          ? c.checkInHistory
+                          : [c.lastCheckedInAt]
+                        )
+                          .map((t, i) => `${i + 1}. ${new Date(t).toLocaleString()}`)
+                          .join("\n")
+                      }
+                    >
+                      {new Date(c.lastCheckedInAt).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <span className="text-neutral-400">Never</span>
+                  )}
+                </div>
+                <div className="col-span-1 text-neutral-600 text-xs">
                   {(() => {
                     const notifs = c.notifications ?? (
                       c.lastNotifiedAt && c.lastNotifiedMethod

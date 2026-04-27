@@ -24,6 +24,7 @@ export default function CustomerFormPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string>("Customer information saved successfully!");
 
     function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -104,23 +105,11 @@ export default function CustomerFormPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                if (data.error === "duplicate" || res.status === 409) {
-                    setError("You are already in our system.");
-                    setFirstName("");
-                    setLastName("");
-                    setEmail("");
-                    setPhone("");
-                    setOptIn(false);
-                    clearAllPhotos();
-                    setTimeout(() => {
-                        setError(null);
-                    }, 2000);
-                    return;
-                }
                 setError(data.error || "Something went wrong. Please try again.");
                 return;
             }
 
+            setSuccessMessage(data.message || "Customer information saved successfully!");
             setSuccess(true);
             setFirstName("");
             setLastName("");
@@ -130,7 +119,7 @@ export default function CustomerFormPage() {
             clearAllPhotos();
             setTimeout(() => {
                 setSuccess(false);
-            }, 2000);
+            }, 2500);
         } catch {
             setError("Unable to save. Please try again or contact support.");
         } finally {
@@ -161,7 +150,7 @@ export default function CustomerFormPage() {
                 {success && (
                     <div className="flex items-center gap-2 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700">
                         <CheckCircle className="w-5 h-5 shrink-0" />
-                        <p className="text-sm">Customer information saved successfully!</p>
+                        <p className="text-sm">{successMessage}</p>
                     </div>
                 )}
 

@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { blogPosts } from "./(public)/blog/posts";
+import { SERVICES as NICHE_SERVICES } from "./(public)/services/[slug]/serviceData";
 
 const BASE_URL = "https://westroxburyframing.com";
 
@@ -38,6 +39,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  const nicheServicePages: MetadataRoute.Sitemap = NICHE_SERVICES.map((s) => ({
+    url: `${BASE_URL}/services/${s.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.85,
+  }));
+
   const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}`,
     lastModified: now,
@@ -45,5 +53,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...serviceAreaPages, ...blogPages];
+  return [...staticPages, ...serviceAreaPages, ...nicheServicePages, ...blogPages];
 }

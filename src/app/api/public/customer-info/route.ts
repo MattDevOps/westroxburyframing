@@ -57,14 +57,33 @@ export async function POST(request: Request) {
             },
         });
 
+        const now = new Date();
+        const nowIso = now.toISOString();
+
         if (existingCustomer) {
-            return NextResponse.json(
-                { 
-                    error: "duplicate",
-                    message: "You are already in our system.",
+            const prior = Array.isArray(existingCustomer.checkInHistory)
+                ? (existingCustomer.checkInHistory as unknown[]).filter((v): v is string => typeof v === "string")
+                : [];
+            const nextHistory = [nowIso, ...prior].slice(0, 3);
+
+            await prisma.customer.update({
+                where: { id: existingCustomer.id },
+                data: {
+                    lastCheckedInAt: now,
+                    checkInHistory: nextHistory,
                 },
-                { status: 409 }, // 409 Conflict
-            );
+            });
+
+            return NextResponse.json({
+                success: true,
+                returning: true,
+                customer: {
+                    id: existingCustomer.id,
+                    firstName: existingCustomer.firstName,
+                    lastName: existingCustomer.lastName,
+                },
+                message: `Welcome back, ${existingCustomer.firstName}! You're checked in.`,
+            });
         }
 
         // Create new customer
@@ -78,6 +97,8 @@ export async function POST(request: Request) {
                 preferredContact: email ? "email" : "call",
                 marketingOptIn: marketing,
                 marketingOptInAt: marketing ? new Date() : null,
+                lastCheckedInAt: now,
+                checkInHistory: [nowIso],
                 ...(photoUrl ? { photoUrl } : {}),
                 ...(photoUrls.length > 0 ? { photoUrls } : {}),
             },

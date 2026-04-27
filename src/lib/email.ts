@@ -77,7 +77,7 @@ async function sendViaPostmark(params: {
   html?: string;
   replyTo?: string;
   cc?: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; messageId?: string }> {
   const apiKey =
     process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN;
   if (!apiKey) {
@@ -123,11 +123,46 @@ async function sendViaPostmark(params: {
     console.error("Postmark send failed:", res.status, errorMessage);
     return { ok: false, error: errorMessage };
   }
-  return { ok: true };
+  // Try to capture MessageID for inbound matching
+  let messageId: string | undefined;
+  try {
+    const json = await res.json();
+    if (json && typeof json.MessageID === "string") messageId = json.MessageID;
+  } catch {
+    // ignore — body not JSON
+  }
+  return { ok: true, messageId };
 }
 
 function getFrom(): string {
   return process.env.EMAIL_FROM || "West Roxbury Framing <jake@westroxburyframing.com>";
+}
+
+/* ─── Email: B2B Outreach (plain text, personal-feeling) ────────── */
+// Outreach to designers / law firms / hospitals etc. should NOT use the
+// branded HTML template — it lands harder in inboxes if it reads like a
+// personal note. Plain text only, real-person from-address.
+export async function sendOutreachEmail(params: {
+  to: string;
+  subject: string;
+  body: string; // plain text — line breaks preserved
+  fromOverride?: string; // optional, defaults to OUTREACH_FROM env or shop email
+  replyToOverride?: string;
+}): Promise<{ ok: boolean; error?: string; messageId?: string; from: string }> {
+  const from =
+    params.fromOverride ||
+    process.env.OUTREACH_FROM ||
+    "Jake at West Roxbury Framing <jake@westroxburyframing.com>";
+
+  const result = await sendViaPostmark({
+    to: params.to,
+    from,
+    subject: params.subject,
+    text: params.body,
+    // No html — plain text only for outreach
+    replyTo: params.replyToOverride || from,
+  });
+  return { ...result, from };
 }
 
 /* ─── Email: Ready for Pickup ────────────────────────────────────── */
