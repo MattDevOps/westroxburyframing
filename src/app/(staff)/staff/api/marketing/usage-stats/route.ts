@@ -86,11 +86,14 @@ export async function GET(req: Request) {
 async function fetchPostmarkMonthly(
   monthStart: Date
 ): Promise<{ outbound: number | null; inbound: number | null; available: boolean }> {
-  const token =
+  const rawToken =
     process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN;
-  if (!token) {
+  if (!rawToken) {
     return { outbound: null, inbound: null, available: false };
   }
+  // Capture the narrowed value as a const string so the closure below sees it
+  // typed as `string` and not `string | undefined`.
+  const token: string = rawToken;
 
   const fromDate = monthStart.toISOString().slice(0, 10);
   const toDate = new Date().toISOString().slice(0, 10);
