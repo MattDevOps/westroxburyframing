@@ -59,6 +59,9 @@ model User {
   passwordHash String
   locationId   String? // null = admin (can access all), set = staff assigned to location
   location     Location? @relation(fields: [locationId], references: [id])
+  /// Plain-text signature appended to outbound B2B outreach emails. Falls back
+  /// to a hardcoded shop block if null.
+  emailSignature String?
   createdAt    DateTime @default(now())
 
   orders                 Order[]
@@ -718,6 +721,14 @@ model Lead {
   autoFollowupAt   DateTime?
   autoFollowupSent Boolean   @default(false)
 
+  // Pending draft awaiting human review (review-before-send queue).
+  // Set by bulk-send and the cron followup; cleared on approve (send) or discard.
+  draftSubject    String?
+  draftBody       String?   @db.Text
+  draftMode       String?   // "first_touch" | "followup"
+  draftSource     String?   // "bulk-send" | "cron-followup" | "manual"
+  draftCreatedAt  DateTime?
+
   // Conversion
   convertedCustomerId String?
   convertedCustomer   Customer? @relation("LeadConvertedCustomer", fields: [convertedCustomerId], references: [id])
@@ -736,6 +747,7 @@ model Lead {
   @@index([emailedAt])
   @@index([autoFollowupAt])
   @@index([createdAt])
+  @@index([draftCreatedAt])
 }
 
 enum LeadEmailDirection {
@@ -766,7 +778,11 @@ model LeadEmail {
   postmarkInboundId String?
 
   // Auto-classification of inbound replies
-  classification String? // "positive" | "negative" | "neutral" | "needs_followup"
+  /// "positive" | "soft_pass" | "hard_pass" | "unsubscribe" | "ambiguous"
+  /// (Legacy values "negative", "neutral", "needs_followup" still appear in older rows.)
+  classification    String?
+  /// One-line next-action suggestion from Claude — surfaced in the thread view.
+  suggestedAction   String?
 
   createdAt DateTime @default(now())
 
@@ -774,3 +790,5 @@ model LeadEmail {
   @@index([direction])
   @@index([createdAt])
 }
+
+// Per-user fields appended on User model below (see User.emailSignature)

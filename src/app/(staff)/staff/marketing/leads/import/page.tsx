@@ -30,9 +30,11 @@ export default function LeadImportPage() {
   const [source, setSource] = useState("");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{
+    dryRun?: boolean;
     total: number;
     created: number;
     skipped: number;
+    createdPreview?: Array<{ email: string | null; companyName: string | null }>;
     skippedDetail: Array<{ row: number; reason: string }>;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function LeadImportPage() {
     setCsv(text);
   }
 
-  async function importNow() {
+  async function runImport(dryRun: boolean) {
     if (!csv.trim()) return;
     setRunning(true);
     setError(null);
@@ -53,7 +55,7 @@ export default function LeadImportPage() {
       const res = await fetch("/staff/api/leads/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv, vertical, source }),
+        body: JSON.stringify({ csv, vertical, source, dryRun }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Import failed");
@@ -151,13 +153,40 @@ export default function LeadImportPage() {
           )}
 
           {result && (
-            <div className="p-4 bg-emerald-50 text-emerald-900 text-sm rounded border border-emerald-200">
+            <div
+              className={`p-4 text-sm rounded border ${
+                result.dryRun
+                  ? "bg-blue-50 text-blue-900 border-blue-200"
+                  : "bg-emerald-50 text-emerald-900 border-emerald-200"
+              }`}
+            >
               <div className="font-semibold mb-2">
-                Imported {result.created} of {result.total} rows
-                {result.skipped > 0 && <span className="text-emerald-700 font-normal"> · {result.skipped} skipped</span>}
+                {result.dryRun ? "Preview — nothing saved yet" : "Imported"} {result.created} of {result.total} rows
+                {result.skipped > 0 && (
+                  <span className={`font-normal ${result.dryRun ? "text-blue-700" : "text-emerald-700"}`}>
+                    {" "}· {result.skipped} skipped
+                  </span>
+                )}
               </div>
+              {result.dryRun && result.createdPreview && result.createdPreview.length > 0 && (
+                <details className="text-xs text-blue-800 mb-2" open>
+                  <summary className="cursor-pointer font-medium">
+                    Preview of {Math.min(result.createdPreview.length, 25)} rows that will be created
+                  </summary>
+                  <ul className="mt-2 space-y-0.5 font-mono">
+                    {result.createdPreview.map((c, i) => (
+                      <li key={i}>
+                        {(c.companyName || "(no company)")} — {c.email || "(no email)"}
+                      </li>
+                    ))}
+                    {result.created > result.createdPreview.length && (
+                      <li className="text-blue-600">…and {result.created - result.createdPreview.length} more</li>
+                    )}
+                  </ul>
+                </details>
+              )}
               {result.skippedDetail.length > 0 && (
-                <details className="text-xs text-emerald-800">
+                <details className={`text-xs ${result.dryRun ? "text-blue-800" : "text-emerald-800"}`}>
                   <summary className="cursor-pointer">Show skipped rows</summary>
                   <ul className="mt-2 space-y-0.5 font-mono">
                     {result.skippedDetail.map((s, i) => (
@@ -167,30 +196,57 @@ export default function LeadImportPage() {
                 </details>
               )}
               <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => router.push("/staff/marketing/leads")}
-                  className="px-3 py-1.5 bg-stone-900 text-white rounded text-xs font-medium"
-                >
-                  View leads →
-                </button>
-                <button
-                  onClick={() => { setCsv(""); setResult(null); }}
-                  className="px-3 py-1.5 bg-white border border-stone-300 rounded text-xs font-medium"
-                >
-                  Import another batch
-                </button>
+                {result.dryRun ? (
+                  <>
+                    <button
+                      onClick={() => runImport(false)}
+                      disabled={running}
+                      className="px-3 py-1.5 bg-stone-900 text-white rounded text-xs font-medium"
+                    >
+                      Confirm and import {result.created} rows
+                    </button>
+                    <button
+                      onClick={() => setResult(null)}
+                      className="px-3 py-1.5 bg-white border border-stone-300 rounded text-xs font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => router.push("/staff/marketing/leads")}
+                      className="px-3 py-1.5 bg-stone-900 text-white rounded text-xs font-medium"
+                    >
+                      View leads →
+                    </button>
+                    <button
+                      onClick={() => { setCsv(""); setResult(null); }}
+                      className="px-3 py-1.5 bg-white border border-stone-300 rounded text-xs font-medium"
+                    >
+                      Import another batch
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
 
           <div className="flex gap-2 justify-end">
             <button
-              onClick={importNow}
+              onClick={() => runImport(true)}
+              disabled={running || !csv.trim()}
+              className="px-5 py-2 bg-white border border-stone-300 rounded text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              {running ? "Working…" : "Preview"}
+            </button>
+            <button
+              onClick={() => runImport(false)}
               disabled={running || !csv.trim()}
               className="px-5 py-2 bg-stone-900 text-white rounded text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2"
             >
               <Upload size={16} />
-              {running ? "Importing…" : "Import CSV"}
+              {running ? "Importing…" : "Import directly"}
             </button>
           </div>
         </div>

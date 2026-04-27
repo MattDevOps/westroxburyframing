@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Search, Plus, Upload, Mail, Filter } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Search, Plus, Upload, Mail, Filter, Settings, Send } from "lucide-react";
 
 type Lead = {
   id: string;
@@ -20,6 +20,8 @@ type Lead = {
   repliedAt: string | null;
   followUpCount: number;
   nextFollowUpAt: string | null;
+  autoFollowupAt: string | null;
+  autoFollowupSent: boolean;
   updatedAt: string;
   createdAt: string;
   assignedTo: { id: string; name: string } | null;
@@ -74,12 +76,39 @@ const STATUS_COLORS: Record<string, string> = {
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [followupsToday, setFollowupsToday] = useState(0);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [vertical, setVertical] = useState("");
   const [status, setStatus] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showSignatureSettings, setShowSignatureSettings] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkSend, setShowBulkSend] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleSelectAll(allOnPage: Lead[]) {
+    setSelectedIds((prev) => {
+      const eligibleIds = allOnPage.filter((l) => l.email).map((l) => l.id);
+      const allSelected = eligibleIds.every((id) => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev);
+        eligibleIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      eligibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
 
   async function load() {
     setLoading(true);
@@ -94,6 +123,7 @@ export default function LeadsPage() {
       if (!res.ok) throw new Error(data.error || "Failed to load");
       setLeads(data.leads || []);
       setStatusCounts(data.statusCounts || {});
+      setFollowupsToday(data.followupsToday || 0);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load leads");
     } finally {
@@ -134,7 +164,22 @@ export default function LeadsPage() {
               Designers, law firms, hospitals, and other prospects in the outreach pipeline.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowBulkSend(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700 inline-flex items-center gap-2"
+              >
+                <Send size={16} /> Send to {selectedIds.size} selected
+              </button>
+            )}
+            <button
+              onClick={() => setShowSignatureSettings(true)}
+              className="px-4 py-2 bg-white border border-stone-300 rounded text-sm font-medium hover:bg-stone-50 inline-flex items-center gap-2"
+              title="Edit your outreach email signature"
+            >
+              <Settings size={16} /> Signature
+            </button>
             <Link
               href="/staff/marketing/leads/import"
               className="px-4 py-2 bg-white border border-stone-300 rounded text-sm font-medium hover:bg-stone-50 inline-flex items-center gap-2"
@@ -150,7 +195,14 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        {/* Pipeline summary */}
+        {/* Needs Action — daily-use section */}
+        <NeedsActionSection
+          counts={statusCounts}
+          followupsToday={followupsToday}
+          onFilterStatus={(s) => setStatus(s)}
+        />
+
+        {/* Pipeline summary — supplementary */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           <SummaryCard label="Total" value={totalLeads} />
           <SummaryCard label="New / unprocessed" value={newCount} accent="text-blue-700" />
@@ -210,9 +262,23 @@ export default function LeadsPage() {
             <table className="w-full text-sm">
               <thead className="bg-stone-100 text-xs uppercase tracking-wide text-stone-600">
                 <tr>
+                  <th className="px-2 py-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={
+                        leads.filter((l) => l.email).length > 0 &&
+                        leads.filter((l) => l.email).every((l) => selectedIds.has(l.id))
+                      }
+                      onChange={() => toggleSelectAll(leads)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="cursor-pointer"
+                      title="Select all on page (with email)"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left">Name / Company</th>
                   <th className="px-4 py-3 text-left">Vertical</th>
                   <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Next action</th>
                   <th className="px-4 py-3 text-left">Last activity</th>
                   <th className="px-4 py-3 text-left">Source</th>
                 </tr>
@@ -224,6 +290,16 @@ export default function LeadsPage() {
                     className="border-t border-stone-100 hover:bg-stone-50 cursor-pointer"
                     onClick={() => (window.location.href = `/staff/marketing/leads/${lead.id}`)}
                   >
+                    <td className="px-2 py-3 w-8" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(lead.id)}
+                        onChange={() => toggleSelected(lead.id)}
+                        disabled={!lead.email}
+                        title={lead.email ? "Select for bulk send" : "No email — cannot bulk send"}
+                        className="cursor-pointer disabled:opacity-30"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-stone-900">
                         {[lead.firstName, lead.lastName].filter(Boolean).join(" ") ||
@@ -254,6 +330,9 @@ export default function LeadsPage() {
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-xs">
+                      <NextActionCell lead={lead} />
+                    </td>
                     <td className="px-4 py-3 text-stone-600 text-xs">
                       {lead.repliedAt ? (
                         <>Replied {timeAgo(lead.repliedAt)}</>
@@ -273,6 +352,271 @@ export default function LeadsPage() {
       </div>
 
       {showCreate && <CreateLeadModal onClose={() => setShowCreate(false)} onCreated={load} />}
+      {showSignatureSettings && (
+        <SignatureSettingsModal onClose={() => setShowSignatureSettings(false)} />
+      )}
+      {showBulkSend && (
+        <BulkSendModal
+          leadIds={Array.from(selectedIds)}
+          onClose={() => setShowBulkSend(false)}
+          onDone={() => {
+            setShowBulkSend(false);
+            setSelectedIds(new Set());
+            load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BulkSendModal({
+  leadIds,
+  onClose,
+  onDone,
+}: {
+  leadIds: string[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [delaySeconds, setDelaySeconds] = useState(30);
+  const [autoFollowupDays, setAutoFollowupDays] = useState(5);
+  const [useAi, setUseAi] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{
+    total: number;
+    sent: number;
+    skipped: number;
+    failed: number;
+    results: Array<{ leadId: string; email: string | null; status: string; reason?: string }>;
+  } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function send() {
+    const estMinutes = Math.ceil((leadIds.length * delaySeconds) / 60);
+    if (
+      !confirm(
+        `Send ${leadIds.length} emails with ${delaySeconds}s between each (~${estMinutes} min total)? This will also schedule auto-followups in ${autoFollowupDays} days.`
+      )
+    ) {
+      return;
+    }
+    setRunning(true);
+    setErr(null);
+    try {
+      const res = await fetch("/staff/api/leads/bulk-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadIds, delaySeconds, useAi, autoFollowupDays }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk send failed");
+      setResult(data);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Bulk send failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-stone-900 mb-2">Bulk Send Outreach</h2>
+          <p className="text-sm text-stone-600 mb-4">
+            Sending to <strong>{leadIds.length}</strong> selected leads.
+            {leadIds.length > 25 && (
+              <span className="text-rose-600"> Cap is 25 per batch — split into multiple runs.</span>
+            )}
+          </p>
+          {err && <div className="p-2 bg-rose-50 text-rose-700 text-sm rounded mb-3">{err}</div>}
+
+          {!result ? (
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useAi}
+                  onChange={(e) => setUseAi(e.target.checked)}
+                />
+                <span>Use Claude to draft each email individually (recommended)</span>
+              </label>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-stone-700">Delay between sends:</span>
+                <select
+                  value={delaySeconds}
+                  onChange={(e) => setDelaySeconds(Number(e.target.value))}
+                  className="px-2 py-1 border border-stone-300 rounded text-sm bg-white"
+                >
+                  <option value={15}>15 seconds</option>
+                  <option value={30}>30 seconds</option>
+                  <option value={60}>1 minute</option>
+                  <option value={120}>2 minutes</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-stone-700">Auto-followup if no reply in:</span>
+                <select
+                  value={autoFollowupDays}
+                  onChange={(e) => setAutoFollowupDays(Number(e.target.value))}
+                  className="px-2 py-1 border border-stone-300 rounded text-sm bg-white"
+                >
+                  <option value={0}>Don&apos;t schedule</option>
+                  <option value={3}>3 days</option>
+                  <option value={5}>5 days</option>
+                  <option value={7}>7 days</option>
+                  <option value={14}>14 days</option>
+                </select>
+              </div>
+              <div className="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded p-3">
+                Estimated time: <strong>{Math.ceil((leadIds.length * delaySeconds) / 60)} min</strong> for{" "}
+                {leadIds.length} sends.{" "}
+                {useAi
+                  ? "Each email is AI-drafted using the lead's website, vertical, and your signature."
+                  : "Falls back to a generic template."}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
+                <strong>Done.</strong> Sent {result.sent} of {result.total}
+                {result.skipped > 0 && <> · {result.skipped} skipped</>}
+                {result.failed > 0 && <> · <span className="text-rose-700">{result.failed} failed</span></>}.
+              </div>
+              <details className="text-xs text-stone-700" open={result.failed > 0}>
+                <summary className="cursor-pointer font-medium">Per-lead results</summary>
+                <ul className="mt-2 space-y-0.5 font-mono">
+                  {result.results.map((r) => (
+                    <li
+                      key={r.leadId}
+                      className={
+                        r.status === "sent"
+                          ? "text-emerald-700"
+                          : r.status === "skipped"
+                          ? "text-amber-700"
+                          : "text-rose-700"
+                      }
+                    >
+                      {r.status.toUpperCase()} · {r.email || "(no email)"}
+                      {r.reason && <> — {r.reason}</>}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end mt-5 pt-3 border-t border-stone-200">
+            {!result ? (
+              <>
+                <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 hover:text-stone-900">
+                  Cancel
+                </button>
+                <button
+                  onClick={send}
+                  disabled={running || leadIds.length === 0 || leadIds.length > 25}
+                  className="px-4 py-2 bg-purple-600 text-white rounded text-sm font-medium disabled:opacity-50"
+                >
+                  {running ? `Sending… (don't close this window)` : `Send ${leadIds.length}`}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onDone}
+                className="px-4 py-2 bg-stone-900 text-white rounded text-sm font-medium"
+              >
+                Done
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DEFAULT_SIGNATURE_PLACEHOLDER = `Best,
+Jake
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+westroxburyframing.com`;
+
+function SignatureSettingsModal({ onClose }: { onClose: () => void }) {
+  const [signature, setSignature] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/staff/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setSignature(data?.user?.emailSignature || "");
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    setErr(null);
+    try {
+      const res = await fetch("/staff/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailSignature: signature }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      onClose();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded shadow-xl max-w-lg w-full">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-stone-900 mb-2">Outreach Email Signature</h2>
+          <p className="text-sm text-stone-600 mb-4">
+            This sign-off appears at the bottom of every outreach email you send. Edit it once
+            and every future draft picks it up automatically.
+          </p>
+          {err && <div className="p-2 bg-rose-50 text-rose-700 text-sm rounded mb-3">{err}</div>}
+          {loading ? (
+            <p className="text-sm text-stone-500 py-8 text-center">Loading…</p>
+          ) : (
+            <>
+              <textarea
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                rows={8}
+                placeholder={DEFAULT_SIGNATURE_PLACEHOLDER}
+                className="w-full px-3 py-2 border border-stone-300 rounded text-sm font-mono"
+              />
+              <p className="text-xs text-stone-500 mt-2">
+                Leave blank to use the default shop signature shown in the placeholder.
+              </p>
+            </>
+          )}
+          <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-stone-200">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 hover:text-stone-900">
+              Cancel
+            </button>
+            <button
+              onClick={save}
+              disabled={saving || loading}
+              className="px-4 py-2 bg-stone-900 text-white rounded text-sm font-medium disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -282,6 +626,159 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
     <div className="bg-white border border-stone-200 rounded p-4">
       <div className="text-xs text-stone-500 uppercase tracking-wide">{label}</div>
       <div className={`text-2xl font-bold mt-1 ${accent || "text-stone-900"}`}>{value}</div>
+    </div>
+  );
+}
+
+function NeedsActionSection({
+  counts,
+  followupsToday,
+  onFilterStatus,
+}: {
+  counts: Record<string, number>;
+  followupsToday: number;
+  onFilterStatus: (status: string) => void;
+}) {
+  const repliesWaiting = (counts.replied_positive || 0) + (counts.replied_negative || 0);
+  const readyToEmail = counts.ready_to_email || 0;
+  const newToResearch = counts.new || 0;
+
+  const totalToDo = repliesWaiting + readyToEmail + followupsToday;
+
+  if (totalToDo === 0 && newToResearch === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <h2 className="text-xs uppercase tracking-widest text-stone-500 font-semibold mb-3">
+        Needs your attention
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <ActionCard
+          tone="emerald"
+          urgency={repliesWaiting > 0 ? "now" : "idle"}
+          count={repliesWaiting}
+          title="Replies waiting"
+          subtitle={
+            repliesWaiting === 0
+              ? "All replies handled"
+              : repliesWaiting === 1
+              ? "1 lead replied — respond or move along"
+              : `${repliesWaiting} leads replied — respond or move along`
+          }
+          onClick={() => onFilterStatus("replied_positive")}
+          actionLabel={repliesWaiting > 0 ? "View positive →" : undefined}
+        />
+        <ActionCard
+          tone="amber"
+          urgency={followupsToday > 0 ? "now" : "idle"}
+          count={followupsToday}
+          title="Auto-followups today"
+          subtitle={
+            followupsToday === 0
+              ? "Nothing scheduled"
+              : `${followupsToday} will fire when the cron runs (~9am ET tomorrow)`
+          }
+          onClick={() => onFilterStatus("emailed,followed_up")}
+          actionLabel={followupsToday > 0 ? "Preview / cancel →" : undefined}
+        />
+        <ActionCard
+          tone="blue"
+          urgency={readyToEmail > 0 ? "soon" : "idle"}
+          count={readyToEmail}
+          title="Ready to email"
+          subtitle={
+            readyToEmail === 0
+              ? "No leads queued"
+              : `${readyToEmail} researched and waiting for first touch`
+          }
+          onClick={() => onFilterStatus("ready_to_email")}
+          actionLabel={readyToEmail > 0 ? "Send batch →" : undefined}
+        />
+        <ActionCard
+          tone="purple"
+          urgency={newToResearch > 0 ? "soon" : "idle"}
+          count={newToResearch}
+          title="New leads to research"
+          subtitle={
+            newToResearch === 0
+              ? "No new imports waiting"
+              : `${newToResearch} just imported, need a once-over before emailing`
+          }
+          onClick={() => onFilterStatus("new")}
+          actionLabel={newToResearch > 0 ? "Triage queue →" : undefined}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ActionCard({
+  tone,
+  urgency,
+  count,
+  title,
+  subtitle,
+  actionLabel,
+  onClick,
+}: {
+  tone: "emerald" | "amber" | "blue" | "purple";
+  urgency: "now" | "soon" | "idle";
+  count: number;
+  title: string;
+  subtitle: string;
+  actionLabel?: string;
+  onClick?: () => void;
+}) {
+  const palette = {
+    emerald: {
+      now: "bg-emerald-50 border-emerald-300",
+      soon: "bg-emerald-50/40 border-emerald-200",
+      idle: "bg-white border-stone-200",
+      countCls: "text-emerald-700",
+      linkCls: "text-emerald-700 hover:text-emerald-900",
+    },
+    amber: {
+      now: "bg-amber-50 border-amber-300",
+      soon: "bg-amber-50/40 border-amber-200",
+      idle: "bg-white border-stone-200",
+      countCls: "text-amber-700",
+      linkCls: "text-amber-700 hover:text-amber-900",
+    },
+    blue: {
+      now: "bg-blue-50 border-blue-300",
+      soon: "bg-blue-50/40 border-blue-200",
+      idle: "bg-white border-stone-200",
+      countCls: "text-blue-700",
+      linkCls: "text-blue-700 hover:text-blue-900",
+    },
+    purple: {
+      now: "bg-purple-50 border-purple-300",
+      soon: "bg-purple-50/40 border-purple-200",
+      idle: "bg-white border-stone-200",
+      countCls: "text-purple-700",
+      linkCls: "text-purple-700 hover:text-purple-900",
+    },
+  } as const;
+  const p = palette[tone];
+  const wrapperBg = urgency === "now" ? p.now : urgency === "soon" ? p.soon : p.idle;
+
+  return (
+    <div className={`rounded p-4 border ${wrapperBg}`}>
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className={`text-2xl font-bold ${count > 0 ? p.countCls : "text-stone-300"}`}>
+          {count}
+        </span>
+        <span className="text-sm font-semibold text-stone-900">{title}</span>
+      </div>
+      <p className="text-xs text-stone-600 leading-snug">{subtitle}</p>
+      {actionLabel && onClick && (
+        <button
+          onClick={onClick}
+          className={`mt-2 text-xs font-semibold ${p.linkCls}`}
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
@@ -427,6 +924,67 @@ function Input({
 
 function humanizeStatus(s: string): string {
   return s.replace(/_/g, " ");
+}
+
+function NextActionCell({ lead }: { lead: Lead }) {
+  const action = computeNextAction(lead);
+  if (!action) return <span className="text-stone-400">—</span>;
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded ${action.cls}`}>
+      {action.label}
+    </span>
+  );
+}
+
+function computeNextAction(lead: Lead): { label: string; cls: string } | null {
+  // Replied — needs a human response NOW
+  if (lead.status === "replied_positive") {
+    return { label: "Reply waiting", cls: "bg-emerald-100 text-emerald-900 font-medium" };
+  }
+  if (lead.status === "replied_negative") {
+    return { label: "Decide nurture vs. drop", cls: "bg-rose-100 text-rose-900" };
+  }
+
+  // Auto-followup queued
+  if (lead.autoFollowupAt && !lead.autoFollowupSent) {
+    const ms = new Date(lead.autoFollowupAt).getTime() - Date.now();
+    const days = Math.round(ms / (24 * 60 * 60 * 1000));
+    if (days <= 0) {
+      return { label: "Auto-followup due now", cls: "bg-amber-100 text-amber-900" };
+    }
+    return { label: `Auto-followup in ${days}d`, cls: "bg-amber-50 text-amber-800" };
+  }
+
+  // Pipeline-stage actions
+  switch (lead.status) {
+    case "new":
+      return { label: "Research + email", cls: "bg-blue-50 text-blue-800" };
+    case "researching":
+      return { label: "Finish research", cls: "bg-purple-50 text-purple-800" };
+    case "ready_to_email":
+      return { label: "Send first email", cls: "bg-amber-100 text-amber-900 font-medium" };
+    case "emailed": {
+      // No auto-followup queued — they just sat there. Suggest manual follow-up after 5+ days
+      if (lead.emailedAt) {
+        const days = Math.floor((Date.now() - new Date(lead.emailedAt).getTime()) / (24 * 60 * 60 * 1000));
+        if (days >= 7) return { label: `Follow up (${days}d cold)`, cls: "bg-orange-100 text-orange-900" };
+      }
+      return { label: "Wait for reply", cls: "bg-stone-100 text-stone-700" };
+    }
+    case "followed_up":
+      return { label: "Wait for reply", cls: "bg-stone-100 text-stone-700" };
+    case "no_reply":
+      return { label: "Final follow-up or drop", cls: "bg-rose-50 text-rose-800" };
+    case "qualified":
+      return { label: "Move to close", cls: "bg-yellow-100 text-yellow-900 font-medium" };
+    case "customer":
+      return { label: "Convert to customer record", cls: "bg-green-100 text-green-900" };
+    case "unsubscribed":
+    case "bounced":
+      return null;
+    default:
+      return null;
+  }
 }
 
 function humanizeVertical(v: string): string {

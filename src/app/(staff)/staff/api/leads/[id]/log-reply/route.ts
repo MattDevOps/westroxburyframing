@@ -42,13 +42,19 @@ export async function POST(req: Request, { params }: Params) {
   // Map classification → status
   const statusMap: Record<string, string> = {
     positive: "replied_positive",
+    soft_pass: "replied_negative",
+    hard_pass: "replied_negative",
+    unsubscribe: "unsubscribed",
+    ambiguous: "replied_positive",
+    // Legacy values still supported
     negative: "replied_negative",
     neutral: "replied_positive",
     needs_followup: "replied_positive",
   };
   const newStatus = (statusMap[classification] || "replied_positive") as
     | "replied_positive"
-    | "replied_negative";
+    | "replied_negative"
+    | "unsubscribed";
 
   const [, updated] = await prisma.$transaction([
     prisma.leadEmail.create({

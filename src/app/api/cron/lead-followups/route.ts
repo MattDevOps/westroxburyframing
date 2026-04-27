@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { sendOutreachEmail } from "@/lib/email";
 import Anthropic from "@anthropic-ai/sdk";
 
 /**
@@ -11,11 +10,17 @@ import Anthropic from "@anthropic-ai/sdk";
  *   - status IN ("emailed", "followed_up")
  *   - repliedAt IS NULL
  *
- * For each: generates an AI follow-up draft, sends via Postmark, creates a
- * LeadEmail (outboundKind="auto_followup"), and updates the Lead.
+ * For each: generates an AI follow-up DRAFT and writes it to the Lead's
+ * draftSubject/draftBody/draftMode/draftSource/draftCreatedAt fields, then
+ * marks autoFollowupSent=true so this slot isn't re-processed. Drafts surface
+ * in /staff/marketing/drafts where staff approve (sends via /send-email) or
+ * discard.
+ *
+ * NOTE: this used to send autonomously. As of the review-before-send change,
+ * nothing in this route hits Postmark — the human review step is mandatory.
  *
  * Hard-coded conservative cap of 20 leads per run to avoid blasting too many
- * follow-ups at once if a backlog accumulates.
+ * drafts onto the queue if a backlog accumulates.
  */
 export async function GET(request: Request) {
   // Auth: Vercel Cron sends Authorization: Bearer <CRON_SECRET>
@@ -48,6 +53,7 @@ export async function GET(request: Request) {
         orderBy: { createdAt: "asc" },
         select: { direction: true, subject: true, body: true, createdAt: true },
       },
+      assignedTo: { select: { id: true, name: true, emailSignature: true } },
     },
     take: 20,
     orderBy: { autoFollowupAt: "asc" },
@@ -61,78 +67,72 @@ export async function GET(request: Request) {
   const results: Array<{
     leadId: string;
     email: string | null;
-    status: "sent" | "failed" | "skipped";
+    status: "drafted" | "failed" | "skipped";
     reason?: string;
   }> = [];
 
+  const draftedAt = new Date();
+
   for (const lead of eligible) {
+    if (lead.draftCreatedAt) {
+      results.push({
+        leadId: lead.id,
+        email: lead.email,
+        status: "skipped",
+        reason: "Existing draft pending review",
+      });
+      continue;
+    }
+
     try {
       const draft = await draftFollowup(client, lead);
 
-      const sendResult = await sendOutreachEmail({
-        to: lead.email!,
-        subject: draft.subject,
-        body: draft.body,
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: {
+          draftSubject: draft.subject,
+          draftBody: draft.body,
+          draftMode: "followup",
+          draftSource: "cron-followup",
+          draftCreatedAt: draftedAt,
+          // Mark this auto-followup slot as processed so the cron doesn't keep
+          // re-drafting it every day. The slot is "done" once we've prepared a
+          // draft for human review — what happens to the draft is a separate
+          // human decision.
+          autoFollowupSent: true,
+          autoFollowupAt: null,
+        },
       });
 
-      if (!sendResult.ok) {
-        results.push({
-          leadId: lead.id,
-          email: lead.email,
-          status: "failed",
-          reason: sendResult.error,
-        });
-        // Don't mark autoFollowupSent — leave it queued for next run
-        continue;
-      }
-
-      await prisma.$transaction([
-        prisma.leadEmail.create({
-          data: {
-            leadId: lead.id,
-            direction: "outbound",
-            subject: draft.subject,
-            body: draft.body,
-            fromAddr: sendResult.from,
-            toAddr: lead.email,
-            postmarkMessageId: sendResult.messageId,
-            outboundKind: "auto_followup",
-          },
-        }),
-        prisma.lead.update({
-          where: { id: lead.id },
-          data: {
-            emailSubject: draft.subject,
-            emailBody: draft.body,
-            emailedAt: new Date(),
-            status: "followed_up",
-            followUpCount: { increment: 1 },
-            lastFollowUpAt: new Date(),
-            autoFollowupSent: true,
-            autoFollowupAt: null,
-          },
-        }),
-      ]);
-
-      results.push({ leadId: lead.id, email: lead.email, status: "sent" });
+      results.push({ leadId: lead.id, email: lead.email, status: "drafted" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "unknown error";
-      console.error(`[cron/lead-followups] Lead ${lead.id} failed:`, e);
+      console.error(`[cron/lead-followups] Lead ${lead.id} draft failed:`, e);
       results.push({ leadId: lead.id, email: lead.email, status: "failed", reason: msg });
     }
   }
 
-  const sent = results.filter((r) => r.status === "sent").length;
+  const drafted = results.filter((r) => r.status === "drafted").length;
+  const skipped = results.filter((r) => r.status === "skipped").length;
   const failed = results.filter((r) => r.status === "failed").length;
 
   return NextResponse.json({
     ok: true,
     eligible: eligible.length,
-    sent,
+    drafted,
+    skipped,
     failed,
     results,
+    reviewUrl: "/staff/marketing/drafts",
   });
 }
+
+const DEFAULT_SIGNATURE = `Best,
+Jake
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+westroxburyframing.com`;
 
 /** Calls Claude to draft a follow-up. Inline (separate from the user-driven /draft-email route) so this cron route is self-contained. */
 async function draftFollowup(
@@ -149,8 +149,10 @@ async function draftFollowup(
     website: string | null;
     notes: string | null;
     emails: Array<{ direction: string; subject: string; body: string; createdAt: Date }>;
+    assignedTo: { id: string; name: string; emailSignature: string | null } | null;
   }
 ): Promise<{ subject: string; body: string }> {
+  const signature = lead.assignedTo?.emailSignature?.trim() || DEFAULT_SIGNATURE;
   const leadFacts = [
     `First name: ${lead.firstName || "(unknown)"}`,
     `Title: ${lead.title || "(unknown)"}`,
@@ -174,9 +176,12 @@ async function draftFollowup(
 - References the prior note briefly without repeating the entire pitch
 - Offers ONE new hook (e.g. an updated portfolio piece, a relevant Boston-area project, a seasonal angle)
 - Is 50-80 words MAX
-- Sounds genuinely from Jake (warm, not pushy)
-- Sign off as "Jake" then a new line with the shop name
-- DO NOT use em-dashes — use regular dashes or rephrase
+- Sounds genuinely from a real person (warm, not pushy)
+- End with EXACTLY this signature block, verbatim, including line breaks (do NOT modify it):
+---
+${signature}
+---
+- DO NOT use em-dashes (—). Use regular dashes or rephrase.
 
 Lead facts:
 ${leadFacts}${priorEmails}
@@ -185,11 +190,11 @@ Return ONLY JSON: { "subject": string, "body": string }. Subject under 70 chars 
 
   const systemPrompt = `You are drafting a short follow-up email on behalf of Jake, owner of West Roxbury Framing — a 40+ year family-owned custom framing shop in West Roxbury, Boston (1741 Centre St, 617-327-3890).
 
-Specialties: custom framing, sports memorabilia / jersey shadow boxes, diploma framing, military / first-responder shadow boxes, corporate art programs, canvas stretching, wedding keepsakes.
+Specialties: custom framing, **picture hanging and installation** (we hang the work in homes, offices, lobbies — major selling point), sports memorabilia / jersey shadow boxes, diploma framing, military / first-responder shadow boxes, corporate art programs, canvas stretching, wedding keepsakes.
 
 Tone: warm, real-person voice. Direct. Confident but not pushy. Specific over generic. Short.
 
-Forbidden: "I hope this email finds you well", marketing-speak, em-dashes, bullet-point feature lists, price quotes, claims we can't back up.`;
+Forbidden: "I hope this email finds you well", marketing-speak, em-dashes, bullet-point feature lists, price quotes, claims we can't back up. Do NOT include any Calendly or scheduling links in auto-followups — only include those when replying to a lead who has visibly expressed interest.`;
 
   const response = await client.messages.create({
     model: "claude-opus-4-7",

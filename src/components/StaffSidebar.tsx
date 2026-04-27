@@ -34,6 +34,8 @@ export const SIDEBAR_GROUPS: Array<{
       { href: "/staff/marketing/email-blast", label: "Email Blast" },
       { href: "/staff/marketing/gbp-posts", label: "GBP Posts" },
       { href: "/staff/marketing/utm-links", label: "UTM Links" },
+      { href: "/staff/marketing/drafts", label: "Email Drafts" },
+      { href: "/staff/photo-intake", label: "Photo Intake" },
     ],
   },
   {

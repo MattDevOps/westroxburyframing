@@ -190,7 +190,7 @@ export default function AreaContent({ area }: { area: AreaInfo }) {
             Ready to Get Your Piece <span className="text-gold">Framed</span>?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Walk in anytime, book a free consultation, or submit a quote request online.
+            Walk in anytime, book a free consultation, or tell us about your project online.
             We&apos;re {area.distance} from {area.name} with free parking and walk-ins welcome.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -210,7 +210,7 @@ export default function AreaContent({ area }: { area: AreaInfo }) {
               href="/custom-framing"
               className="px-8 py-3.5 border border-border text-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:border-gold/50 transition-colors"
             >
-              Get a Quote Online
+              Tell Us About Your Project
             </Link>
           </div>
         </div>

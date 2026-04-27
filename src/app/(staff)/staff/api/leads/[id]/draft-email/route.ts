@@ -7,6 +7,13 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+const DEFAULT_SIGNATURE = `Best,
+Jake
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+westroxburyframing.com`;
+
 /**
  * POST /staff/api/leads/[id]/draft-email
  * Body: { mode: "first_touch" | "followup" }
@@ -39,16 +46,25 @@ export async function POST(req: Request, { params }: Params) {
 
   const mode = payload.mode === "followup" ? "followup" : "first_touch";
 
-  const lead = await prisma.lead.findUnique({
-    where: { id },
-    include: {
-      emails: {
-        orderBy: { createdAt: "asc" },
-        select: { direction: true, subject: true, body: true, createdAt: true },
+  const [lead, currentUser] = await Promise.all([
+    prisma.lead.findUnique({
+      where: { id },
+      include: {
+        emails: {
+          orderBy: { createdAt: "asc" },
+          select: { direction: true, subject: true, body: true, createdAt: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, emailSignature: true },
+    }),
+  ]);
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+
+  const signature = currentUser?.emailSignature?.trim() || DEFAULT_SIGNATURE;
+  const calendlyUrl = process.env.OUTREACH_CALENDLY_URL?.trim() || null;
 
   // Best-effort website fetch — used to personalize the draft
   let websiteExcerpt: string | null = null;
@@ -96,7 +112,10 @@ Rules:
 - Reference something specific about THEIR business if the website excerpt allows. If not, lean on the vertical (e.g. for designers: "matched moulding for client installs"; for law firms: "partner diploma display walls").
 - Sound like a real person wrote it on their phone — warm but not corporate. NO marketing-speak. NO "I hope this email finds you well." NO bullet points unless genuinely useful.
 - 100-200 words for first_touch. 50-100 words for followup.
-- Sign off as "Jake" (no last name, no title — just "Jake" then the shop name on a new line).
+- End with EXACTLY this signature block, verbatim, including line breaks (do NOT modify it):
+---
+${signature}
+---
 - DO NOT use em-dashes (—). Use regular dashes or rephrase.
 - DO NOT include the recipient's name in the subject line.
 
@@ -108,10 +127,14 @@ The shop's positioning:
 - Hand-built custom framing for 40+ years (since 1981)
 - 5.0 stars on Google with 100+ reviews
 - 2024 Boston Legacy Business Award
-- Specialties: custom picture framing, sports memorabilia / jersey shadow boxes, diploma framing for any school, military and first-responder shadow boxes (active relationships with BPD, BFD, VA hospitals), corporate art programs (hotels, law firms, hospitals, designers), canvas stretching and gallery wraps, wedding keepsakes, photo restoration
-- Free walk-in quotes — they prefer the customer brings the piece in so they can quote accurately
-- Greater Boston pickup and delivery available; on-site walkthroughs for B2B projects
-- Volume pricing for projects of 10+ pieces; Net-30 for established business accounts
+- Specialties: custom picture framing, **picture hanging and installation** (single pieces, gallery walls, donor walls, full installations across Greater Boston — major selling point for designers, hotels, hospitals, law firms), sports memorabilia / jersey shadow boxes, diploma framing for any school, military and first-responder shadow boxes (active relationships with BPD, BFD, VA hospitals), corporate art programs (hotels, law firms, hospitals, designers), canvas stretching and gallery wraps, wedding keepsakes, photo restoration
+- Pricing is always done in person — they prefer the customer brings the piece in so they can design and price accurately
+- Greater Boston pickup, delivery, AND professional hanging/installation — we hang the work for you
+- Volume pricing for projects of 10+ pieces; Net-30 for established business accounts${
+    calendlyUrl
+      ? `\n- Booking link for a quick intro call: ${calendlyUrl}`
+      : ""
+  }
 
 Tone for outreach:
 - Warm, direct, real-person voice. Like a small-business owner reaching out, not a marketer.
@@ -123,6 +146,12 @@ What we DO NOT do in outreach:
 - No "I hope this email finds you well" / "I'm reaching out to" / similar marketing openers.
 - No em-dashes.
 - No bullet-point laundry lists of features unless directly answering a question.
+
+When to include the Calendly booking link:
+- Only suggest it if the lead has CLEARLY shown interest (replied positively asking to talk, asking questions, asking for a portfolio).
+- DO NOT include the Calendly link in cold first-touch emails. It reads as pushy and lowers reply rates.
+- DO NOT include it in soft follow-ups either.
+- If you're drafting a reply to someone who said "let's talk" — yes, include it.
 - No price quotes (we never quote without seeing the piece).
 - No claims we can't back up.
 

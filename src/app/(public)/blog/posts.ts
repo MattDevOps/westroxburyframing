@@ -12,65 +12,59 @@ export interface BlogPost {
 export const blogPosts: BlogPost[] = [
   {
     slug: "how-much-does-custom-framing-cost",
-    title: "How Much Does Custom Framing Cost in Boston? A Honest Price Guide",
+    title: "What Goes Into Custom Framing Pricing? An Honest Guide for Boston Customers",
     excerpt:
-      "Custom framing typically ranges from $80 to $400+ depending on materials and size. Here's a straightforward breakdown of what drives the cost — and how to get the best value.",
-    category: "Pricing Guide",
+      "Custom framing pricing depends on the moulding, mat, glass, and size of your piece. Here's a straightforward breakdown of what drives the price — and why we work it out in person.",
+    category: "Framing Guide",
     date: "March 28, 2026",
     metaDescription:
-      "Custom framing in Boston costs $80–$400+ depending on frame, mat, glass, and size. Get a transparent price breakdown from West Roxbury Framing — serving Boston since 1981.",
+      "What goes into custom framing pricing in Boston: frame moulding, mat type, glass, and size. We work out exact pricing in person at our West Roxbury shop. Family-owned since 1981.",
     keywords: [
-      "custom framing cost",
-      "custom framing cost Boston",
-      "how much does custom framing cost",
-      "picture framing prices",
-      "affordable custom framing Boston",
-      "framing price guide",
+      "custom framing pricing Boston",
+      "what does custom framing cost",
+      "custom framing factors",
+      "picture framing pricing guide",
+      "Boston frame shop",
+      "custom framing West Roxbury",
     ],
     content: `
-## What Goes Into the Price of Custom Framing?
+## Why We Don't Publish Prices Online
 
-When you bring a piece in for custom framing, the final price depends on four main factors: the frame moulding, the mat, the glass, and the size of your piece.
+Every framing job we do is custom — the moulding, the mat, the glass, the size, and the construction work all change with the piece. Two photos that look the same size can end up at very different prices depending on whether you choose conservation glass or standard, a single mat or a triple, a basic moulding or a hand-finished one.
 
-### Frame Moulding: $30–$150+
+That's why we work out the pricing in person, with the piece in front of us, after you've picked the materials. It's the only way we can give you an accurate number — and the only way you can see exactly what you're paying for.
 
-The frame itself is usually the biggest cost driver. Simple wood or aluminum mouldings start around $30. Ornate, hand-finished, or imported Italian mouldings can run $150 or more. We carry hundreds of options so there's always something that fits your budget and your style.
+## What Drives the Price
 
-### Matting: $15–$50+
+When you bring a piece in for custom framing, four things drive the final number: the frame moulding, the mat, the glass, and the size of your piece.
 
-Mats add depth and protect your artwork from touching the glass. A single mat is the most affordable option. Double or triple matting, specialty fabrics, or conservation-grade mats will add to the cost — but they make a big visual difference.
+### Frame Moulding
 
-### Glass: $20–$120+
+The frame itself is usually the biggest cost driver. Simple wood or aluminum mouldings are the most affordable. Ornate, hand-finished, or imported Italian mouldings cost more. We carry hundreds of options so there's always something that fits your budget and your style.
 
-Standard clear glass is the most affordable. Non-glare glass reduces reflections. UV-filtering conservation glass prevents fading over time. Museum glass (anti-reflective + UV protection) is the premium choice — ideal for valuable artwork or pieces in bright rooms.
+### Matting
 
-### Size Matters
+Mats add depth and protect your artwork from touching the glass. A single mat is the most affordable option. Double or triple matting, specialty fabrics, or conservation-grade mats add to the cost — but they make a big visual difference.
+
+### Glass
+
+Standard clear glass is the most affordable. Non-glare glass reduces reflections. UV-filtering conservation glass prevents fading over time. Museum glass (anti-reflective plus UV protection) is the premium choice — ideal for valuable artwork or pieces in bright rooms.
+
+### Size
 
 Larger pieces require more material and more labor. A standard 8×10 photo will cost significantly less than a 24×36 poster or an oversized canvas.
 
-## Typical Price Ranges
-
-| Project Type | Typical Range |
-|---|---|
-| Standard photo or print (up to 11×14) | $80–$150 |
-| Medium artwork or poster (16×20 to 24×36) | $150–$300 |
-| Sports jersey shadowbox | $250–$450 |
-| Diploma or certificate | $100–$200 |
-| Large or complex piece | $300–$500+ |
-
-These are general ranges — your exact price depends on the specific materials you choose.
-
 ## How to Get the Best Value
 
-**Come in for a free quote.** We always provide options at different price points so you can choose what works best. There's no pressure and no obligation.
+**Bring the piece in.** We sit down with you, walk through every option, and show you what each choice does to the price. You see materials side by side and pick what fits — we never push toward the most expensive option.
 
-**Ask about our current promotions.** We frequently run seasonal discounts — right now, new customers get 10% off with code WELCOME10.
+**Ask about our current promotions.** We frequently run seasonal discounts. Ask when you come in.
 
 **Consider what matters most.** If it's a poster you'll swap out in a few years, basic framing works great. If it's your grandmother's painting or your child's diploma, investing in conservation materials protects it for decades.
 
-## Get a Quote Today
+## Come See Us
 
-Stop by our shop at 1741 Centre St in West Roxbury — walk-ins are always welcome. Or book a free consultation online and we'll help you find the perfect frame at the right price.
+Stop by our shop at 1741 Centre St in West Roxbury — walk-ins are always welcome. Or book a free consultation online and we'll set up a time for you to come in. Either way, we design the piece together and work out the pricing on the spot.
     `,
   },
   {
@@ -134,9 +128,9 @@ Most undergraduate diplomas are roughly 11×14 or 14×17. Graduate and professio
 
 Standard diploma framing takes 5–7 business days. If you need it before a graduation party or office move, ask about our rush same-day service.
 
-## What Does Diploma Framing Cost?
+## What Goes Into Diploma Framing Pricing?
 
-Most diploma framing projects run between $100 and $200, depending on frame style and glass type. We provide a free quote on the spot — just bring your diploma in.
+Diploma framing pricing depends on size, the moulding you pick, mat options, glass type, and whether you want extras like seal embossing or an engraved nameplate. We work out the pricing with you in person once you've seen the moulding and mat samples — bring your diploma in and we'll design and price it on the spot.
 
 ## Where to Get Your Diploma Framed in Boston
 
@@ -214,7 +208,7 @@ A hallway, study, or interior living room wall is ideal.
 
 ## What Does Archival Photo Framing Cost?
 
-Conservation framing for old photos typically runs $120–$250 depending on size, mat style, and glass type. The extra cost over standard framing is small compared to the value of the photo.
+Conservation framing costs more than standard framing because of the acid-free, archival materials and UV-protective glass — but the extra cost is small compared to the value of the photo. We walk through the materials with you in person and work out the pricing on the spot.
 
 ## Bring Your Photos to West Roxbury Framing
 

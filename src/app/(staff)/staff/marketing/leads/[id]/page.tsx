@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Mail, MessageSquare, Save, Trash2, ExternalLink, Phone, Building, Globe } from "lucide-react";
+import { Mail, MessageSquare, Save, Trash2, ExternalLink, Phone, Building, Globe, Sparkles, Loader2, Copy, Check } from "lucide-react";
 
 type LeadEmailRecord = {
   id: string;
@@ -14,6 +14,7 @@ type LeadEmailRecord = {
   toAddr: string | null;
   outboundKind: string | null;
   classification: string | null;
+  suggestedAction: string | null;
   createdAt: string;
   sentBy: { id: string; name: string } | null;
 };
@@ -46,6 +47,11 @@ type Lead = {
   nextFollowUpAt: string | null;
   autoFollowupAt: string | null;
   autoFollowupSent: boolean;
+  draftSubject: string | null;
+  draftBody: string | null;
+  draftMode: string | null;
+  draftSource: string | null;
+  draftCreatedAt: string | null;
   convertedCustomerId: string | null;
   convertedAt: string | null;
   createdAt: string;
@@ -228,12 +234,29 @@ export default function LeadDetailPage() {
           {/* Left: contact & details */}
           <div className="lg:col-span-1 space-y-4">
             <DetailsCard lead={lead} onSave={save} saving={saving} />
+            <EnrichmentCard leadId={lead.id} />
             <NotesCard lead={lead} onSave={save} saving={saving} />
             <DangerCard onDelete={deleteLead} />
           </div>
 
           {/* Right: email thread */}
           <div className="lg:col-span-2 space-y-4">
+            {lead.draftCreatedAt && (
+              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900 flex items-center justify-between gap-3">
+                <div>
+                  <strong>Email draft pending review</strong>{" "}
+                  <span className="text-blue-700">
+                    ({lead.draftSource || "draft"} · {new Date(lead.draftCreatedAt).toLocaleString()})
+                  </span>
+                </div>
+                <Link
+                  href="/staff/marketing/drafts"
+                  className="px-3 py-1.5 bg-white border border-blue-300 rounded text-xs font-medium text-blue-900 hover:bg-blue-100 inline-flex items-center gap-1"
+                >
+                  Open drafts queue
+                </Link>
+              </div>
+            )}
             <ThreadCard lead={lead} />
             {lead.autoFollowupAt && !lead.autoFollowupSent && (
               <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
@@ -444,15 +467,15 @@ function ThreadMessage({ email, lead }: { email: LeadEmailRecord; lead: Lead }) 
   return (
     <div className={`${wrapperCls} rounded p-4`}>
       <div className="flex items-start justify-between mb-2 text-xs">
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`font-semibold ${labelCls}`}>
             {isOutbound ? "→ Outbound" : "← Inbound"}
           </span>
           {email.outboundKind && (
-            <span className="ml-2 text-stone-500">({email.outboundKind.replace(/_/g, " ")})</span>
+            <span className="text-stone-500">({email.outboundKind.replace(/_/g, " ")})</span>
           )}
           {email.classification && (
-            <span className="ml-2 text-stone-500">({email.classification})</span>
+            <ClassificationBadge value={email.classification} />
           )}
         </div>
         <div className="text-stone-500">{new Date(email.createdAt).toLocaleString()}</div>
@@ -460,7 +483,35 @@ function ThreadMessage({ email, lead }: { email: LeadEmailRecord; lead: Lead }) 
       <div className="text-xs text-stone-500 mb-2">{senderLabel}</div>
       <div className="font-medium text-stone-900 text-sm mb-2">Subject: {email.subject}</div>
       <div className="text-stone-700 text-sm whitespace-pre-wrap">{email.body}</div>
+      {email.suggestedAction && (
+        <div className="mt-3 pt-3 border-t border-emerald-200 flex items-start gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700 shrink-0">
+            ✨ Suggested
+          </span>
+          <span className="text-sm text-emerald-900">{email.suggestedAction}</span>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ClassificationBadge({ value }: { value: string }) {
+  const styles: Record<string, string> = {
+    positive: "bg-emerald-100 text-emerald-800",
+    soft_pass: "bg-amber-100 text-amber-900",
+    hard_pass: "bg-rose-100 text-rose-900",
+    unsubscribe: "bg-stone-200 text-stone-800",
+    ambiguous: "bg-blue-100 text-blue-900",
+    // Legacy values
+    negative: "bg-rose-100 text-rose-900",
+    neutral: "bg-blue-100 text-blue-900",
+    needs_followup: "bg-amber-100 text-amber-900",
+  };
+  const label = value.replace(/_/g, " ");
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${styles[value] || "bg-stone-100"}`}>
+      {label}
+    </span>
   );
 }
 
@@ -474,14 +525,174 @@ function DangerCard({ onDelete }: { onDelete: () => void }) {
   );
 }
 
+type EnrichmentResult = {
+  fitScore: number | null;
+  recommendedVertical: string;
+  projectValueBand: string;
+  signals: string;
+  recommendedAngle: string;
+  confidence: string;
+  nextAction: string;
+  websiteUsed: boolean;
+};
+
+function EnrichmentCard({ leadId }: { leadId: string }) {
+  const [result, setResult] = useState<EnrichmentResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function run() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/staff/api/leads/${leadId}/enrich`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error || `HTTP ${res.status}`);
+      } else {
+        setResult(data);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyAngle() {
+    if (!result?.recommendedAngle) return;
+    try {
+      await navigator.clipboard.writeText(result.recommendedAngle);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const scoreClass = (n: number | null) => {
+    if (n === null) return "bg-stone-100 text-stone-700";
+    if (n >= 4) return "bg-emerald-100 text-emerald-800 border-emerald-300";
+    if (n === 3) return "bg-amber-100 text-amber-800 border-amber-300";
+    return "bg-rose-100 text-rose-800 border-rose-300";
+  };
+
+  return (
+    <div className="bg-white border border-stone-200 rounded p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-stone-700 inline-flex items-center gap-2">
+          <Sparkles size={14} /> AI Enrichment
+        </h3>
+        <button
+          onClick={run}
+          disabled={loading}
+          className="text-xs text-stone-600 hover:text-stone-900 underline disabled:opacity-50"
+        >
+          {loading ? "Running…" : result ? "Re-run" : "Run"}
+        </button>
+      </div>
+
+      {loading && (
+        <div className="text-sm text-stone-500 inline-flex items-center gap-2">
+          <Loader2 size={14} className="animate-spin" /> Reading website + scoring…
+        </div>
+      )}
+
+      {error && <div className="text-sm text-rose-700">{error}</div>}
+
+      {!loading && !result && !error && (
+        <p className="text-xs text-stone-500">
+          Fetches the lead&apos;s website, scores fit (1–5), recommends vertical, project value band, and outreach angle.
+        </p>
+      )}
+
+      {result && (
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full px-3 py-0.5 text-xs font-semibold border ${scoreClass(result.fitScore)}`}>
+              Fit {result.fitScore ?? "?"} / 5
+            </span>
+            <span className="text-xs text-stone-600">
+              {result.recommendedVertical} · {result.projectValueBand}
+            </span>
+          </div>
+
+          {result.signals && (
+            <div>
+              <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">Signals</div>
+              <pre className="text-xs whitespace-pre-wrap font-sans text-stone-700">{result.signals}</pre>
+            </div>
+          )}
+
+          {result.recommendedAngle && (
+            <div>
+              <div className="text-xs text-stone-500 uppercase tracking-wide mb-1 flex items-center justify-between">
+                Recommended angle
+                <button onClick={copyAngle} className="text-stone-400 hover:text-stone-700" title="Copy">
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                </button>
+              </div>
+              <p className="text-stone-800">{result.recommendedAngle}</p>
+            </div>
+          )}
+
+          {result.nextAction && (
+            <div className="border-t border-stone-100 pt-2">
+              <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">Next action</div>
+              <p className="text-stone-800">{result.nextAction}</p>
+            </div>
+          )}
+
+          <div className="text-[11px] text-stone-400">
+            confidence: {result.confidence || "?"} · website: {result.websiteUsed ? "fetched" : "not available"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ComposeModal({ lead, onClose, onSent }: { lead: Lead; onClose: () => void; onSent: () => void }) {
   const isFollowUp = Boolean(lead.emailedAt);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
   const [subject, setSubject] = useState(defaultSubject(lead, isFollowUp));
-  const [body, setBody] = useState(defaultBody(lead, isFollowUp));
+  const [body, setBody] = useState(defaultBody(lead, isFollowUp, null));
   const [sending, setSending] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [autoFollowupDays, setAutoFollowupDays] = useState<number>(isFollowUp ? 0 : 5);
   const [err, setErr] = useState<string | null>(null);
+
+  // Load the current user's signature + shop settings once
+  useEffect(() => {
+    fetch("/staff/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const sig = data?.user?.emailSignature ?? null;
+        setSignature(sig);
+        setCalendlyUrl(data?.settings?.calendlyUrl ?? null);
+        setBody((current) => {
+          const stillDefault = current === defaultBody(lead, isFollowUp, null);
+          return stillDefault ? defaultBody(lead, isFollowUp, sig) : current;
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function insertCalendlyLink() {
+    if (!calendlyUrl) return;
+    const inviteLine = `\n\nWant to grab 15 minutes? Pick a time that works for you: ${calendlyUrl}\n`;
+    setBody((current) => {
+      // Insert before the sign-off if we can find a likely marker; otherwise append.
+      const sigStart = current.search(/\nBest,\n|\nThanks,\n|\nCheers,\n/i);
+      if (sigStart > 0) {
+        return current.slice(0, sigStart) + inviteLine + current.slice(sigStart);
+      }
+      return current + inviteLine;
+    });
+  }
 
   async function send() {
     if (!confirm(`Send to ${lead.email}?`)) return;
@@ -527,22 +738,33 @@ function ComposeModal({ lead, onClose, onSent }: { lead: Lead; onClose: () => vo
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-1 gap-2">
             <h2 className="text-xl font-bold text-stone-900">
               {isFollowUp ? "Send Follow-Up" : "Compose Outreach"}
             </h2>
-            <button
-              onClick={draftWithAi}
-              disabled={drafting}
-              title={
-                lead.website
-                  ? "Use Claude to research their website and draft a personalized email"
-                  : "Use Claude to draft a personalized email (no website to research)"
-              }
-              className="px-3 py-1.5 bg-purple-50 text-purple-800 border border-purple-200 rounded text-xs font-medium hover:bg-purple-100 disabled:opacity-50 inline-flex items-center gap-1"
-            >
-              {drafting ? "Drafting…" : "✨ Draft with AI"}
-            </button>
+            <div className="flex gap-2">
+              {calendlyUrl && (
+                <button
+                  onClick={insertCalendlyLink}
+                  title={`Insert a Calendly invite line: ${calendlyUrl}`}
+                  className="px-3 py-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded text-xs font-medium hover:bg-blue-100 inline-flex items-center gap-1"
+                >
+                  📅 Insert Calendly
+                </button>
+              )}
+              <button
+                onClick={draftWithAi}
+                disabled={drafting}
+                title={
+                  lead.website
+                    ? "Use Claude to research their website and draft a personalized email"
+                    : "Use Claude to draft a personalized email (no website to research)"
+                }
+                className="px-3 py-1.5 bg-purple-50 text-purple-800 border border-purple-200 rounded text-xs font-medium hover:bg-purple-100 disabled:opacity-50 inline-flex items-center gap-1"
+              >
+                {drafting ? "Drafting…" : "✨ Draft with AI"}
+              </button>
+            </div>
           </div>
           <p className="text-sm text-stone-600 mb-4">To: <strong>{lead.email}</strong></p>
           {err && <div className="p-2 bg-rose-50 text-rose-700 text-sm rounded mb-3">{err}</div>}
@@ -644,16 +866,17 @@ function LogReplyModal({ leadId, onClose, onLogged }: { leadId: string; onClose:
               />
             </div>
             <div>
-              <label className="text-xs text-stone-600 block mb-1">Tone</label>
+              <label className="text-xs text-stone-600 block mb-1">Classification</label>
               <select
                 value={classification}
                 onChange={(e) => setClassification(e.target.value)}
                 className="w-full px-3 py-2 border border-stone-300 rounded text-sm bg-white"
               >
-                <option value="positive">Positive — interested or asking questions</option>
-                <option value="neutral">Neutral / acknowledging</option>
-                <option value="needs_followup">Needs follow-up — punted</option>
-                <option value="negative">Negative — not interested / unsubscribe</option>
+                <option value="positive">Positive — interested, wants to talk, asking questions</option>
+                <option value="soft_pass">Soft pass — busy now, but reasonable to follow up later</option>
+                <option value="hard_pass">Hard pass — strongly not interested, don&apos;t re-engage</option>
+                <option value="unsubscribe">Unsubscribe — explicit removal request</option>
+                <option value="ambiguous">Ambiguous — auto-reply or unclear, needs review</option>
               </select>
             </div>
           </div>
@@ -693,30 +916,34 @@ function defaultSubject(lead: Lead, isFollowUp: boolean): string {
   return `Quick intro — West Roxbury Framing`;
 }
 
-function defaultBody(lead: Lead, isFollowUp: boolean): string {
+const DEFAULT_SIGNATURE = `Best,
+Jake
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+westroxburyframing.com`;
+
+function defaultBody(lead: Lead, isFollowUp: boolean, signature: string | null): string {
   const greeting = lead.firstName ? `Hi ${lead.firstName},` : "Hi,";
   const company = lead.companyName ? lead.companyName : "your studio";
+  const sig = (signature && signature.trim()) || DEFAULT_SIGNATURE;
 
   if (isFollowUp) {
     return `${greeting}
 
-Wanted to circle back on my earlier note. No pressure if framing isn't a current need — just letting you know we're here when it is.
+Wanted to circle back on my earlier note. No pressure if framing isn't a current need, just letting you know we're here when it is.
 
 If you'd like to stop by the shop sometime to see the work in person, the door is open Mon–Fri 9:30–6 at 1741 Centre Street, West Roxbury.
 
-Best,
-Jake
-West Roxbury Framing
-(617) 327-3890
-westroxburyframing.com
+${sig}
 `;
   }
 
   return `${greeting}
 
-I'm Jake, second-generation owner of West Roxbury Framing — a custom picture framing shop in West Roxbury that's been working with Boston-area designers, hotels, hospitals, and law firms for over 40 years.
+I'm Jake, second-generation owner of West Roxbury Framing, a custom picture framing shop in West Roxbury that's been working with Boston-area designers, hotels, hospitals, and law firms for over 40 years.
 
-I came across ${company} and wanted to introduce myself. We do museum-quality custom framing, conservation framing, shadow boxes, canvas stretching, and matched-moulding installations — the kind of work that holds up across an office or a curated space.
+I came across ${company} and wanted to introduce myself. We do museum-quality custom framing, conservation framing, shadow boxes, canvas stretching, and matched-moulding installations, the kind of work that holds up across an office or a curated space.
 
 A few things designers and firms tend to like about working with us:
 
@@ -725,15 +952,10 @@ A few things designers and firms tend to like about working with us:
 - Single point of contact for the duration of every project
 - Pickup, delivery, and on-site install across Greater Boston
 
-If framing is something ${company} handles regularly — for client homes, the office itself, or anything in between — I'd love to put a portfolio in front of you. Stop by the shop anytime, or reply to this email and we'll set something up.
+If framing is something ${company} handles regularly, for client homes, the office itself, or anything in between, I'd love to put a portfolio in front of you. Stop by the shop anytime, or reply to this email and we'll set something up.
 
 Either way, glad to introduce myself.
 
-Best,
-Jake
-West Roxbury Framing
-1741 Centre Street, West Roxbury, MA 02132
-(617) 327-3890
-westroxburyframing.com
+${sig}
 `;
 }

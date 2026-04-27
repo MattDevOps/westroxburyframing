@@ -107,8 +107,8 @@ export default function RestorationContent() {
             Have a Piece That Needs <span className="text-gold">Restoring</span>?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Bring it in for a free assessment. We'll evaluate the damage and give you an honest recommendation
-            and quote — no obligation.
+            Bring it in for a free assessment. We&apos;ll evaluate the damage and give you an honest recommendation
+            and pricing in person, no obligation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

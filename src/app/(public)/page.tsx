@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy, Hammer } from "lucide-react";
 
 const services = [
   { icon: Frame, title: "Custom & Handmade Frames", description: "Choose from hundreds of different styles, finishes (wood and aluminum), colors, and designs to suit your needs." },
+  { icon: Hammer, title: "Picture Hanging & Installation", description: "We hang single pieces, gallery walls, and full installations in homes, offices, hotels, and law firms across Greater Boston. Done right the first time, level, secure, and exactly where you want it." },
   { icon: Layers, title: "Matting", description: "Preservation/Conservation of many types, styles, and frame designs for your precious artwork." },
   { icon: Maximize, title: "Mounting", description: "Dry mounting, floating mounting, and shadow boxing, among others." },
   { icon: Wrench, title: "Insurance Repair & Replace", description: "Repair art and frames covered by insurance — we will repair or replace with care." },
@@ -33,7 +34,7 @@ const framedArtImages = [
 ];
 
 const allServicesList = [
-  "Same Day Framing", "Custom Framing", "On-Site Framing Design", "Ready Made Frames and Mats",
+  "Same Day Framing", "Custom Framing", "Picture Hanging & Installation", "On-Site Framing Design", "Ready Made Frames and Mats",
   "Repairs and Restoration", "Custom Acrylic Box for All Use", "Museum Diploma/Ketubah Framing",
   "Plaques and Name Tags For All Occasions", "Engraving", "Various Glass Types and Mirrors",
   "Canvas Stretching", "Oval Circle Shape Frames and Matting", "Various Type of Glass for All Needs and Repairs",
@@ -225,14 +226,14 @@ export default function HomePage() {
               How It <span className="text-gold">Works</span>
             </motion.h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Three simple steps from your artwork to a beautifully framed piece.
+              Three simple steps from front door to finished piece. Everything happens in the shop — no online forms, no remote pricing.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
-              { step: "1", title: "Bring In Your Work", desc: "Visit our gallery or schedule a consultation. Bring your treasured artwork, family photograph, or meaningful keepsake — we welcome walk-ins and appointments." },
-              { step: "2", title: "Design Together", desc: "Our experts help you choose the perfect frame, mat, and glass to complement your piece and your space." },
-              { step: "3", title: "We Frame & You Pick Up", desc: "We craft your custom frame with care. We'll let you know when it's ready — most orders done in about a week." },
+              { step: "1", title: "Bring It In", desc: "Walk in or schedule a visit at 1741 Centre Street with your artwork, photo, jersey, diploma, or keepsake. We need to see the piece in person." },
+              { step: "2", title: "Design & Pricing Together", desc: "We sit down with you, walk through moulding, mat, and glass options for your piece, and work out the pricing right then. No guesswork." },
+              { step: "3", title: "We Build It & You Pick Up", desc: "Our framers hand-build your piece in our West Roxbury shop. Most jobs are ready in 5–10 business days. We'll call when it's done." },
             ].map((s, i) => (
               <motion.div
                 key={s.step}

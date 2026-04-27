@@ -137,8 +137,8 @@ export default async function BlogPostPage({ params }: Props) {
               Ready to Get Started?
             </h2>
             <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
-              Bring your piece to West Roxbury Framing for a free quote.
-              Walk-ins welcome, or book a consultation online.
+              Bring your piece to West Roxbury Framing for a free design consultation.
+              Walk-ins welcome, or book a time online.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link

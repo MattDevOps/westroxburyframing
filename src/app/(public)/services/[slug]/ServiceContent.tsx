@@ -353,8 +353,8 @@ export default function ServiceContent({ service, related }: Props) {
             Ready to Get <span className="text-gold">Started</span>?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Walk in anytime or book a consultation. Bring the piece — we&apos;ll design and price it
-            with you in person. Pricing is always quoted in writing before any work begins.
+            Walk in anytime or book a consultation. Bring the piece — we&apos;ll design it
+            with you in person and work out the pricing on the spot. We put it in writing before any work begins.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

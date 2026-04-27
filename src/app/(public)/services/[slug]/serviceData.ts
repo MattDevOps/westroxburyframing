@@ -133,7 +133,7 @@ export const SERVICES: ServiceInfo[] = [
     faqs: [
       {
         q: "How much does a jersey shadow box cost?",
-        a: "Every shadow box is custom. Pricing depends on the size of the jersey, the moulding you choose, the glass type, and how many pieces are mounted. Bring the piece in and we'll design the shadow box and quote it together. Quotes are always free.",
+        a: "Every shadow box is custom. Pricing depends on the size of the jersey, the moulding you choose, the glass type, and how many pieces are mounted. Bring the piece in and we'll design the shadow box and work out the pricing together. Walk-ins are always welcome.",
       },
       {
         q: "Will mounting damage my game-worn jersey?",
@@ -263,7 +263,7 @@ export const SERVICES: ServiceInfo[] = [
       },
       {
         q: "Do you offer bulk pricing for law firms or medical practices?",
-        a: "Yes. We work with Boston-area firms that frame every partner's diploma collection consistently. Email us with the count and schools and we'll quote the project. Volume discount available.",
+        a: "Yes. We work with Boston-area firms that frame every partner's diploma collection consistently. Email us with the count and schools, then come in and we'll work out the project pricing. Volume discount available.",
       },
       {
         q: "How long does it take?",
@@ -360,7 +360,7 @@ export const SERVICES: ServiceInfo[] = [
     faqs: [
       {
         q: "How much does a retirement shadow box cost?",
-        a: "Every retirement shadow box is custom — pricing depends on the depth of the box, the moulding, the number of items being mounted, and whether a folded flag is included. Bring the items in and we'll lay them out and quote the project together. Quotes are always free.",
+        a: "Every retirement shadow box is custom — pricing depends on the depth of the box, the moulding, the number of items being mounted, and whether a folded flag is included. Bring the items in and we'll lay them out and work out the pricing together. Walk-ins are always welcome.",
       },
       {
         q: "Will mounting damage my medals or ribbons?",
@@ -372,7 +372,7 @@ export const SERVICES: ServiceInfo[] = [
       },
       {
         q: "Can you do bulk projects for a department or unit?",
-        a: "Yes. We work with BPD districts, BFD houses, and military units on bulk retirement gifts. Email us the count and we'll quote with volume pricing.",
+        a: "Yes. We work with BPD districts, BFD houses, and military units on bulk retirement gifts. Email us the count, then come in and we'll work out the pricing with the volume discount applied.",
       },
       {
         q: "Can you replicate official medal-rack protocol?",
@@ -477,7 +477,7 @@ export const SERVICES: ServiceInfo[] = [
     faqs: [
       {
         q: "How much does it cost to stretch a canvas?",
-        a: "Every canvas is custom — pricing depends on size, stretcher bar depth, and whether you want a gallery wrap, floater frame, or traditional frame. Bring the canvas in and we'll measure and quote it together. Quotes are always free.",
+        a: "Every canvas is custom — pricing depends on size, stretcher bar depth, and whether you want a gallery wrap, floater frame, or traditional frame. Bring the canvas in and we'll measure and work out the pricing together. Walk-ins are always welcome.",
       },
       {
         q: "What's the difference between a gallery wrap and a floater frame?",
@@ -553,8 +553,8 @@ export const SERVICES: ServiceInfo[] = [
         body: "We come to your space (Greater Boston) to see the project in person. We measure, photograph, and understand the scope. No charge for the walkthrough — we just need to see the work to scope it properly.",
       },
       {
-        title: "Project quote in writing",
-        body: "Every project gets an itemized written quote: piece count, moulding choices, glass type, mat options, timeline, and total. No surprise add-ons.",
+        title: "Pricing in writing",
+        body: "Every project gets itemized pricing in writing: piece count, moulding choices, glass type, mat options, timeline, and total. No surprise add-ons.",
       },
       {
         title: "Approval samples",
@@ -575,7 +575,8 @@ export const SERVICES: ServiceInfo[] = [
       "On-site walkthroughs and measurements (Greater Boston)",
       "Single point of contact for the duration of the project",
       "Approval samples for designer/facilities sign-off",
-      "Pickup, delivery, and installation included on most jobs",
+      "Pickup, delivery, AND professional hanging / installation — we hang the work for you, level and secure",
+      "Right hardware for every wall type (drywall, plaster, concrete, brick)",
       "Conservation glass and acid-free materials standard for institutional work",
       "Insurance certificates for installations on request",
     ],
@@ -692,7 +693,7 @@ export const SERVICES: ServiceInfo[] = [
     faqs: [
       {
         q: "How much does a wedding shadow box cost?",
-        a: "Every wedding keepsake shadow box is custom — pricing depends on size, the number of items included, the moulding, and the design. Stop in with what you'd like included and we'll design and quote the piece together. Quotes are always free.",
+        a: "Every wedding keepsake shadow box is custom — pricing depends on size, the number of items included, the moulding, and the design. Stop in with what you'd like included and we'll design the piece and work out the pricing together. Walk-ins are always welcome.",
       },
       {
         q: "Do you preserve the bouquet?",

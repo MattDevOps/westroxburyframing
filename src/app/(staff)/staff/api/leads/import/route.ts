@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const userId = getStaffUserIdFromRequest(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let payload: { csv?: string; vertical?: string; source?: string };
+  let payload: { csv?: string; vertical?: string; source?: string; dryRun?: boolean };
   try {
     payload = await req.json();
   } catch {
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
 
   const csv = (payload.csv || "").trim();
   if (!csv) return NextResponse.json({ error: "Missing csv body" }, { status: 400 });
+
+  const dryRun = Boolean(payload.dryRun);
 
   const defaultVertical = (payload.vertical || "designer") as Prisma.LeadCreateInput["vertical"];
   const defaultSource = payload.source?.trim() || null;
@@ -85,6 +87,17 @@ export async function POST(req: Request) {
       continue;
     }
 
+    if (dryRun) {
+      // Don't write to DB — just collect what we WOULD have created.
+      created.push({
+        id: "(preview)",
+        email,
+        companyName,
+      });
+      if (email) batchEmails.add(email);
+      continue;
+    }
+
     try {
       const lead = await prisma.lead.create({
         data: {
@@ -115,10 +128,12 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
+    dryRun,
     total: dataRows.length,
     created: created.length,
     skipped: skipped.length,
-    createdIds: created.map((c) => c.id),
+    createdIds: dryRun ? [] : created.map((c) => c.id),
+    createdPreview: dryRun ? created.slice(0, 25).map((c) => ({ email: c.email, companyName: c.companyName })) : undefined,
     skippedDetail: skipped.slice(0, 50),
   });
 }

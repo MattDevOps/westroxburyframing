@@ -75,7 +75,19 @@ export async function GET(req: Request) {
     const statusCounts: Record<string, number> = {};
     for (const c of counts) statusCounts[c.status] = c._count._all;
 
-    return NextResponse.json({ leads, statusCounts });
+    // Auto-followups firing today (across the whole DB, not just the current filter)
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    const followupsToday = await prisma.lead.count({
+      where: {
+        autoFollowupAt: { lte: endOfToday },
+        autoFollowupSent: false,
+        repliedAt: null,
+        status: { in: ["emailed", "followed_up"] },
+      },
+    });
+
+    return NextResponse.json({ leads, statusCounts, followupsToday });
   } catch (e) {
     console.error("Lead list failed:", e);
     return NextResponse.json({ error: "Failed to load leads" }, { status: 500 });

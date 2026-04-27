@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock, ArrowRight } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock, ArrowRight, Hammer } from "lucide-react";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SERVICES as NICHE_SERVICES } from "./[slug]/serviceData";
@@ -13,6 +13,11 @@ const SERVICES = [
     icon: Frame,
     title: "Custom Picture Framing",
     body: "Choose from hundreds of moulding profiles in wood, metal, and specialty finishes. Every frame is cut, joined, and assembled by hand in our West Roxbury shop to perfectly complement your artwork, photograph, or memorabilia. We handle everything from small 4×6 photos to oversized gallery pieces.",
+  },
+  {
+    icon: Hammer,
+    title: "Picture Hanging & Installation",
+    body: "We don't just frame — we hang the work in your home, office, lobby, or hotel. Single statement pieces, balanced gallery walls, donor walls, partner-diploma displays, and full art installations across Greater Boston. We bring the right hardware for your wall type (drywall, plaster, concrete, brick), level every piece, and clean up after. Most jobs same-week. Available as a standalone service even on pieces we didn't frame.",
   },
   {
     icon: Layers,
@@ -320,7 +325,7 @@ export default function ServicesContent() {
               href="/custom-framing"
               className="px-8 py-3.5 border border-border text-foreground font-semibold tracking-wide uppercase text-sm rounded-sm hover:border-gold/50 transition-colors"
             >
-              Get a Quote Online
+              Tell Us About Your Project
             </Link>
           </div>
           <p className="mt-6 text-muted-foreground text-sm">

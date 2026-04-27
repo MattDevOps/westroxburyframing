@@ -154,8 +154,8 @@ export default function CustomFramingContent() {
                         Custom <span className="text-gold">Framing</span>
                     </motion.h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Tell us about your framing project and we&apos;ll get back to you with a personalized quote.
-                        No obligation — just expert advice from Boston&apos;s trusted framers since 1981.
+                        Tell us about your framing project and we&apos;ll set up a time for you to come in for a design consultation.
+                        No obligation, just expert advice from Boston&apos;s trusted framers since 1981.
                     </p>
                 </div>
             </section>
@@ -178,7 +178,8 @@ export default function CustomFramingContent() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             {[
                                 { step: "1", title: "Describe", desc: "Tell us what you'd like framed" },
-                                { step: "2", title: "We Review", desc: "Drop off in store (no online quotes)" }
+                                { step: "2", title: "We Review", desc: "We review your details and reach out to schedule a visit" },
+                                { step: "3", title: "Come In", desc: "Bring the piece — we design and price it together in person" }
                             ].map((s) => (
                                 <div key={s.step} className="flex items-start gap-3">
                                     <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-sm font-bold">
@@ -289,7 +290,7 @@ export default function CustomFramingContent() {
                                 <h3 className="font-serif text-xl text-foreground">Upload Photos</h3>
                             </div>
                             <p className="text-muted-foreground text-sm mb-4">
-                                Upload up to 6 photos of your artwork or item. This helps us give you a more accurate quote. (Max 5MB per image)
+                                Upload up to 6 photos of your artwork or item. Helps us prep for your visit. (Max 5MB per image)
                             </p>
 
                             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">

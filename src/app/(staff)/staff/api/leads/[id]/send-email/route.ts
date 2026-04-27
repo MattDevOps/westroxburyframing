@@ -101,6 +101,13 @@ export async function POST(req: Request, { params }: Params) {
         emailBody: body,
         emailedAt: new Date(),
         status: newStatus,
+        // Always clear any pending review-queue draft on successful send.
+        // This is the single point where drafts get retired.
+        draftSubject: null,
+        draftBody: null,
+        draftMode: null,
+        draftSource: null,
+        draftCreatedAt: null,
         ...(wasAlreadyEmailed && {
           followUpCount: { increment: 1 },
           lastFollowUpAt: new Date(),

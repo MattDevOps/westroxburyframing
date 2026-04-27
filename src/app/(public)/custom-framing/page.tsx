@@ -2,22 +2,23 @@ import { Metadata } from "next";
 import CustomFramingContent from "./CustomFramingContent";
 
 export const metadata: Metadata = {
-  title: "Get a Custom Framing Quote Online | West Roxbury Framing",
+  title: "Tell Us About Your Custom Framing Project | West Roxbury Framing",
   description:
-    "Request a free custom framing quote online from West Roxbury Framing. Upload photos of your artwork, jersey, diploma, or memorabilia and we'll get back to you with pricing. Serving Boston and Greater Boston since 1981.",
+    "Tell us about your custom framing project online — upload photos and describe what you'd like framed, and we'll set up a time for you to come in for a design consultation. Boston-area framer since 1981.",
   keywords: [
-    "custom framing quote",
-    "framing quote online Boston",
-    "picture framing quote West Roxbury",
-    "custom frame price estimate",
-    "jersey framing quote",
-    "diploma framing quote",
+    "custom framing Boston",
+    "custom framing West Roxbury",
+    "picture framing consultation",
+    "framing project intake Boston",
+    "jersey framing consultation",
+    "diploma framing consultation",
     "custom framing request",
+    "Boston frame shop appointment",
   ],
   openGraph: {
-    title: "Get a Custom Framing Quote Online | West Roxbury Framing",
+    title: "Tell Us About Your Custom Framing Project | West Roxbury Framing",
     description:
-      "Submit your framing request online and receive a personalized quote. Upload photos, describe your piece, and our team will get back to you within one business day.",
+      "Tell us about your custom framing project online and we'll set up a time for you to come in. Pricing is always worked out in person at the shop.",
     url: "https://westroxburyframing.com/custom-framing",
   },
   alternates: {
@@ -31,18 +32,18 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "How do I get a custom framing quote online?",
+      name: "How does the custom framing process work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Upload photos of your piece using the form on this page, include the dimensions, and tell us what you have in mind. We'll reply within one business day with pricing options at different levels.",
+        text: "Tell us about your project using the form on this page (or just walk into the shop). We'll set up a time for you to come in with the piece. We design the frame with you in person and work out the pricing on the spot — every job is custom, so we need to see the piece to be accurate.",
       },
     },
     {
       "@type": "Question",
-      name: "Can I get a custom framing quote in person?",
+      name: "Can I get pricing online or over the phone?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Absolutely — walk-ins are always welcome at our shop at 1741 Centre St in West Roxbury. Bring your piece in and we'll give you a quote on the spot with options at different price points.",
+        text: "Every job is custom — pricing depends on the moulding, mat, glass type, and size of your piece. We work out pricing in person so we can show you options at different price points and you can see the materials. Walk-ins are always welcome at 1741 Centre Street, West Roxbury.",
       },
     },
     {

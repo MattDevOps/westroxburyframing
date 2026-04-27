@@ -53,7 +53,7 @@ const faqSchema = {
       name: "How much does photo restoration cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Photo restoration starts around $50 for minor repairs and ranges up to $150+ for heavily damaged images. Bring your photo in for a free assessment — we'll give you an honest estimate on the spot.",
+        text: "Photo restoration pricing depends on the condition of the original — minor repairs are quick, heavily damaged images take more work. Bring your photo in for a free assessment and we'll work out the pricing in person.",
       },
     },
     {
