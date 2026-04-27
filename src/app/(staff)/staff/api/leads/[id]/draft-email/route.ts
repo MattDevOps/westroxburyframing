@@ -157,16 +157,17 @@ When to include the Calendly booking link:
 
 Your job: produce a single email draft (subject + body) that sounds like Jake wrote it himself, tailored to the lead's vertical, location, and (if available) what their website tells us about them.`;
 
-  // Use Opus 4.7 with adaptive thinking for higher-quality, more personalized drafts.
-  // Email drafting is intelligence-sensitive — we want sharp tone and specific personalization.
+  // Haiku 4.5 — ~85% cheaper than Opus 4.7 (~$0.01/draft vs ~$0.07).
+  // For outreach emails (100-200 words, well-defined task, structured output),
+  // Haiku produces drafts that are essentially indistinguishable from Opus.
+  // No thinking / effort params — Haiku 4.5 doesn't support `effort` and we
+  // don't need extended reasoning for this task.
   let response;
   try {
     response = await client.messages.create({
-      model: "claude-opus-4-7",
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
+      model: "claude-haiku-4-5",
+      max_tokens: 4096,
       output_config: {
-        effort: "medium",
         format: {
           type: "json_schema",
           schema: {

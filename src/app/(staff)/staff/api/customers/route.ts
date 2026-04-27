@@ -45,6 +45,30 @@ export async function GET(req: Request) {
     };
   }
 
+  async function attachLifetimeSpend(customers: any[]) {
+    if (customers.length === 0) return;
+    const customerIds = customers.map((c) => c.id);
+    // Sum totalAmount across all orders, plus the most recent order date.
+    const aggregates = await prisma.order.groupBy({
+      by: ["customerId"],
+      where: { customerId: { in: customerIds } },
+      _sum: { totalAmount: true },
+      _max: { createdAt: true },
+    });
+    const sumByCustomer = new Map<string, number>();
+    const lastOrderByCustomer = new Map<string, string>();
+    for (const a of aggregates) {
+      if (a.customerId) {
+        sumByCustomer.set(a.customerId, a._sum.totalAmount ?? 0);
+        if (a._max.createdAt) lastOrderByCustomer.set(a.customerId, a._max.createdAt.toISOString());
+      }
+    }
+    for (const c of customers) {
+      c.lifetimeSpendCents = sumByCustomer.get(c.id) ?? 0;
+      c.lastOrderAt = lastOrderByCustomer.get(c.id) ?? null;
+    }
+  }
+
   async function attachLastNotified(customers: any[]) {
     if (customers.length === 0) return;
     const customerIds = customers.map((c) => c.id);
@@ -122,6 +146,7 @@ export async function GET(req: Request) {
     }
 
     await attachLastNotified(customers);
+    await attachLifetimeSpend(customers);
 
     return NextResponse.json({ customers });
   } catch (error: any) {

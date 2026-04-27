@@ -495,10 +495,10 @@ export default function DashboardPage() {
               Top Customers
             </h2>
             <Link
-              href="/staff/reports?reportType=customers"
+              href="/staff/reports/top-customers"
               className="text-xs text-blue-600 hover:underline"
             >
-              View report →
+              Full report →
             </Link>
           </div>
           {!data.topCustomers || data.topCustomers.length === 0 ? (

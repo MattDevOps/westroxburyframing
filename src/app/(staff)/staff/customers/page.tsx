@@ -35,6 +35,8 @@ type Customer = {
   lastNotifiedMethod?: "sms" | "email" | null;
   notifications?: Notification[];
   _count?: { orders: number };
+  lifetimeSpendCents?: number;
+  lastOrderAt?: string | null;
 };
 
 type Backup = {
@@ -69,7 +71,7 @@ export default function CustomersPage() {
   const [savingTag, setSavingTag] = useState(false);
   
   // Sorting state
-  const [sortBy, setSortBy] = useState<"name" | "dateAdded">("dateAdded");
+  const [sortBy, setSortBy] = useState<"name" | "dateAdded" | "lifetimeSpend">("dateAdded");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   // Pickup SMS state
@@ -382,6 +384,11 @@ export default function CustomersPage() {
         const nameA = `${a.firstName || ""} ${a.lastName || ""}`.toLowerCase();
         const nameB = `${b.firstName || ""} ${b.lastName || ""}`.toLowerCase();
         return sortDir === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      }
+      if (sortBy === "lifetimeSpend") {
+        const spendA = (a as Customer & { lifetimeSpendCents?: number }).lifetimeSpendCents ?? 0;
+        const spendB = (b as Customer & { lifetimeSpendCents?: number }).lifetimeSpendCents ?? 0;
+        return sortDir === "asc" ? spendA - spendB : spendB - spendA;
       }
       // dateAdded
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -878,7 +885,24 @@ export default function CustomersPage() {
           </button>
           <div className="col-span-2">Email</div>
           <div className="col-span-1">Phone</div>
-          <div className="col-span-1">Orders</div>
+          <button
+            className={`col-span-1 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
+              sortBy === "lifetimeSpend"
+                ? "text-neutral-900 font-semibold"
+                : "hover:text-neutral-900 underline decoration-dotted underline-offset-4 decoration-neutral-400"
+            }`}
+            onClick={() => {
+              if (sortBy === "lifetimeSpend") setSortDir(sortDir === "asc" ? "desc" : "asc");
+              else { setSortBy("lifetimeSpend"); setSortDir("desc"); }
+            }}
+          >
+            Lifetime
+            {sortBy === "lifetimeSpend" ? (
+              sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+            ) : (
+              <ArrowUpDown size={11} className="text-neutral-400" />
+            )}
+          </button>
           <div className="col-span-1">Tags</div>
           <button
             className={`col-span-1 flex items-center gap-1 text-left cursor-pointer select-none transition-colors ${
@@ -921,7 +945,14 @@ export default function CustomersPage() {
                 <div className="col-span-2 font-medium">{name}</div>
                 <div className="col-span-2 text-neutral-600 truncate">{c.email || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{c.phone || "—"}</div>
-                <div className="col-span-1 text-neutral-600">{orderCount}</div>
+                <div className="col-span-1">
+                  <div className="font-medium text-neutral-900">
+                    ${((c.lifetimeSpendCents ?? 0) / 100).toFixed(0)}
+                  </div>
+                  <div className="text-xs text-neutral-500">
+                    {orderCount} {orderCount === 1 ? "order" : "orders"}
+                  </div>
+                </div>
                 <div className="col-span-1">
                   <div className="flex flex-wrap gap-1">
                     {(c as any).tagAssignments?.slice(0, 1).map((assignment: any) => (

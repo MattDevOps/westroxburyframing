@@ -4,6 +4,19 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { Search, Plus, Upload, Mail, Filter, Settings, Send } from "lucide-react";
 
+type UsageStats = {
+  monthStartIso: string;
+  aiDraftsCount: number;
+  aiDraftsSent: number;
+  draftsPending: number;
+  classificationsCount: number;
+  estimatedAnthropicSpendUsd: number;
+  costAssumptions: { perDraftUsd: number; perClassificationUsd: number; note: string };
+  postmarkOutbound: number | null;
+  postmarkInbound: number | null;
+  postmarkAvailable: boolean;
+};
+
 type Lead = {
   id: string;
   firstName: string | null;
@@ -77,6 +90,7 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [followupsToday, setFollowupsToday] = useState(0);
+  const [usage, setUsage] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [vertical, setVertical] = useState("");
@@ -124,6 +138,11 @@ export default function LeadsPage() {
       setLeads(data.leads || []);
       setStatusCounts(data.statusCounts || {});
       setFollowupsToday(data.followupsToday || 0);
+      // Refresh usage stats whenever leads reload — cheap, runs in parallel
+      fetch("/staff/api/marketing/usage-stats", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((u) => u && setUsage(u))
+        .catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load leads");
     } finally {
@@ -210,6 +229,9 @@ export default function LeadsPage() {
           <SummaryCard label="Replied" value={repliedCount} accent="text-emerald-700" />
           <SummaryCard label="Converted" value={customerCount} accent="text-green-700" />
         </div>
+
+        {/* Cost / usage monitoring */}
+        {usage && <UsageWidget usage={usage} />}
 
         {/* Filters */}
         <div className="bg-white border border-stone-200 rounded p-4 mb-4 flex flex-col md:flex-row gap-3 md:items-center">
@@ -626,6 +648,117 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
     <div className="bg-white border border-stone-200 rounded p-4">
       <div className="text-xs text-stone-500 uppercase tracking-wide">{label}</div>
       <div className={`text-2xl font-bold mt-1 ${accent || "text-stone-900"}`}>{value}</div>
+    </div>
+  );
+}
+
+function UsageWidget({ usage }: { usage: UsageStats }) {
+  const monthLabel = new Date(usage.monthStartIso).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Postmark free tier is 100 outbound/mo; flag if approaching
+  const postmarkFreeCap = 100;
+  const outbound = usage.postmarkOutbound;
+  const postmarkPct =
+    typeof outbound === "number" ? Math.round((outbound / postmarkFreeCap) * 100) : null;
+  const postmarkWarning = postmarkPct != null && postmarkPct >= 80;
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs uppercase tracking-widest text-stone-500 font-semibold">
+          Usage & cost — {monthLabel}
+        </h2>
+        <a
+          href="https://console.anthropic.com/settings/usage"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-stone-500 hover:text-stone-900"
+        >
+          Real Anthropic spend ↗
+        </a>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* AI drafts */}
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <div className="text-xs text-stone-500 uppercase tracking-wide">AI drafts</div>
+          <div className="text-2xl font-bold mt-1 text-purple-700">{usage.aiDraftsCount}</div>
+          <div className="text-xs text-stone-500 mt-1">
+            {usage.aiDraftsSent} sent · {usage.draftsPending} pending review
+          </div>
+        </div>
+
+        {/* Classifications */}
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <div className="text-xs text-stone-500 uppercase tracking-wide">Reply classifications</div>
+          <div className="text-2xl font-bold mt-1 text-emerald-700">
+            {usage.classificationsCount}
+          </div>
+          <div className="text-xs text-stone-500 mt-1">Inbound, auto-classified by Haiku</div>
+        </div>
+
+        {/* Estimated Anthropic spend */}
+        <div className="bg-white border border-stone-200 rounded p-4">
+          <div className="text-xs text-stone-500 uppercase tracking-wide">
+            Est. Anthropic spend
+          </div>
+          <div className="text-2xl font-bold mt-1 text-stone-900">
+            ${usage.estimatedAnthropicSpendUsd.toFixed(2)}
+          </div>
+          <div
+            className="text-xs text-stone-500 mt-1 truncate"
+            title={usage.costAssumptions.note}
+          >
+            Estimate · ${usage.costAssumptions.perDraftUsd.toFixed(2)}/draft
+          </div>
+        </div>
+
+        {/* Postmark */}
+        <div
+          className={`rounded p-4 border ${
+            postmarkWarning
+              ? "bg-amber-50 border-amber-300"
+              : "bg-white border-stone-200"
+          }`}
+        >
+          <div className="text-xs text-stone-500 uppercase tracking-wide">Postmark</div>
+          {usage.postmarkAvailable && outbound != null ? (
+            <>
+              <div
+                className={`text-2xl font-bold mt-1 ${
+                  postmarkWarning ? "text-amber-800" : "text-stone-900"
+                }`}
+              >
+                {outbound}
+                <span className="text-base text-stone-400 font-normal"> / 100 free</span>
+              </div>
+              <div className="text-xs text-stone-500 mt-1">
+                {usage.postmarkInbound != null && (
+                  <>{usage.postmarkInbound} inbound · </>
+                )}
+                {postmarkWarning ? (
+                  <span className="text-amber-700 font-medium">
+                    Near free-tier cap — $15/mo plan covers 10K
+                  </span>
+                ) : (
+                  <>Free tier covers 100/mo outbound</>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-base font-medium mt-1 text-stone-500">unavailable</div>
+              <div className="text-xs text-stone-500 mt-1">
+                {usage.postmarkAvailable === false
+                  ? "POSTMARK_SERVER_API_TOKEN not set"
+                  : "API call failed"}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

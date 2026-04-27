@@ -364,6 +364,26 @@ export default function OrderDetailPage() {
           <div className="text-neutral-700">
             {order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : "No Customer"}
           </div>
+          {order.customer && (order.customer.email || order.customer.phone) && (
+            <div className="text-neutral-500 text-sm mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 print:hidden">
+              {order.customer.email && (
+                <a
+                  href={`mailto:${order.customer.email}`}
+                  className="hover:text-neutral-900 hover:underline"
+                >
+                  {order.customer.email}
+                </a>
+              )}
+              {order.customer.phone && (
+                <a
+                  href={`tel:${order.customer.phone}`}
+                  className="hover:text-neutral-900 hover:underline"
+                >
+                  {order.customer.phone}
+                </a>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 print:hidden">
           {/* Group 1: Status / Edit */}

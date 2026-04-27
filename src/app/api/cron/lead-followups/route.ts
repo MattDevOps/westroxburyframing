@@ -196,12 +196,11 @@ Tone: warm, real-person voice. Direct. Confident but not pushy. Specific over ge
 
 Forbidden: "I hope this email finds you well", marketing-speak, em-dashes, bullet-point feature lists, price quotes, claims we can't back up. Do NOT include any Calendly or scheduling links in auto-followups — only include those when replying to a lead who has visibly expressed interest.`;
 
+  // Haiku 4.5 — ~85% cheaper than Opus, indistinguishable quality on this task
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
-    max_tokens: 8000,
-    thinking: { type: "adaptive" },
+    model: "claude-haiku-4-5",
+    max_tokens: 2048,
     output_config: {
-      effort: "medium",
       format: {
         type: "json_schema",
         schema: {
