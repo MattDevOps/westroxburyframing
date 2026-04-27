@@ -1,7 +1,30 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Inter, Playfair_Display, Oswald } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-oswald",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -144,7 +167,7 @@ const localBusinessSchema = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${oswald.variable}`}>
       <head>
         <script
           type="application/ld+json"

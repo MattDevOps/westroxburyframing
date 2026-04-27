@@ -46,16 +46,19 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/framed-art/01.webp)" }}
+        <Image
+          src="/framed-art/01.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-background/70" />
         <div className="relative z-10 text-center max-w-4xl mx-auto px-6 pt-20">
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
             className="mb-6"
           >
             <a
@@ -68,9 +71,8 @@ export default function HomePage() {
             </a>
           </motion.p>
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
             className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold text-foreground mb-6 leading-tight"
           >
             West Roxbury
@@ -78,17 +80,15 @@ export default function HomePage() {
             <span className="text-gold">Framing</span>
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
             className="text-foreground/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
             West Roxbury Framing was one of a select few businesses in Boston to earn the Legacy Business Award, acknowledging long-standing businesses with historic significance and a commitment to the community.
           </motion.p>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
@@ -113,9 +113,8 @@ export default function HomePage() {
             </a>
           </motion.div>
           <motion.p
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
             className="mt-6 text-foreground/50 text-sm"
           >
             Walk-ins welcome · Free parking available
