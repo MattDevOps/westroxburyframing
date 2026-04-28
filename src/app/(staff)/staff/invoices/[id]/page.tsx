@@ -303,6 +303,19 @@ export default function InvoiceDetailPage({
               Record Payment
             </button>
           )}
+          {canPay && (
+            <button
+              onClick={() => {
+                setPayMethod("check");
+                setPayAmount((invoice.balanceDue / 100).toFixed(2));
+                setPayNote("");
+                setShowPaymentForm(true);
+              }}
+              className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm text-sky-700 hover:bg-sky-100"
+            >
+              Check Received
+            </button>
+          )}
           {!isPaid && !isVoid && (
             <button
               onClick={voidInvoice}
