@@ -1,0 +1,74 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "West Roxbury Framing" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - img "West Roxbury Framing" [ref=e8]
+          - button "Toggle navigation" [ref=e9] [cursor=pointer]:
+            - img [ref=e10]
+        - generic [ref=e12]:
+          - generic [ref=e30]: West Roxbury Framing (WRF)
+          - button "Log out" [ref=e14] [cursor=pointer]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Customer Recall" [level=1] [ref=e33]
+            - paragraph [ref=e34]: Calendar-triggered email campaigns to past retail customers. The cron drafts personalized emails into the review queue below; nothing sends until you approve.
+          - link "← Marketing" [ref=e35] [cursor=pointer]:
+            - /url: /staff/marketing
+        - generic [ref=e36]:
+          - heading "Campaigns" [level=2] [ref=e37]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]:
+                  - link "Graduation diploma reminder (May)" [ref=e42] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/bca42665-692f-401e-983e-50e4afd1a58a
+                  - generic [ref=e43]: Disabled
+                - generic [ref=e44]: Window May 1 – May 31 · cap 50/run · total drafted 0
+              - generic [ref=e45]:
+                - button "Enable" [ref=e46] [cursor=pointer]
+                - link "Edit" [ref=e47] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/bca42665-692f-401e-983e-50e4afd1a58a
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]:
+                  - link "Father's Day sports memorabilia (early June)" [ref=e51] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/d74c1059-55b8-4249-8b06-dcdcddc1be42
+                  - generic [ref=e52]: Disabled
+                - generic [ref=e53]: Window Jun 1 – Jun 15 · cap 50/run · total drafted 0
+              - generic [ref=e54]:
+                - button "Enable" [ref=e55] [cursor=pointer]
+                - link "Edit" [ref=e56] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/d74c1059-55b8-4249-8b06-dcdcddc1be42
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - generic [ref=e59]:
+                  - link "Wedding keepsakes (summer wedding season)" [ref=e60] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/6a15f2d7-dd58-4712-a099-9a6348446aa3
+                  - generic [ref=e61]: Disabled
+                - generic [ref=e62]: Window Jun 1 – Sep 30 · cap 50/run · total drafted 0
+              - generic [ref=e63]:
+                - button "Enable" [ref=e64] [cursor=pointer]
+                - link "Edit" [ref=e65] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/6a15f2d7-dd58-4712-a099-9a6348446aa3
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - generic [ref=e68]:
+                  - link "Holiday shadow boxes (Nov–Dec)" [ref=e69] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/6cf34bbe-f264-4c41-bd8b-db2798bd368e
+                  - generic [ref=e70]: Disabled
+                - generic [ref=e71]: Window Nov 15 – Dec 20 · cap 50/run · total drafted 0
+              - generic [ref=e72]:
+                - button "Enable" [ref=e73] [cursor=pointer]
+                - link "Edit" [ref=e74] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/6cf34bbe-f264-4c41-bd8b-db2798bd368e
+        - generic [ref=e75]:
+          - heading "Review queue (0)" [level=2] [ref=e77]
+          - generic [ref=e78]: Nothing pending. The cron drafts campaigns daily; you can also use "Run now" on a campaign's edit page.
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]:
+    - img [ref=e25]
+  - alert [ref=e28]

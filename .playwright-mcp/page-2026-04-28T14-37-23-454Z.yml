@@ -1,0 +1,117 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "West Roxbury Framing" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - img "West Roxbury Framing" [ref=e8]
+          - button "Toggle navigation" [ref=e9] [cursor=pointer]:
+            - img [ref=e10]
+        - generic [ref=e12]:
+          - generic [ref=e30]: West Roxbury Framing (WRF)
+          - button "Log out" [ref=e14] [cursor=pointer]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - heading "Customer Recall" [level=1] [ref=e33]
+            - paragraph [ref=e34]: Calendar-triggered email campaigns to past retail customers. The cron drafts personalized emails into the review queue below; nothing sends until you approve.
+          - link "← Marketing" [ref=e35] [cursor=pointer]:
+            - /url: /staff/marketing
+        - generic [ref=e36]:
+          - heading "Campaigns" [level=2] [ref=e37]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]:
+                  - link "Graduation diploma reminder (May)" [ref=e42] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/bca42665-692f-401e-983e-50e4afd1a58a
+                  - generic [ref=e43]: Disabled
+                  - generic [ref=e44]: 1 pending
+                - generic [ref=e45]: Window May 1 – May 31 · cap 50/run · total drafted 1 · last run 4/28/2026
+              - generic [ref=e46]:
+                - button "Enable" [ref=e47] [cursor=pointer]
+                - link "Edit" [ref=e48] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/bca42665-692f-401e-983e-50e4afd1a58a
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - generic [ref=e51]:
+                  - link "Father's Day sports memorabilia (early June)" [ref=e52] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/d74c1059-55b8-4249-8b06-dcdcddc1be42
+                  - generic [ref=e53]: Disabled
+                - generic [ref=e54]: Window Jun 1 – Jun 15 · cap 50/run · total drafted 0
+              - generic [ref=e55]:
+                - button "Enable" [ref=e56] [cursor=pointer]
+                - link "Edit" [ref=e57] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/d74c1059-55b8-4249-8b06-dcdcddc1be42
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - generic [ref=e60]:
+                  - link "Wedding keepsakes (summer wedding season)" [ref=e61] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/6a15f2d7-dd58-4712-a099-9a6348446aa3
+                  - generic [ref=e62]: Disabled
+                - generic [ref=e63]: Window Jun 1 – Sep 30 · cap 50/run · total drafted 0
+              - generic [ref=e64]:
+                - button "Enable" [ref=e65] [cursor=pointer]
+                - link "Edit" [ref=e66] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/6a15f2d7-dd58-4712-a099-9a6348446aa3
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - generic [ref=e69]:
+                  - link "Holiday shadow boxes (Nov–Dec)" [ref=e70] [cursor=pointer]:
+                    - /url: /staff/marketing/recall/6cf34bbe-f264-4c41-bd8b-db2798bd368e
+                  - generic [ref=e71]: Disabled
+                - generic [ref=e72]: Window Nov 15 – Dec 20 · cap 50/run · total drafted 0
+              - generic [ref=e73]:
+                - button "Enable" [ref=e74] [cursor=pointer]
+                - link "Edit" [ref=e75] [cursor=pointer]:
+                  - /url: /staff/marketing/recall/6cf34bbe-f264-4c41-bd8b-db2798bd368e
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - heading "Review queue (1)" [level=2] [ref=e78]
+            - generic [ref=e79]:
+              - button "Select all" [ref=e80] [cursor=pointer]
+              - button "Approve & send (0)" [disabled] [ref=e81]
+              - button "Discard (0)" [disabled] [ref=e82]
+          - table [ref=e84]:
+            - rowgroup [ref=e85]:
+              - row "Customer Campaign Subject Drafted" [ref=e86]:
+                - columnheader [ref=e87]
+                - columnheader "Customer" [ref=e88]
+                - columnheader "Campaign" [ref=e89]
+                - columnheader "Subject" [ref=e90]
+                - columnheader "Drafted" [ref=e91]
+                - columnheader [ref=e92]
+            - rowgroup [ref=e93]:
+              - row "CLAUDE-TEST DELETEME claude-recall-test@example.com Graduation diploma reminder (May) Diploma framing season — got one to bring in, CLAUDE-TEST? 4/28/2026 Preview Send Discard" [ref=e94]:
+                - cell [ref=e95]:
+                  - checkbox [ref=e96]
+                - cell "CLAUDE-TEST DELETEME claude-recall-test@example.com" [ref=e97]:
+                  - generic [ref=e98]: CLAUDE-TEST DELETEME
+                  - generic [ref=e99]: claude-recall-test@example.com
+                - cell "Graduation diploma reminder (May)" [ref=e100]
+                - cell "Diploma framing season — got one to bring in, CLAUDE-TEST?" [ref=e101]
+                - cell "4/28/2026" [ref=e102]
+                - cell "Preview Send Discard" [ref=e103]:
+                  - button "Preview" [active] [ref=e104] [cursor=pointer]
+                  - button "Send" [ref=e105] [cursor=pointer]
+                  - button "Discard" [ref=e106] [cursor=pointer]
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - generic [ref=e111]: To claude-recall-test@example.com
+              - generic [ref=e112]: Diploma framing season — got one to bring in, CLAUDE-TEST?
+            - button "✕" [ref=e113] [cursor=pointer]
+          - generic [ref=e114]:
+            - paragraph [ref=e115]: Hi CLAUDE-TEST,
+            - paragraph [ref=e116]: Graduation season is here. If anyone in the family is finishing this year — high school, college, grad school, even a professional certification — we'd love to frame the diploma for you.
+            - paragraph [ref=e117]: We do recognized seal embossing, archival mounting, and Boston-area school mat colors (Harvard crimson, BC maroon & gold, BU red, Northeastern red & black, MIT cardinal, etc.).
+            - paragraph [ref=e118]: Walk in any time, or call us at (617) 327-3890 and we can have it ready before the family party.
+            - paragraph [ref=e119]:
+              - text: — The team at West Roxbury Framing
+              - link "https://westroxburyframing.com" [ref=e120] [cursor=pointer]:
+                - /url: https://westroxburyframing.com
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]:
+    - img [ref=e25]
+  - alert [ref=e28]

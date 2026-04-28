@@ -1,0 +1,50 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "West Roxbury Framing" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - img "West Roxbury Framing" [ref=e8]
+          - button "Toggle navigation" [ref=e9] [cursor=pointer]:
+            - img [ref=e10]
+        - button "Log out" [ref=e14] [cursor=pointer]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - link "Active Orders" [ref=e20] [cursor=pointer]:
+            - /url: /staff/orders?tab=active
+          - link "Estimates" [ref=e21] [cursor=pointer]:
+            - /url: /staff/orders?tab=estimates
+          - link "All Orders" [ref=e22] [cursor=pointer]:
+            - /url: /staff/orders?tab=all
+          - link "Completed Orders" [ref=e23] [cursor=pointer]:
+            - /url: /staff/orders/completed
+          - link "Pending Invoices" [ref=e24] [cursor=pointer]:
+            - /url: /staff/invoices?status=pending
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - heading "Invoices" [level=1] [ref=e27]
+            - generic [ref=e28]:
+              - generic [ref=e29]: "Outstanding: $0.00"
+              - generic [ref=e30]: "Collected: $0.00"
+          - generic [ref=e31]:
+            - link "+ New Order" [ref=e32] [cursor=pointer]:
+              - /url: /staff/orders/intake
+            - link "+ Quick Order" [ref=e33] [cursor=pointer]:
+              - /url: /staff/orders/new
+            - link "+ New Invoice" [ref=e34] [cursor=pointer]:
+              - /url: /staff/invoices/new
+        - generic [ref=e35]:
+          - textbox "Search invoices, customers…" [ref=e36]
+          - generic [ref=e37]:
+            - button "All" [ref=e38] [cursor=pointer]
+            - button "Pending" [ref=e39] [cursor=pointer]
+            - button "Draft" [ref=e40] [cursor=pointer]
+            - button "Sent" [ref=e41] [cursor=pointer]
+            - button "Partial" [ref=e42] [cursor=pointer]
+            - button "Paid" [ref=e43] [cursor=pointer]
+        - paragraph [ref=e44]: Loading…
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51]
+  - alert [ref=e54]

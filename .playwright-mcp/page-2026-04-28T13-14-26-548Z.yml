@@ -1,0 +1,12 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "West Roxbury Framing" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "West Roxbury Framing" [ref=e8]
+        - button "Toggle navigation" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+      - button "Log out" [ref=e14] [cursor=pointer]
+  - main [ref=e16]:
+    - generic [ref=e19]: Loading dashboard…

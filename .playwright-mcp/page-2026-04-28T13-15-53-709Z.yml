@@ -1,0 +1,98 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "West Roxbury Framing" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - img "West Roxbury Framing" [ref=e8]
+          - button "Toggle navigation" [ref=e9] [cursor=pointer]:
+            - img [ref=e10]
+        - generic [ref=e12]:
+          - generic [ref=e29]: West Roxbury Framing (WRF)
+          - button "Log out" [ref=e14] [cursor=pointer]
+    - main [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - heading "INV-000001" [level=1] [ref=e34]
+              - generic [ref=e35]: Draft
+            - generic [ref=e36]:
+              - link "CLAUDE-TEST DELETEME" [ref=e37] [cursor=pointer]:
+                - /url: /staff/customers/039ea06b-d383-43c8-bffa-0542eb2e0775
+              - text: · claude-test-deleteme@example.com · 5550100
+            - generic [ref=e38]: Created 4/28/2026 by Admin
+          - generic [ref=e39]:
+            - button "Mark as Sent" [ref=e40] [cursor=pointer]
+            - button "Record Payment" [ref=e41] [cursor=pointer]
+            - button "Check Received" [active] [ref=e42] [cursor=pointer]
+            - button "Void" [ref=e43] [cursor=pointer]
+            - button "Delete" [ref=e44] [cursor=pointer]
+            - generic [ref=e45]:
+              - combobox "PDF style" [ref=e46]:
+                - option "Invoice PDF" [selected]
+              - button "Preview" [ref=e47] [cursor=pointer]
+              - link "Download" [ref=e48] [cursor=pointer]:
+                - /url: /staff/api/invoices/a7313e8a-8fe5-4432-91da-6d717c06de47/pdf
+            - button "Sync to QBO" [disabled] [ref=e49]
+            - button "← Back" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Total
+            - generic [ref=e54]: $53.13
+          - generic [ref=e55]:
+            - generic [ref=e56]: Paid
+            - generic [ref=e57]: $0.00
+          - generic [ref=e58]:
+            - generic [ref=e59]: Balance Due
+            - generic [ref=e60]: $53.13
+        - generic [ref=e85]:
+          - heading "Record Payment" [level=3] [ref=e86]
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - generic [ref=e89]: Amount ($)
+              - spinbutton [ref=e90]: "53.13"
+            - generic [ref=e91]:
+              - generic [ref=e92]: Method
+              - combobox [ref=e93]:
+                - option "Cash"
+                - option "Check" [selected]
+                - option "Square"
+                - option "Other"
+            - generic [ref=e94]:
+              - generic [ref=e95]: Note (optional)
+              - 'textbox "e.g. Check #1234" [ref=e96]'
+          - button "Pay full balance ($53.13)" [ref=e98] [cursor=pointer]
+          - generic [ref=e99]:
+            - button "Cancel" [ref=e100] [cursor=pointer]
+            - button "Record Payment" [ref=e101] [cursor=pointer]
+        - generic [ref=e61]:
+          - heading "Square Invoice" [level=3] [ref=e62]
+          - button "Send Full Invoice" [ref=e64] [cursor=pointer]
+        - generic [ref=e65]:
+          - heading "Online Payment" [level=3] [ref=e66]
+          - paragraph [ref=e67]: Send a branded payment link so customers can pay by credit card directly on your website.
+          - generic [ref=e68]:
+            - button "📧 Email Invoice to Customer" [ref=e69] [cursor=pointer]
+            - button "🔗 Copy Pay Link" [ref=e70] [cursor=pointer]
+            - link "Preview Pay Page ↗" [ref=e71] [cursor=pointer]:
+              - /url: /pay/a7313e8a-8fe5-4432-91da-6d717c06de47
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - heading "Linked Orders (0)" [level=3] [ref=e74]
+            - generic [ref=e75]:
+              - link "+ New Order" [ref=e76] [cursor=pointer]:
+                - /url: /staff/orders/intake?customerId=039ea06b-d383-43c8-bffa-0542eb2e0775
+              - link "+ Quick Order" [ref=e77] [cursor=pointer]:
+                - /url: /staff/orders/new?customerId=039ea06b-d383-43c8-bffa-0542eb2e0775
+          - paragraph [ref=e78]: No orders linked to this invoice.
+        - generic [ref=e79]:
+          - heading "Payment History (0)" [level=3] [ref=e80]
+          - paragraph [ref=e81]: No payments recorded yet.
+        - generic [ref=e82]:
+          - heading "Notes" [level=3] [ref=e83]
+          - paragraph [ref=e84]: CLAUDE-TEST DELETEME
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]:
+    - img [ref=e25]
+  - alert [ref=e30]
