@@ -165,6 +165,30 @@ export async function sendOutreachEmail(params: {
   return { ...result, from };
 }
 
+/* ─── Email: Customer Recall Campaign ────────────────────────────── */
+// Seasonal/triggered campaigns to past retail customers. Pre-rendered subject
+// and HTML body come from RecallCampaignSend (already has template variables
+// substituted). Uses the branded layout via plain HTML pass-through.
+export async function sendRecallCampaignEmail(params: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string | null;
+}) {
+  const from = getFrom();
+  const text =
+    params.bodyText ||
+    params.bodyHtml.replace(/<[^>]+>/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  return sendViaPostmark({
+    to: params.to,
+    from,
+    subject: params.subject,
+    text,
+    html: params.bodyHtml,
+    replyTo: from,
+  });
+}
+
 /* ─── Email: Ready for Pickup ────────────────────────────────────── */
 
 export async function sendReadyForPickupEmail(params: {

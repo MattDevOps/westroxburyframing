@@ -109,6 +109,7 @@ model Customer {
   giftCertificates GiftCertificate[]
   products         Product[]
   convertedFromLeads Lead[]                @relation("LeadConvertedCustomer")
+  recallSends      RecallCampaignSend[]
 
   @@index([phone])
   @@index([email])
@@ -792,3 +793,81 @@ model LeadEmail {
 }
 
 // Per-user fields appended on User model below (see User.emailSignature)
+
+// ─── Customer Recall Engine ────────────────────────────────────
+// Calendar-triggered email campaigns to past retail customers.
+// Cron drafts personalized sends into a review queue; staff approves before
+// anything actually goes to Postmark.
+
+model RecallCampaign {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?
+
+  /// Calendar window when the campaign should be drafting. Inclusive on both ends.
+  /// 1 = Jan, 12 = Dec.
+  startMonth Int
+  startDay   Int
+  endMonth   Int
+  endDay     Int
+
+  /// JSON segmentation rule. Shape (all optional):
+  ///   {
+  ///     hadOrder?: boolean,                  // true = customer must have at least one order
+  ///     minDaysSinceLastOrder?: number,
+  ///     maxDaysSinceLastOrder?: number,
+  ///     itemTypeContains?: string,           // case-insensitive substring on Order.itemType
+  ///     tagIds?: string[],                   // require at least one of these CustomerTag ids
+  ///     excludeIfOrderedSinceDays?: number,  // skip customers who ordered in last N days (avoid bothering active customers)
+  ///   }
+  segmentRule Json @default("{}")
+
+  /// Email template. Supports {{firstName}}, {{lastName}}, {{shopName}}, {{shopPhone}}, {{shopUrl}}.
+  subject  String
+  bodyHtml String @db.Text
+  bodyText String? @db.Text
+
+  enabled    Boolean   @default(false)
+  lastRunAt  DateTime?
+  /// Max sends drafted per cron run as a safety throttle.
+  perRunCap  Int       @default(50)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sends RecallCampaignSend[]
+
+  @@index([enabled])
+}
+
+model RecallCampaignSend {
+  id         String         @id @default(uuid())
+  campaignId String
+  campaign   RecallCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  /// Calendar year of the campaign run. Same campaign can re-fire to the same
+  /// customer in a later year, but only once per year.
+  campaignYear Int
+
+  /// Lifecycle: pending_review -> approved (sent) | discarded
+  status String @default("pending_review")
+
+  renderedSubject  String
+  renderedBodyHtml String  @db.Text
+  renderedBodyText String? @db.Text
+
+  draftedAt  DateTime  @default(now())
+  approvedAt DateTime?
+  sentAt     DateTime?
+
+  postmarkMessageId String?
+  errorMessage      String?
+
+  @@unique([campaignId, customerId, campaignYear])
+  @@index([status])
+  @@index([campaignId, status])
+  @@index([customerId])
+}
