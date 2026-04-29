@@ -6,13 +6,13 @@ import { motion } from "framer-motion";
 import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy, Hammer } from "lucide-react";
 
 const services = [
-  { icon: Frame, title: "Custom & Handmade Frames", description: "Choose from hundreds of different styles, finishes (wood and aluminum), colors, and designs to suit your needs." },
-  { icon: Hammer, title: "Picture Hanging & Installation", description: "We hang single pieces, gallery walls, and full installations in homes, offices, hotels, and law firms across Greater Boston. Done right the first time, level, secure, and exactly where you want it." },
-  { icon: Layers, title: "Matting", description: "Preservation/Conservation of many types, styles, and frame designs for your precious artwork." },
-  { icon: Maximize, title: "Mounting", description: "Dry mounting, floating mounting, and shadow boxing, among others." },
-  { icon: Wrench, title: "Insurance Repair & Replace", description: "Repair art and frames covered by insurance — we will repair or replace with care." },
-  { icon: Shield, title: "UV Light Protection", description: "Various types of glass for preservation: picture clear, non-glare, UV protection, and museum glass." },
-  { icon: Sparkles, title: "Restoration", description: "Beautiful frame and photo restoration to bring the good memories back to life." },
+  { icon: Frame, title: "Custom & Handmade Frames", description: "Hundreds of styles, finishes, and colors in wood and aluminum — designed in-shop to suit your piece." },
+  { icon: Hammer, title: "Picture Hanging & Installation", description: "Single pieces, gallery walls, and full installations in homes, offices, hotels, and law firms across Greater Boston — level, secure, and exactly where you want it." },
+  { icon: Layers, title: "Custom Matting", description: "Conservation and decorative mats in countless colors and styles, hand-cut to fit your artwork perfectly." },
+  { icon: Maximize, title: "Mounting & Shadow Boxes", description: "Dry mounting, float mounting, canvas stretching, museum mounting, and shadow boxes for jerseys, medals, and memorabilia." },
+  { icon: Wrench, title: "Insurance Repair & Replacement", description: "Damaged art or frames covered by insurance — we work directly with adjusters to repair or replace with care." },
+  { icon: Shield, title: "Protective Glass & Glazing", description: "Picture clear, non-glare, UV-protective, and museum glass to keep your artwork looking its best for decades." },
+  { icon: Sparkles, title: "Restoration", description: "Frame and photo restoration that brings cherished memories back to life." },
 ];
 
 const galleryImages = [
@@ -26,11 +26,17 @@ const galleryImages = [
 
 const framedArtImages = [
   "/framed-art/brady-jersey.webp",
+  "/framed-art/adkins-signed-jersey.jpg",
+  "/framed-art/boston-marathon-jersey.jpg",
   "/framed-art/diploma-and-medal.webp",
+  "/framed-art/jaylen-brown-proclamation.jpg",
+  "/framed-art/charlie-ward-jersey.jpg",
+  "/framed-art/chopstick-fan-shadowbox.jpg",
+  "/framed-art/marathon-shadowbox-collection.jpg",
+  "/framed-art/stairway-to-heaven.jpg",
+  "/framed-art/ballerina-painting.jpg",
+  "/framed-art/horse-painting.jpg",
   "/framed-art/cowboy-sunset.webp",
-  "/framed-art/ems-patches-collage.webp",
-  "/framed-art/lighthouse-tapestry.webp",
-  "/framed-art/honor-certificate.webp",
 ];
 
 const allServicesList = [

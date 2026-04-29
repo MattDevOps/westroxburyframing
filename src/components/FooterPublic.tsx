@@ -80,7 +80,9 @@ export default function FooterPublic() {
               { name: "Military Shadow Boxes", slug: "military-shadow-boxes" },
               { name: "Canvas Stretching & Framing", slug: "canvas-stretching" },
               { name: "Corporate Art Programs", slug: "corporate-art-programs" },
-              { name: "Wedding Keepsakes", slug: "wedding-keepsakes" },
+              { name: "Boston Marathon & Race Bib Framing", slug: "marathon-race-bib-framing" },
+              { name: "Proclamations & Plaques", slug: "proclamation-and-plaque-framing" },
+              { name: "Concert Posters & Music Memorabilia", slug: "music-and-concert-poster-framing" },
             ].map((s) => (
               <Link
                 key={s.slug}

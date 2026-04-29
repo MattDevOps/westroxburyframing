@@ -17,6 +17,25 @@ const SERVICES = [
 ];
 
 const FALLBACK_GALLERY = [
+  { src: "/framed-art/brady-jersey.webp", alt: "Custom shadow box framed Tom Brady Patriots jersey" },
+  { src: "/framed-art/adkins-signed-jersey.jpg", alt: "Signed Adkins #517 baseball jersey shadow box with congratulatory messages" },
+  { src: "/framed-art/boston-marathon-jersey.jpg", alt: "Framed 2026 Boston Marathon adidas singlet shadow box — 30 Years One Legendary Finish" },
+  { src: "/framed-art/charlie-ward-jersey.jpg", alt: "Framed Charlie Ward #17 Florida State signed football jersey with Heisman photo and team patches" },
+  { src: "/framed-art/marathon-shadowbox-collection.jpg", alt: "Three custom marathon shadow boxes — Boston Marathon, SYNLAB Como Lake, Rock 'n' Roll Las Vegas race bibs and medals" },
+  { src: "/framed-art/jaylen-brown-proclamation.jpg", alt: "Framed City of Boston proclamation declaring Jaylen Brown Day with mahogany frame and gold mat" },
+  { src: "/framed-art/whittier-plaque.jpg", alt: "Framed Whittier Street Health Center Beacon of Hope plaque — Tim Sweeney Liberty Mutual" },
+  { src: "/framed-art/superintendent-plaque.jpg", alt: "Custom Boston Police Superintendent plaque with laurel wreath and embossed seal" },
+  { src: "/framed-art/police-badge-shadowbox.jpg", alt: "Boston Police Sergeant badge #6579 shadow box with engraved nameplate on blue suede" },
+  { src: "/framed-art/diploma-and-medal.webp", alt: "Framed diploma with medal on red mat — diploma framing Boston" },
+  { src: "/framed-art/honor-certificate.webp", alt: "Framed honor certificate with decorative border and medallion" },
+  { src: "/framed-art/chopstick-fan-shadowbox.jpg", alt: "Asian-inspired shadow box with hand fan and decorative chopstick collection on burgundy mat" },
+  { src: "/framed-art/stairway-to-heaven.jpg", alt: "Led Zeppelin Stairway to Heaven shadow box with vinyl records, album art and commemorative documentation" },
+  { src: "/framed-art/floral-chinoiserie.jpg", alt: "Large framed chinoiserie floral panel displayed above jewelry showroom shelves" },
+  { src: "/framed-art/music-poster-wall.jpg", alt: "Wall installation of vintage rock and roll posters and concert memorabilia framed in matching black frames" },
+  { src: "/framed-art/ballerina-painting.jpg", alt: "Framed oil painting of a ballerina lacing pointe shoes in a gold gilded frame" },
+  { src: "/framed-art/horse-painting.jpg", alt: "Antique oil painting of a mare and foal at pasture in an ornate gold gilded frame" },
+  { src: "/framed-art/worker-painting.jpg", alt: "Large framed contemporary painting of a worker with vibrant abstract background in carved gold frame" },
+  { src: "/framed-art/cowboy-sunset.webp", alt: "Framed painting of cowboy on horse at sunset" },
   { src: "/framed-art/01.webp", alt: "Custom framed sports memorabilia collage — West Roxbury Framing" },
   { src: "/framed-art/02.webp", alt: "Framed photograph with Boston Celtics logo — custom sports framing" },
   { src: "/framed-art/04.webp", alt: "Framed Bruins poster with custom mat and logo cutout" },
@@ -24,14 +43,10 @@ const FALLBACK_GALLERY = [
   { src: "/framed-art/06.webp", alt: "Large framed colorful artwork — custom picture framing Boston" },
   { src: "/framed-art/07.webp", alt: "Framed Roslindale map art — neighborhood art framing" },
   { src: "/framed-art/08.webp", alt: "Framed western landscape artwork" },
-  { src: "/framed-art/brady-jersey.webp", alt: "Custom shadow box framed Tom Brady Patriots jersey" },
   { src: "/framed-art/vintage-flag-large.webp", alt: "Large framed American flag — flag framing West Roxbury" },
   { src: "/framed-art/ems-patches-collage.webp", alt: "Framed EMS patches and numbers collage — shadow box" },
   { src: "/framed-art/lighthouse-tapestry.webp", alt: "Framed lighthouse and nautical tapestry" },
-  { src: "/framed-art/diploma-and-medal.webp", alt: "Framed diploma with medal on red mat — diploma framing Boston" },
-  { src: "/framed-art/cowboy-sunset.webp", alt: "Framed painting of cowboy on horse at sunset" },
   { src: "/framed-art/shop-owner-portrait.webp", alt: "Moses Hasson — owner of West Roxbury Framing — standing next to large custom framed artwork" },
-  { src: "/framed-art/honor-certificate.webp", alt: "Framed honor certificate with decorative border and medallion" },
 ];
 
 interface GalleryItem {

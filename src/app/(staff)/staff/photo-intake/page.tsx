@@ -35,7 +35,9 @@ const PAGE_SLUGS = [
   "military-first-responder",
   "canvas-stretching",
   "corporate-art",
-  "wedding-keepsakes",
+  "marathon-race-bib",
+  "proclamation-plaque",
+  "music-memorabilia",
 ] as const;
 
 function verdictKind(verdict: string): "HERO" | "EXTRA" | "REJECT" | "UNKNOWN" {

@@ -169,28 +169,11 @@ export default function CustomFramingContent() {
                         viewport={{ once: true }}
                         className="mb-12"
                     >
-                        <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3">
                             <Frame size={24} className="text-gold" />
                             <h2 className="font-serif text-2xl font-bold text-foreground">
-                                How It <span className="text-gold">Works</span>
+                                Tell us about your <span className="text-gold">custom framing</span> needs
                             </h2>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            {[
-                                { step: "1", title: "Describe", desc: "Tell us what you'd like framed" },
-                                { step: "2", title: "We Review", desc: "We review your details and reach out to schedule a visit" },
-                                { step: "3", title: "Come In", desc: "Bring the piece — we design and price it together in person" }
-                            ].map((s) => (
-                                <div key={s.step} className="flex items-start gap-3">
-                                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-sm font-bold">
-                                        {s.step}
-                                    </span>
-                                    <div>
-                                        <h3 className="text-foreground font-semibold text-sm">{s.title}</h3>
-                                        <p className="text-muted-foreground text-sm">{s.desc}</p>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </motion.div>
 
