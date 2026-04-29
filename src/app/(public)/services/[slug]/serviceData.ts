@@ -79,7 +79,7 @@ export const SERVICES: ServiceInfo[] = [
     heroTitleAccent: "Boston",
     heroDescription:
       "Jersey shadow boxes, autographed photos, ticket stubs, signed baseballs and pucks — built by hand in West Roxbury since 1981. UV-protective glass and acid-free materials so the piece you love never fades.",
-    heroImage: "",
+    heroImage: "/framed-art/brady-jersey.webp",
     intro: [
       "If you've got a Brady jersey, a Sox lineup card, or a Bruins puck from a game you'll never forget — those pieces deserve more than a closet shelf. We've spent 40+ years building shadow boxes for Boston's most passionate fans, athletes, and collectors.",
       "Every memorabilia piece we frame is mounted on archival, acid-free backing and sealed behind UV-protective glass. That means autographs don't fade, jerseys don't yellow, and the piece looks the same in 20 years as the day you brought it in.",
@@ -197,7 +197,7 @@ export const SERVICES: ServiceInfo[] = [
     heroTitleAccent: "Framing",
     heroDescription:
       "Official mat colors, seal embossing, and conservation glass — for graduates of any school, anywhere. From the Boston-area institutions we know by heart to schools across the country, we match the colors and details that make a diploma frame feel official.",
-    heroImage: "",
+    heroImage: "/framed-art/diploma-and-medal.webp",
     intro: [
       "A diploma is a once-in-a-lifetime document. It belongs in a frame that matches the institution and protects the paper for the next 40 years — not a generic frame off the shelf at a big-box store.",
       "We frame diplomas from any school. We stock the official mat colors for every Boston-area institution and can match the colors and seals of schools across the country. Acid-free, conservation-grade materials throughout — your diploma stays bright for decades.",
@@ -301,7 +301,7 @@ export const SERVICES: ServiceInfo[] = [
     heroTitleAccent: "Shadow Boxes",
     heroDescription:
       "Medals, badges, patches, flags, and challenge coins — built into custom shadow boxes that honor a career of service. We've framed retirement displays for Boston police, fire, EMS, and veterans for over 40 years.",
-    heroImage: "",
+    heroImage: "/framed-art/police-badge-shadowbox.jpg",
     intro: [
       "A retirement after 25 or 30 years of service deserves more than a thank-you letter. We build shadow boxes that pull together the medals, patches, badge, flag, photos, and challenge coins from an entire career into one piece that hangs proudly in a den, office, or station house.",
       "Boston Police, BFD, and military families have been bringing retirement displays to our shop for decades. We know how to lay out the rank insignia, fold the flag correctly, mount the medals without damaging the ribbons, and pair it all with the right photos and citations.",
@@ -421,7 +421,7 @@ export const SERVICES: ServiceInfo[] = [
     heroTitleAccent: "& Framing",
     heroDescription:
       "Rolled canvases, unstretched paintings, gallery wraps, floater frames, and re-stretching for sagging or warped pieces — built by hand in West Roxbury. Whether you bought a painting on vacation that needs stretching or you're an artist with a stack of unstretched canvases, we handle it all.",
-    heroImage: "",
+    heroImage: "/framed-art/cowboy-sunset.webp",
     intro: [
       "Stretching a canvas properly is a craft. The tension has to be even on every side, the corners need to be tucked cleanly, and the stretcher bars have to be sized exactly right for the painting. Done well, the canvas hangs flat for decades. Done poorly, it warps within a year.",
       "We've been hand-stretching canvases in West Roxbury for over 40 years — for working artists, galleries, designers, and customers who picked up a painting they love and need it finished. We build custom stretcher bars to size, stretch by hand for proper tension, and offer gallery wraps, floater frames, or traditional framing depending on the look you want.",
@@ -530,7 +530,7 @@ export const SERVICES: ServiceInfo[] = [
     heroTitleAccent: "Programs",
     heroDescription:
       "Hotels, law firms, hospitals, and corporate offices across Greater Boston rely on us for bulk custom framing — donor walls, partner diploma displays, lobby art, and recurring framing projects. Volume pricing, dedicated project management, and direct billing.",
-    heroImage: "",
+    heroImage: "/framed-art/floral-chinoiserie.jpg",
     intro: [
       "If you run an office, hotel, hospital, design studio, or staging firm, framing is rarely a one-time job. Donor walls expand. New partners need diplomas matched to existing displays. Lobbies refresh art every few years. We're built for that kind of recurring, multi-piece work.",
       "We've been the framing partner for Greater Boston hotels, law offices, hospital art programs, and interior designers for decades. We work directly with facilities managers, designers, and procurement teams — so the project gets done without your team chasing details.",
