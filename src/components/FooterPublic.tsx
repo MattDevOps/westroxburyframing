@@ -83,6 +83,8 @@ export default function FooterPublic() {
               { name: "Boston Marathon & Race Bib Framing", slug: "marathon-race-bib-framing" },
               { name: "Proclamations & Plaques", slug: "proclamation-and-plaque-framing" },
               { name: "Concert Posters & Music Memorabilia", slug: "music-and-concert-poster-framing" },
+              { name: "Fine Art & Oil Painting Framing", slug: "fine-art-and-oil-painting-framing" },
+              { name: "Heirloom & Cultural Keepsakes", slug: "heirloom-and-cultural-keepsake-framing" },
             ].map((s) => (
               <Link
                 key={s.slug}

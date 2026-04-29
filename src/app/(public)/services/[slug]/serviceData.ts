@@ -985,6 +985,255 @@ export const SERVICES: ServiceInfo[] = [
     relatedSlugs: ["sports-memorabilia-framing", "corporate-art-programs", "canvas-stretching"],
     schemaCategory: "Concert poster and music memorabilia custom framing",
   },
+
+  // ------------------------------------------------------------------
+  // 9. FINE ART & OIL PAINTING FRAMING
+  // ------------------------------------------------------------------
+  {
+    slug: "fine-art-and-oil-painting-framing",
+    metaTitle: "Fine Art & Oil Painting Framing in Boston | Gallery Frames",
+    metaDescription:
+      "Custom framing for original oil paintings, fine art, antique works, and gallery pieces. Gold-leaf mouldings, conservation glass, linen liners. West Roxbury since 1981.",
+    keywords: [
+      "fine art framing Boston",
+      "oil painting framing Boston",
+      "gallery framing Boston",
+      "antique oil painting framing",
+      "conservation framing Boston",
+      "museum framing Boston",
+      "collector framing Boston",
+      "gold leaf moulding framing",
+      "ornate gold frame Boston",
+      "vintage painting framing",
+      "estate painting framing",
+      "inherited painting framing",
+      "portrait painting framing Boston",
+      "landscape oil painting framing",
+      "period frame Boston",
+      "closed corner frame Boston",
+      "linen liner frame",
+      "museum quality framing Boston",
+      "contemporary art framing Boston",
+      "plein air painting framing",
+    ],
+    heroEyebrow: "Conservation Framing for Fine Art",
+    heroTitle: "Fine Art & Oil",
+    heroTitleAccent: "Painting Framing",
+    heroDescription:
+      "Original oil paintings, antique works, gallery pieces, and inherited fine art — framed with gilded mouldings, conservation glass, and the attention these pieces have always deserved. Built by hand in West Roxbury since 1981.",
+    heroImage: "/framed-art/ballerina-painting.jpg",
+    intro: [
+      "An original oil painting deserves more than a moulding off a wall rack. The right gold-leaf or hand-finished frame transforms a painting — gives it the gravity it had on the wall of the gallery you bought it from, or the presence your grandmother's painting deserved when it was first hung in the family home a hundred years ago.",
+      "We frame fine art for collectors, gallery clients, designers, and estate inheritors across Greater Boston. Hand-finished gilded mouldings, period frames for antique works, conservation glass for valuable pieces, and acid-free linen liners that complete the gallery look.",
+    ],
+    whatWeFrame: [
+      "Original oil paintings — contemporary, mid-century, traditional, plein-air",
+      "Antique paintings inherited from estates or bought at estate sales",
+      "Gallery purchases from Boston, Cape Cod, Newport, and travel",
+      "Acrylic and mixed-media works",
+      "Fine art prints, etchings, lithographs, and serigraphs",
+      "Watercolors and pastels (acid-free conservation framing)",
+      "Commissioned and antique family portraits",
+      "Closed-corner gold-leaf gallery frames",
+      "Linen liners and fillets between frame and painting",
+      "Vintage paintings needing fresh framing or moulding restoration",
+      "Plein-air paintings bought on vacation or from working artists",
+      "Children's portraits and family-commission paintings",
+    ],
+    process: [
+      {
+        title: "Bring the painting in",
+        body: "We'll look at the piece in person — size, surface (varnished, matte, textured), condition, and the room it'll hang in. Lighting and surroundings matter for the moulding decision.",
+      },
+      {
+        title: "Choose the moulding",
+        body: "Most fine art deserves gold-leaf, hand-finished, or closed-corner moulding. We carry traditional gilded period mouldings, contemporary minimal floats, and everything between. We'll pull samples and let you see them next to the painting before deciding.",
+      },
+      {
+        title: "Liner or no liner",
+        body: "A linen- or silk-covered liner inside the frame separates the painting from the moulding visually — common on traditional oils and a meaningful upgrade. We'll show you the difference with and without.",
+      },
+      {
+        title: "Conservation considerations",
+        body: "Valuable paintings benefit from conservation glass or acrylic to protect from UV and dust. Some collectors prefer no glazing for the painterly texture — we'll talk through the tradeoffs based on the piece, the value, and where it will hang.",
+      },
+      {
+        title: "Build, fit, and deliver",
+        body: "Frames are hand-built in our West Roxbury shop. For larger or oversize works we offer local delivery and professional hanging — drywall, plaster, brick, the right hardware for the wall.",
+      },
+    ],
+    features: [
+      "Hand-finished gilded and gold-leaf mouldings — period and contemporary",
+      "Closed-corner frames for gallery-quality finish",
+      "Linen and silk liners in dozens of colors",
+      "Conservation glass and acrylic for valuable works",
+      "Period mouldings for antique paintings (Louis XIV, Spanish, Florentine, Dutch)",
+      "Reversible mounting — paintings are never glued or forced into the frame",
+      "Local delivery and professional hanging for oversize works",
+      "Designer and gallery wholesale rates",
+    ],
+    localContext:
+      "Boston has a serious fine-art community — galleries from the SoWa district to the South End and Newbury Street, designers across the suburbs, and collectors with paintings inherited from generations of New England families. We've worked with collectors, designers, and gallery clients across Greater Boston for over 40 years. Plenty of customers also bring us paintings inherited from estates, purchased on vacation in Provincetown, Newport, Italy, or the Caribbean, or commissioned from local portrait artists. Bring it in and we'll work out the right moulding to give the painting the presence it should have.",
+    gallery: [
+      "/framed-art/horse-painting.jpg",
+      "/framed-art/worker-painting.jpg",
+    ],
+    faqs: [
+      {
+        q: "How much does a fine art frame cost?",
+        a: "Every fine art frame is custom — pricing depends on the size of the painting, the moulding (closed-corner gilded mouldings cost more than off-the-shelf wood), the liner, and the glazing. Bring the painting in and we'll pull samples and work out the design and pricing together. Quotes are always free.",
+      },
+      {
+        q: "What's the difference between a closed-corner gallery frame and a regular frame?",
+        a: "A closed-corner frame is built so the moulding is mitered and finished as a single continuous piece — there's no visible joint at the corners. It's the gallery and museum standard for fine art and adds significantly to the perceived value of the painting. We carry closed-corner mouldings in dozens of finishes.",
+      },
+      {
+        q: "Do oil paintings need glass?",
+        a: "It depends on the piece. Many traditional oils are framed without glass to preserve the painterly surface and visible brushwork. Valuable, fragile, or environmentally sensitive paintings benefit from museum-grade non-reflective acrylic. We'll talk through the tradeoffs for your specific painting.",
+      },
+      {
+        q: "Can you build a period frame for an antique painting?",
+        a: "Yes. We carry period mouldings (Louis XIV, Florentine, Spanish, Dutch) and can match the era of the painting. For especially significant pieces we can also source or restore an existing period frame.",
+      },
+      {
+        q: "What's a linen liner and do I need one?",
+        a: "A linen liner is a fabric-covered inner frame that sits between the painting and the moulding — usually 1–3 inches wide. It gives the painting space to 'breathe' visually and is a hallmark of traditional oil painting framing. Not every painting needs one, but for most traditional oils it's the right call.",
+      },
+      {
+        q: "Can you re-frame a painting that came with a frame I don't like?",
+        a: "Absolutely — common request. We'll remove the painting from the existing frame without damage, design a new frame that suits it, and return the old frame to you (or dispose of it if you'd prefer).",
+      },
+      {
+        q: "Do you offer trade pricing for designers and galleries?",
+        a: "Yes. Working designers, galleries, and stagers who use us regularly get wholesale trade pricing. Email us for the trade rate sheet.",
+      },
+    ],
+    relatedSlugs: ["canvas-stretching", "corporate-art-programs", "proclamation-and-plaque-framing"],
+    schemaCategory: "Fine art and oil painting custom framing",
+  },
+
+  // ------------------------------------------------------------------
+  // 10. HEIRLOOM & CULTURAL KEEPSAKE FRAMING
+  // ------------------------------------------------------------------
+  {
+    slug: "heirloom-and-cultural-keepsake-framing",
+    metaTitle: "Heirloom & Cultural Keepsake Framing in Boston",
+    metaDescription:
+      "Custom shadow boxes for family heirlooms, cultural keepsakes, ceremonial items, and generational mementos. Conservation framing in West Roxbury since 1981.",
+    keywords: [
+      "heirloom framing Boston",
+      "family heirloom shadow box",
+      "cultural keepsake framing",
+      "generational keepsake framing",
+      "ceremonial item framing",
+      "ethnic keepsake framing Boston",
+      "chinese fan framing Boston",
+      "japanese fan framing Boston",
+      "chopstick display framing",
+      "cultural artifact framing",
+      "religious object framing Boston",
+      "ketubah framing Boston",
+      "baptism gown framing",
+      "ceremonial textile framing",
+      "sari framing Boston",
+      "kimono framing Boston",
+      "hanbok framing Boston",
+      "vintage textile framing",
+      "immigration document framing",
+      "family bible framing",
+    ],
+    heroEyebrow: "For Pieces That Pass Through Generations",
+    heroTitle: "Heirloom & Cultural",
+    heroTitleAccent: "Keepsake Framing",
+    heroDescription:
+      "Family heirlooms, ceremonial items, cultural artifacts, and generational keepsakes — built into archival shadow boxes that protect the piece for decades and let it live on a wall instead of a closet shelf. Hand-built in West Roxbury since 1981.",
+    heroImage: "/framed-art/chopstick-fan-shadowbox.jpg",
+    intro: [
+      "Some pieces don't fit any category but their own. A grandmother's silk fan from Shanghai, a hand-painted chopstick set from Kyoto, a ketubah from a wedding 60 years ago, a baptism gown passed down through four generations. They're not 'sports memorabilia' or any other off-the-shelf category — they're heirlooms, and they deserve framing built around their specific shape, weight, and significance.",
+      "We build archival shadow boxes for family and cultural heirlooms with the same conservation methods we'd use on a museum piece — acid-free backing, UV-protective glass, reversible mounting, and a layout that respects the piece. The result is something that protects the heirloom, displays it beautifully, and can be passed down again to the next generation.",
+    ],
+    whatWeFrame: [
+      "Asian fans — Chinese, Japanese, Korean — folding and rigid",
+      "Decorative chopsticks, kanzashi, and ceremonial flatware sets",
+      "Embroidered textiles and silk panels",
+      "Sari, kimono, hanbok, and ceremonial garment displays",
+      "Ketubahs, marriage contracts, and religious documents",
+      "Baptism gowns and christening keepsakes",
+      "First-haircut keepsake boxes (upsherin, mundan)",
+      "Antique handkerchiefs, lace, and trousseau pieces",
+      "Family bibles, prayer books, and inscribed documents",
+      "Vintage maps, deeds, and immigration papers",
+      "Generational toys, pins, jewelry, and inherited small objects",
+      "Hand-painted folk art, icons, and devotional pieces",
+    ],
+    process: [
+      {
+        title: "Bring the piece in",
+        body: "Heirloom framing starts with a conversation. Tell us what the piece is, who it came from, and how it's been stored. We'll examine the condition together and figure out the right approach before any work begins.",
+      },
+      {
+        title: "Conservation assessment",
+        body: "For fragile or aged pieces, we'll talk through whether straightforward shadow-box framing is appropriate or whether the piece needs paper / textile conservation work first. For especially valuable pieces we may refer you to a conservator before we frame.",
+      },
+      {
+        title: "Layout design",
+        body: "The piece itself dictates the layout. A folding fan opens into one specific shape. A textile needs to be supported flat or pleated as it naturally falls. We design the shadow box around how the piece wants to sit — never the other way around.",
+      },
+      {
+        title: "Reversible, archival mounting",
+        body: "Nothing is glued, stitched through, or pierced. Acid-free backing, hidden archival pins or sleeves where needed, and reversible methods so a future owner can re-frame the piece without damage decades from now.",
+      },
+      {
+        title: "Conservation glass",
+        body: "UV-protective glass is standard for heirlooms — silk fades fast, paper foxes, dyes shift. Museum glass with anti-reflective coating for the most valuable or visually busy pieces.",
+      },
+    ],
+    features: [
+      "Acid-free, reversible mounting — the heirloom is never glued or pierced",
+      "UV-protective conservation glass — slows fading by decades",
+      "Custom shadow-box depths for fans, textiles, ceremonial objects, garments",
+      "Fabric-covered backing in colors that complement the piece",
+      "Period and culturally appropriate moulding choices",
+      "Archival sleeves and mounting for documents (immigration papers, ketubahs, bibles)",
+      "Conservator referrals for pieces needing restoration before framing",
+      "Documentation pocket on the back for provenance and family history",
+    ],
+    localContext:
+      "Boston is generations old as a city, and Greater Boston has every cultural community you can name. We've framed heirlooms for families with roots in China, Japan, Korea, Vietnam, India, the Philippines, Ireland, Italy, the Caribbean, West Africa, Eastern Europe, and the Middle East — alongside multi-generational New England families with trousseau pieces and baptism gowns going back to the 1800s. There's no single template for an heirloom, which is why every one of these projects starts with a conversation about the piece itself.",
+    gallery: [],
+    faqs: [
+      {
+        q: "How much does an heirloom shadow box cost?",
+        a: "Every heirloom is unique, so every frame is custom. Pricing depends on size, the depth of the shadow box, the moulding, the glass, and any conservation work the piece may need before mounting. Bring the piece in and we'll work out the design and pricing together. Walk-ins are always welcome.",
+      },
+      {
+        q: "Will mounting damage my heirloom?",
+        a: "No. We use reversible, archival methods — no glue, no stitching through the piece, no piercing. Textiles are supported on acid-free backing; documents are mounted with archival corners or sleeves. The piece can be removed at any future date with no damage.",
+      },
+      {
+        q: "Can you frame textiles, fans, and three-dimensional pieces?",
+        a: "Yes — that's the heart of this work. We custom-build shadow boxes at whatever depth is needed for the piece, from a thin folded fan to a full kimono or ceremonial garment. Fabric-covered backing in a color that complements the textile is included.",
+      },
+      {
+        q: "Do you handle religious or ceremonial pieces (ketubahs, baptism gowns, etc.)?",
+        a: "Yes. Ketubahs, baptism gowns, prayer cards, religious icons, and similar pieces are common heirloom requests. We frame them with the same conservation respect we'd give a museum piece — acid-free, reversible, UV-protected.",
+      },
+      {
+        q: "The piece is fragile or aged — should I have it conserved first?",
+        a: "Sometimes. We'll look at the piece with you. For straightforward heirlooms we can frame as-is with conservation methods that prevent further deterioration. For fragile, foxed, torn, or chemically deteriorating pieces we'll refer you to a paper or textile conservator before framing.",
+      },
+      {
+        q: "Can you frame the heirloom alongside photographs or documents about its history?",
+        a: "Absolutely. Pairing the piece with a family photo, the original immigration document, or a handwritten note about its provenance is a meaningful upgrade. We can also include a small documentation pocket on the back of the frame for family history that should travel with the piece.",
+      },
+      {
+        q: "Will UV glass slow the fading on a silk fan or embroidered piece?",
+        a: "Yes — significantly. Conservation glass blocks 97%+ of UV rays, which are responsible for most fabric and dye fading. For silk, embroidered pieces, and any dyed textile, conservation or museum glass is the right call.",
+      },
+    ],
+    relatedSlugs: ["military-shadow-boxes", "diploma-framing", "fine-art-and-oil-painting-framing"],
+    schemaCategory: "Heirloom and cultural keepsake custom framing",
+  },
 ];
 
 export function getServiceBySlug(slug: string): ServiceInfo | undefined {

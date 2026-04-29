@@ -38,6 +38,8 @@ const PAGE_SLUGS = [
   "marathon-race-bib",
   "proclamation-plaque",
   "music-memorabilia",
+  "fine-art",
+  "heirloom-keepsake",
 ] as const;
 
 function verdictKind(verdict: string): "HERO" | "EXTRA" | "REJECT" | "UNKNOWN" {
