@@ -732,7 +732,7 @@ function UsageWidget({ usage }: { usage: UsageStats }) {
                 }`}
               >
                 {outbound}
-                <span className="text-base text-stone-400 font-normal"> / 100 free</span>
+                <span className="text-base text-stone-400 font-normal"> used · 100 free</span>
               </div>
               <div className="text-xs text-stone-500 mt-1">
                 {usage.postmarkInbound != null && (
