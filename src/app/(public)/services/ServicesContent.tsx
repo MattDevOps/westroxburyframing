@@ -65,9 +65,14 @@ const SERVICES = [
     body: "Need a frame fast? We offer rush same-day custom framing for customers across Boston and the surrounding area — perfect for last-minute gifts, graduation parties, gallery openings, and memorial services. Call ahead or walk in and we'll do everything we can to get your piece framed the same day.",
   },
   {
+    icon: Gem,
+    title: "Engraved Plaques — Gold, Brass & Silver",
+    body: "Custom engraved plaques in gold, brass, and silver finishes for donor walls, retirement gifts, awards, dedications, memorials, and signed memorabilia. Cleanly engraved with your text, dates, logos, or signatures and mounted on the mat or frame for a finished, gallery-quality presentation. Plaques are included at no extra charge on many memorabilia and dedication framing jobs where appropriate — just ask.",
+  },
+  {
     icon: PaintBucket,
     title: "Specialty Services",
-    body: "Mirror framing and tabletop glass, oval and circle-shaped frames and mats, custom engraved plaques and name tags, and scanning and digital reproduction services.",
+    body: "Mirror framing and tabletop glass, oval and circle-shaped frames and mats, custom name tags, and scanning and digital reproduction services.",
   },
   {
     icon: DollarSign,
