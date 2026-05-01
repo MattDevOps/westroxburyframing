@@ -231,26 +231,23 @@ export default function HomePage() {
               How It <span className="text-gold">Works</span>
             </motion.h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Three simple steps from front door to finished piece. Everything happens in the shop — no online forms, no remote pricing.
+              Everything happens in the shop — no online forms, no remote pricing.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
-              { step: "1", title: "Bring It In", desc: "Walk in or schedule a visit at 1741 Centre Street with your artwork, photo, jersey, diploma, or keepsake. We need to see the piece in person." },
-              { step: "2", title: "Design & Pricing Together", desc: "We sit down with you, walk through moulding, mat, and glass options for your piece, and work out the pricing right then. No guesswork." },
-              { step: "3", title: "We Build It & You Pick Up", desc: "Our framers hand-build your piece in our West Roxbury shop. Most jobs are ready in 5–10 business days. We'll call when it's done." },
+              { title: "Free Consultation", desc: "Walk in or schedule a visit at 1741 Centre Street with your artwork, photo, jersey, diploma, or keepsake. We need to see the piece in person." },
+              { title: "Design & Pricing Together", desc: "We sit down with you, walk through moulding, mat, and glass options for your piece, and work out the pricing right then. No guesswork." },
+              { title: "Pickup When Ready", desc: "Our framers hand-build your piece in our West Roxbury shop. Most jobs are ready in 5–10 business days. Once your job is completed, we'll notify you to pick it up." },
             ].map((s, i) => (
               <motion.div
-                key={s.step}
+                key={s.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.15 }}
                 className="text-center"
               >
-                <div className="w-14 h-14 rounded-full bg-gold text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-5">
-                  {s.step}
-                </div>
                 <h3 className="font-impact text-xl text-foreground mb-3">{s.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
               </motion.div>
