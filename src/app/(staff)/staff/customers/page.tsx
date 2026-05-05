@@ -335,6 +335,19 @@ export default function CustomersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const sentAt = new Date().toISOString();
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === customer.id
+            ? {
+                ...r,
+                lastNotifiedAt: sentAt,
+                lastNotifiedMethod: "sms",
+                notifications: [{ at: sentAt, method: "sms" }, ...(r.notifications ?? [])],
+              }
+            : r
+        )
+      );
       setPickupFlash({ kind: "ok", text: `SMS sent to ${name} at ${customer.phone}` });
     } catch (e: any) {
       setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
@@ -360,6 +373,19 @@ export default function CustomersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const sentAt = new Date().toISOString();
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === customer.id
+            ? {
+                ...r,
+                lastNotifiedAt: sentAt,
+                lastNotifiedMethod: "email",
+                notifications: [{ at: sentAt, method: "email" }, ...(r.notifications ?? [])],
+              }
+            : r
+        )
+      );
       setPickupFlash({ kind: "ok", text: `Email sent to ${name} at ${customer.email}` });
     } catch (e: any) {
       setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
