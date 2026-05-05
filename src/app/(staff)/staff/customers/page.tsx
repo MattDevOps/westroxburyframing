@@ -80,6 +80,91 @@ export default function CustomersPage() {
   const [pickupFlash, setPickupFlash] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
 
+  // Custom message state
+  const [customMsgCustomer, setCustomMsgCustomer] = useState<Customer | null>(null);
+  const [customMsgChannel, setCustomMsgChannel] = useState<"sms" | "email">("sms");
+  const [customMsgSubject, setCustomMsgSubject] = useState("");
+  const [customMsgBody, setCustomMsgBody] = useState("");
+  const [customMsgSending, setCustomMsgSending] = useState(false);
+
+  function openCustomMessage(customer: Customer) {
+    setCustomMsgCustomer(customer);
+    // Default channel to whichever the customer has on file (prefer SMS)
+    setCustomMsgChannel(customer.phone ? "sms" : (customer.email ? "email" : "sms"));
+    setCustomMsgSubject("");
+    setCustomMsgBody("");
+  }
+
+  function closeCustomMessage() {
+    setCustomMsgCustomer(null);
+    setCustomMsgSubject("");
+    setCustomMsgBody("");
+  }
+
+  async function sendCustomMessage() {
+    if (!customMsgCustomer) return;
+    const body = customMsgBody.trim();
+    if (!body) {
+      setPickupFlash({ kind: "err", text: "Message body is required." });
+      return;
+    }
+    if (customMsgChannel === "sms" && !customMsgCustomer.phone) {
+      setPickupFlash({ kind: "err", text: "Customer has no phone number on file." });
+      return;
+    }
+    if (customMsgChannel === "email" && !customMsgCustomer.email) {
+      setPickupFlash({ kind: "err", text: "Customer has no email address on file." });
+      return;
+    }
+
+    const customer = customMsgCustomer;
+    const name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "this customer";
+    setCustomMsgSending(true);
+    setPickupFlash(null);
+    try {
+      const url =
+        customMsgChannel === "sms"
+          ? `/staff/api/customers/${customer.id}/notify-pickup`
+          : `/staff/api/customers/${customer.id}/notify-pickup-email`;
+      const payload =
+        customMsgChannel === "sms"
+          ? { message: body }
+          : { subject: customMsgSubject.trim(), message: body };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send");
+
+      const sentAt = new Date().toISOString();
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === customer.id
+            ? {
+                ...r,
+                lastNotifiedAt: sentAt,
+                lastNotifiedMethod: customMsgChannel,
+                notifications: [{ at: sentAt, method: customMsgChannel }, ...(r.notifications ?? [])],
+              }
+            : r
+        )
+      );
+      setPickupFlash({
+        kind: "ok",
+        text: `Custom ${customMsgChannel === "sms" ? "SMS" : "email"} sent to ${name}`,
+      });
+      closeCustomMessage();
+    } catch (e: any) {
+      setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
+    } finally {
+      setCustomMsgSending(false);
+    }
+  }
+
   function toggleNotificationsExpanded(customerId: string) {
     setExpandedNotifications((prev) => {
       const next = new Set(prev);
@@ -1100,12 +1185,141 @@ export default function CustomersPage() {
                   >
                     {sendingEmailId === c.id ? "Sending…" : "Email"}
                   </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openCustomMessage(c);
+                    }}
+                    disabled={!c.phone && !c.email}
+                    className="rounded-lg border border-amber-400 bg-amber-50 text-amber-900 px-2.5 py-1 text-xs font-medium hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={c.phone || c.email ? "Send a custom SMS or email" : "No phone or email on file"}
+                  >
+                    Custom…
+                  </button>
                 </div>
               </Link>
             );
           })
         )}
       </div>
+
+      {/* Custom Message Modal */}
+      {customMsgCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-neutral-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-neutral-900">
+                Send custom message to {`${customMsgCustomer.firstName || ""} ${customMsgCustomer.lastName || ""}`.trim() || "customer"}
+              </h2>
+              <button
+                onClick={closeCustomMessage}
+                disabled={customMsgSending}
+                className="text-neutral-500 hover:text-neutral-700 disabled:opacity-40"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-2">Send via</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomMsgChannel("sms")}
+                    disabled={!customMsgCustomer.phone || customMsgSending}
+                    className={`flex-1 rounded-lg border-2 px-4 py-2 text-sm font-medium ${
+                      customMsgChannel === "sms"
+                        ? "border-black bg-black text-white"
+                        : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    title={customMsgCustomer.phone || "No phone on file"}
+                  >
+                    SMS{customMsgCustomer.phone ? ` (${customMsgCustomer.phone})` : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomMsgChannel("email")}
+                    disabled={!customMsgCustomer.email || customMsgSending}
+                    className={`flex-1 rounded-lg border-2 px-4 py-2 text-sm font-medium ${
+                      customMsgChannel === "email"
+                        ? "border-black bg-black text-white"
+                        : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    title={customMsgCustomer.email || "No email on file"}
+                  >
+                    Email{customMsgCustomer.email ? ` (${customMsgCustomer.email})` : ""}
+                  </button>
+                </div>
+              </div>
+
+              {customMsgChannel === "email" && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-700 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={customMsgSubject}
+                    onChange={(e) => setCustomMsgSubject(e.target.value)}
+                    placeholder="A message from West Roxbury Framing"
+                    disabled={customMsgSending}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Message{customMsgChannel === "sms" && (
+                    <span className="ml-1 text-neutral-400">({customMsgBody.length} chars)</span>
+                  )}
+                </label>
+                <textarea
+                  value={customMsgBody}
+                  onChange={(e) => setCustomMsgBody(e.target.value)}
+                  placeholder={
+                    customMsgChannel === "sms"
+                      ? "Type your text message here…"
+                      : "Type your email here…"
+                  }
+                  rows={customMsgChannel === "email" ? 8 : 5}
+                  disabled={customMsgSending}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2 border-t border-neutral-200">
+                <button
+                  type="button"
+                  onClick={closeCustomMessage}
+                  disabled={customMsgSending}
+                  className="rounded-lg border border-neutral-300 bg-white text-neutral-700 px-4 py-2 text-sm font-medium hover:bg-neutral-50 disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={sendCustomMessage}
+                  disabled={
+                    customMsgSending ||
+                    !customMsgBody.trim() ||
+                    (customMsgChannel === "sms" && !customMsgCustomer.phone) ||
+                    (customMsgChannel === "email" && !customMsgCustomer.email)
+                  }
+                  className="rounded-lg bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {customMsgSending
+                    ? "Sending…"
+                    : customMsgChannel === "sms"
+                      ? "Send SMS"
+                      : "Send Email"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tag Management Modal */}
       {showTagManager && (

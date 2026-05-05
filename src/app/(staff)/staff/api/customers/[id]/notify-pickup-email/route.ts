@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
-import { sendPickupReadyCustomerEmail } from "@/lib/email";
+import { sendPickupReadyCustomerEmail, sendOutreachEmail } from "@/lib/email";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,22 +21,36 @@ export async function POST(req: Request, ctx: Ctx) {
     );
   }
 
+  // Optional custom subject + message override the canned pickup-ready email.
+  const body = await req.json().catch(() => ({}));
+  const customSubject = typeof body?.subject === "string" ? body.subject.trim() : "";
+  const customMessage = typeof body?.message === "string" ? body.message.trim() : "";
+
   const customerName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Customer";
 
-  const emailResult = await sendPickupReadyCustomerEmail({
-    to: customer.email,
-    customerName,
-  });
+  const emailResult = customMessage
+    ? await sendOutreachEmail({
+        to: customer.email,
+        subject: customSubject || "A message from West Roxbury Framing",
+        body: customMessage,
+      })
+    : await sendPickupReadyCustomerEmail({
+        to: customer.email,
+        customerName,
+      });
 
   await prisma.activityLog.create({
     data: {
       entityType: "customer",
       entityId: customer.id,
-      action: emailResult.ok ? "pickup_email_sent" : "pickup_email_failed",
+      action: emailResult.ok
+        ? customMessage ? "custom_email_sent" : "pickup_email_sent"
+        : customMessage ? "custom_email_failed" : "pickup_email_failed",
       actorUserId: userId,
       metadata: {
         email: customer.email,
         error: emailResult.error || null,
+        custom: customMessage ? true : false,
       } as any,
     },
   });

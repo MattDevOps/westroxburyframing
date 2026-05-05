@@ -1,9 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ArrowLeft, ArrowRight, User, Maximize, Layers, Eye, Frame as FrameIcon, Receipt } from "lucide-react";
+import { Check, ArrowLeft, ArrowRight, User, Maximize, Layers, Eye, Frame as FrameIcon, Receipt, Plus, Trash2 } from "lucide-react";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
+
+type LineItem = {
+  itemType: string;
+  width: string;
+  height: string;
+  frameCode: string;
+  frameVendor: string;
+  hasMats: boolean | null;
+  mat1Code: string;
+  mat2Code: string;
+  glassType: string;
+  mountType: string;
+  subtotal: string;
+};
 
 const STEPS: { num: Step; title: string; icon: any }[] = [
   { num: 1, title: "Customer", icon: User },
@@ -80,12 +94,68 @@ export default function EasyOrderForm() {
   const [includeTax, setIncludeTax] = useState(true);
   const [notesInternal, setNotesInternal] = useState("");
 
+  // Saved line items (everything other than the in-progress draft)
+  const [items, setItems] = useState<LineItem[]>([]);
+
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const subtotalNum = useMemo(() => Number(subtotal) || 0, [subtotal]);
+  const draftSubtotalNum = useMemo(() => Number(subtotal) || 0, [subtotal]);
+  const savedSubtotalNum = useMemo(
+    () => items.reduce((sum, it) => sum + (Number(it.subtotal) || 0), 0),
+    [items]
+  );
+  const subtotalNum = useMemo(
+    () => savedSubtotalNum + draftSubtotalNum,
+    [savedSubtotalNum, draftSubtotalNum]
+  );
   const taxNum = useMemo(() => (includeTax ? subtotalNum * 0.0625 : 0), [subtotalNum, includeTax]);
   const totalNum = useMemo(() => subtotalNum + taxNum, [subtotalNum, taxNum]);
+
+  function currentDraft(): LineItem {
+    return {
+      itemType,
+      width,
+      height,
+      frameCode,
+      frameVendor,
+      hasMats,
+      mat1Code,
+      mat2Code,
+      glassType,
+      mountType,
+      subtotal,
+    };
+  }
+
+  function resetItemFields() {
+    setItemType("");
+    setW("");
+    setH("");
+    setFrameCode("");
+    setFrameVendor("");
+    setHasMats(null);
+    setMat1Code("");
+    setMat2Code("");
+    setGlassType("");
+    setMountType("");
+    setSubtotal("");
+  }
+
+  function addAnotherItem() {
+    setErr(null);
+    if (draftSubtotalNum <= 0) {
+      setErr("Enter a price for this item before adding another.");
+      return;
+    }
+    setItems((prev) => [...prev, currentDraft()]);
+    resetItemFields();
+    setStep(2);
+  }
+
+  function removeSavedItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   function canAdvance(): boolean {
     if (step === 1) return Boolean((phone.trim() || email.trim()) && firstName.trim());
@@ -93,7 +163,7 @@ export default function EasyOrderForm() {
     if (step === 3) return hasMats !== null;
     if (step === 4) return Boolean(glassType);
     if (step === 5) return Boolean(mountType);
-    if (step === 6) return subtotalNum > 0;
+    if (step === 6) return draftSubtotalNum > 0;
     return true;
   }
 
@@ -138,52 +208,96 @@ export default function EasyOrderForm() {
       }
       if (cOut.existing && cOut.message) setInfo(cOut.message);
 
-      const orderPayload: any = {
-        customer_id: cOut.customer.id,
-        intake_channel: "walk_in",
-        item_type: itemType || null,
-        quantity: 1,
-        width: Number(width),
-        height: Number(height),
-        units: "in",
-        status: asEstimate ? "estimate" : "new_design",
-        discount_type: "none",
-        discount_value: 0,
-        tax_rate: includeTax ? 0.0625 : 0,
-        notes_internal: notesInternal.trim() || null,
-        notes_customer: null,
-        pricing: {
-          subtotal_cents: Math.round(subtotalNum * 100),
-          tax_cents: Math.round(taxNum * 100),
-          total_cents: Math.round(totalNum * 100),
-        },
-        specs: {
-          frame_code: frameCode || null,
-          frame_vendor: frameVendor || null,
-          mat_1_code: hasMats ? (mat1Code || null) : null,
-          mat_2_code: hasMats ? (mat2Code || null) : null,
-          glass_type: glassType || null,
-          mount_type: mountType === "none" ? null : (mountType || null),
-          backing_type: null,
-          spacers: false,
-          specialty_type: null,
-        },
-      };
+      // Each saved item + the current draft becomes its own Order.
+      // If there's more than one, link them to a single Invoice for combined billing.
+      const allItems: LineItem[] = [...items, currentDraft()];
+      const customerId = cOut.customer.id;
+      const taxRate = includeTax ? 0.0625 : 0;
+      const sharedNotes = notesInternal.trim() || null;
+      const status = asEstimate ? "estimate" : "new_design";
 
-      const oRes = await fetch("/staff/api/orders", {
+      const createdOrderIds: string[] = [];
+      for (const it of allItems) {
+        const sub = Number(it.subtotal) || 0;
+        const subCents = Math.round(sub * 100);
+        const taxCents = Math.round(subCents * taxRate);
+        const totalCents = subCents + taxCents;
+
+        const oRes = await fetch("/staff/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer_id: customerId,
+            intake_channel: "walk_in",
+            item_type: it.itemType || null,
+            quantity: 1,
+            width: Number(it.width),
+            height: Number(it.height),
+            units: "in",
+            status,
+            discount_type: "none",
+            discount_value: 0,
+            tax_rate: taxRate,
+            notes_internal: sharedNotes,
+            notes_customer: null,
+            pricing: {
+              subtotal_cents: subCents,
+              tax_cents: taxCents,
+              total_cents: totalCents,
+            },
+            specs: {
+              frame_code: it.frameCode || null,
+              frame_vendor: it.frameVendor || null,
+              mat_1_code: it.hasMats ? (it.mat1Code || null) : null,
+              mat_2_code: it.hasMats ? (it.mat2Code || null) : null,
+              glass_type: it.glassType || null,
+              mount_type: it.mountType === "none" ? null : (it.mountType || null),
+              backing_type: null,
+              spacers: false,
+              specialty_type: null,
+            },
+          }),
+        });
+        const oOut = await oRes.json();
+        if (!oRes.ok) {
+          const msg = oOut.error || "Could not save order.";
+          setErr(
+            createdOrderIds.length > 0
+              ? `${msg} (${createdOrderIds.length} earlier item${createdOrderIds.length > 1 ? "s" : ""} were saved — check the orders list.)`
+              : msg
+          );
+          setSubmitting(false);
+          return;
+        }
+        createdOrderIds.push(oOut.order.id);
+      }
+
+      // Single item: behave like before — go to the order page.
+      if (createdOrderIds.length === 1) {
+        window.location.href = `/staff/orders/${createdOrderIds[0]}`;
+        return;
+      }
+
+      // Multiple items: create one combined Invoice and go to its page.
+      const invRes = await fetch("/staff/api/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
+        body: JSON.stringify({
+          customerId,
+          orderIds: createdOrderIds,
+        }),
       });
-
-      const oOut = await oRes.json();
-      if (!oRes.ok) {
-        setErr(oOut.error || "Could not save order.");
+      const invOut = await invRes.json();
+      if (!invRes.ok) {
+        setErr(
+          (invOut.error || "Could not create invoice.") +
+            ` All ${createdOrderIds.length} orders were saved — open them from the orders list.`
+        );
         setSubmitting(false);
         return;
       }
 
-      window.location.href = `/staff/orders/${oOut.order.id}`;
+      window.location.href = `/staff/invoices/${invOut.invoice.id}`;
     } catch (e: any) {
       setErr(e?.message || "Something went wrong. Please try again.");
       setSubmitting(false);
@@ -234,8 +348,42 @@ export default function EasyOrderForm() {
       <div className="rounded-2xl border-2 border-neutral-200 bg-white p-8 shadow-sm">
         <h2 className="text-3xl font-bold text-neutral-900 mb-1">
           Step {step} of 6 — {STEPS[step - 1].title}
+          {items.length > 0 && step >= 2 && (
+            <span className="ml-3 text-base font-medium text-amber-700">
+              · Item {items.length + 1}
+            </span>
+          )}
         </h2>
         <p className="text-neutral-600 text-base mb-8">{stepHint(step)}</p>
+
+        {items.length > 0 && step >= 2 && (
+          <div className="mb-6 rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4">
+            <div className="text-sm font-semibold text-emerald-800 mb-2">
+              {items.length} item{items.length > 1 ? "s" : ""} added · running subtotal ${savedSubtotalNum.toFixed(2)}
+            </div>
+            <ul className="space-y-1 text-sm">
+              {items.map((it, idx) => (
+                <li key={idx} className="flex items-center justify-between gap-3">
+                  <span className="text-neutral-800 truncate">
+                    <span className="font-medium">#{idx + 1}</span>{" "}
+                    {ITEM_TYPES.find(t => t.value === it.itemType)?.label || "Item"}
+                    {it.width && it.height ? ` — ${it.width}×${it.height}"` : ""}
+                    {" — $"}{(Number(it.subtotal) || 0).toFixed(2)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeSavedItem(idx)}
+                    disabled={submitting}
+                    className="text-red-600 hover:text-red-800 disabled:opacity-40"
+                    title="Remove this item"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* STEP 1: Customer */}
         {step === 1 && (
@@ -465,6 +613,21 @@ export default function EasyOrderForm() {
             </label>
 
             <div className="rounded-xl bg-amber-50 border-2 border-amber-200 p-6 space-y-2">
+              {items.length > 0 && (
+                <>
+                  {items.map((it, idx) => (
+                    <div key={idx} className="flex justify-between text-base text-neutral-700">
+                      <span>Item {idx + 1}{it.itemType ? ` — ${ITEM_TYPES.find(t => t.value === it.itemType)?.label || it.itemType}` : ""}</span>
+                      <span className="font-medium">${(Number(it.subtotal) || 0).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-base text-neutral-700">
+                    <span>Item {items.length + 1} (current)</span>
+                    <span className="font-medium">${draftSubtotalNum.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-amber-300" />
+                </>
+              )}
               <div className="flex justify-between text-lg">
                 <span className="text-neutral-700">Subtotal</span>
                 <span className="font-semibold">${subtotalNum.toFixed(2)}</span>
@@ -479,6 +642,16 @@ export default function EasyOrderForm() {
               </div>
             </div>
 
+            <button
+              type="button"
+              onClick={addAnotherItem}
+              disabled={submitting || draftSubtotalNum <= 0}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-500 px-6 py-4 text-lg font-semibold text-amber-700 bg-white hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-5 h-5" />
+              Add Another Item (same customer)
+            </button>
+
             <BigField label="Notes (optional)" hint="Reminders for staff — won't be shown to the customer">
               <textarea
                 placeholder="e.g. Rush job for Friday, customer prefers extra wide mat"
@@ -491,7 +664,9 @@ export default function EasyOrderForm() {
 
             {/* Summary */}
             <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-5 text-sm space-y-1">
-              <div className="font-semibold text-neutral-700 mb-2">Order Summary</div>
+              <div className="font-semibold text-neutral-700 mb-2">
+                {items.length > 0 ? `Current Item (#${items.length + 1}) Summary` : "Order Summary"}
+              </div>
               <SummaryRow label="Customer" value={`${firstName} ${lastName}`.trim() || "—"} />
               <SummaryRow label="Phone" value={phone || "—"} />
               <SummaryRow label="Item" value={ITEM_TYPES.find(t => t.value === itemType)?.label || "—"} />
@@ -553,7 +728,7 @@ export default function EasyOrderForm() {
                 disabled={!canAdvance() || submitting}
                 className="rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                {submitting ? "Saving…" : "Create Order"}
+                {submitting ? "Saving…" : items.length > 0 ? `Create Order (${items.length + 1} items)` : "Create Order"}
               </button>
             </div>
           )}

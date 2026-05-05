@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
-import { sendPickupReminderSMS } from "@/lib/sms";
+import { sendPickupReminderSMS, sendSMS } from "@/lib/sms";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,24 +21,33 @@ export async function POST(req: Request, ctx: Ctx) {
     );
   }
 
+  // Optional custom message overrides the canned pickup reminder.
+  const body = await req.json().catch(() => ({}));
+  const customMessage = typeof body?.message === "string" ? body.message.trim() : "";
+
   const customerName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Customer";
 
-  const smsResult = await sendPickupReminderSMS({
-    to: customer.phone,
-    orderNumber: "",
-    customerName,
-  });
+  const smsResult = customMessage
+    ? await sendSMS({ to: customer.phone, message: customMessage })
+    : await sendPickupReminderSMS({
+        to: customer.phone,
+        orderNumber: "",
+        customerName,
+      });
 
   await prisma.activityLog.create({
     data: {
       entityType: "customer",
       entityId: customer.id,
-      action: smsResult.ok ? "pickup_sms_sent" : "pickup_sms_failed",
+      action: smsResult.ok
+        ? customMessage ? "custom_sms_sent" : "pickup_sms_sent"
+        : customMessage ? "custom_sms_failed" : "pickup_sms_failed",
       actorUserId: userId,
       metadata: {
         phone: customer.phone,
         messageSid: smsResult.messageSid || null,
         error: smsResult.error || null,
+        custom: customMessage ? true : false,
       } as any,
     },
   });
