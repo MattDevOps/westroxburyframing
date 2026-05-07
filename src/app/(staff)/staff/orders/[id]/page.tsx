@@ -360,18 +360,22 @@ export default function OrderDetailPage() {
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">
             {order.orderNumber}
-            {isEstimate && (
-              <span className="ml-3 text-sm font-medium px-2 py-1 rounded-lg border border-red-300 text-red-700 bg-red-50">
-                ESTIMATE
-              </span>
-            )}
-            {isOnHold && (
-              <span className="ml-3 text-sm font-medium px-2 py-1 rounded-lg border border-orange-300 text-orange-700 bg-orange-50">
-                ON HOLD
-              </span>
-            )}
           </h1>
-          <div className="text-neutral-700">
+          {(isEstimate || isOnHold) && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {isEstimate && (
+                <span className="text-sm font-medium px-2 py-1 rounded-lg border border-red-300 text-red-700 bg-red-50">
+                  ESTIMATE
+                </span>
+              )}
+              {isOnHold && (
+                <span className="text-sm font-medium px-2 py-1 rounded-lg border border-orange-300 text-orange-700 bg-orange-50">
+                  ON HOLD
+                </span>
+              )}
+            </div>
+          )}
+          <div className="text-neutral-700 mt-1">
             {order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : "No Customer"}
           </div>
           {order.customer && (order.customer.email || order.customer.phone) && (
