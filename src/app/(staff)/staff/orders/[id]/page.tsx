@@ -193,6 +193,15 @@ export default function OrderDetailPage() {
   const isEstimate = order.status === "estimate";
   const isOnHold = order.status === "on_hold";
 
+  // paidInFull defaults to true in the schema, so we can't rely on it as an
+  // "unpaid" signal. Compute open-balance from actual Payment records instead.
+  const orderTotalPaid = (order.payments || [])
+    .filter((p: any) => p.status === "paid")
+    .reduce((s: number, p: any) => s + (p.amount || 0), 0);
+  const orderHasOpenBalance =
+    orderTotalPaid < (order.totalAmount || 0) &&
+    order.squareInvoiceStatus?.toUpperCase() !== "PAID";
+
   // Discount display helpers
   const discountType = order.discountType || "none";
   const discountValue = Number(order.discountValue || 0);
@@ -410,7 +419,7 @@ export default function OrderDetailPage() {
             {(() => {
               const inv = order.invoice;
               const invoiceUnpaid = inv && inv.balanceDue > 0 && inv.status !== "void" && inv.status !== "cancelled";
-              const orderUnpaid = !inv && !order.paidInFull && order.squareInvoiceStatus?.toUpperCase() !== "PAID";
+              const orderUnpaid = !inv && orderHasOpenBalance;
               if (!invoiceUnpaid && !orderUnpaid) return null;
               const amountCents = invoiceUnpaid ? inv!.balanceDue : order.totalAmount;
               const amountStr = `$${(amountCents / 100).toFixed(2)}`;
@@ -1392,7 +1401,7 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {!order.invoice && !order.paidInFull && order.squareInvoiceStatus?.toUpperCase() !== "PAID" && (
+        {!order.invoice && orderHasOpenBalance && (
           <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
             <span className="text-neutral-700 font-medium">Paid by check?</span>
             <button
