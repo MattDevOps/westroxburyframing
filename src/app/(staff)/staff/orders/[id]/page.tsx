@@ -407,6 +407,53 @@ export default function OrderDetailPage() {
             >
               Edit Order
             </button>
+            {(() => {
+              const inv = order.invoice;
+              const invoiceUnpaid = inv && inv.balanceDue > 0 && inv.status !== "void" && inv.status !== "cancelled";
+              const orderUnpaid = !inv && !order.paidInFull && order.squareInvoiceStatus?.toUpperCase() !== "PAID";
+              if (!invoiceUnpaid && !orderUnpaid) return null;
+              const amountCents = invoiceUnpaid ? inv!.balanceDue : order.totalAmount;
+              const amountStr = `$${(amountCents / 100).toFixed(2)}`;
+              return (
+                <button
+                  className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm hover:bg-emerald-700 disabled:opacity-50"
+                  disabled={markingCheck}
+                  onClick={async () => {
+                    const ref = window.prompt(
+                      `Mark ${amountStr} as paid by check.\n\nOptional check # or note:`,
+                      "",
+                    );
+                    if (ref === null) return;
+                    setMarkingCheck(true);
+                    try {
+                      const url = invoiceUnpaid
+                        ? `/staff/api/invoices/${inv!.id}/payments`
+                        : `/staff/api/orders/${order.id}/mark-paid-check`;
+                      const body = invoiceUnpaid
+                        ? { amount: amountCents, method: "check", note: ref ? `Check ${ref}` : "Check payment" }
+                        : { note: ref || "" };
+                      const res = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                      });
+                      const raw = await res.text();
+                      let out: any = {};
+                      try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                      if (!res.ok) { alert(out.error || raw || "Failed to mark paid"); return; }
+                      await refresh();
+                    } catch (e: any) {
+                      alert(e?.message || "Failed to mark paid");
+                    } finally {
+                      setMarkingCheck(false);
+                    }
+                  }}
+                  title="Record a check payment for this order"
+                >
+                  {markingCheck ? "Recording…" : `Mark as Paid (${amountStr})`}
+                </button>
+              );
+            })()}
           </div>
 
           <div className="hidden sm:block h-6 w-px bg-neutral-200" aria-hidden />
