@@ -80,6 +80,7 @@ export default function OrderDetailPage() {
   const [attachingArtwork, setAttachingArtwork] = useState<string | null>(null);
   const [mailInPreviewOpen, setMailInPreviewOpen] = useState(false);
   const [sendingMailIn, setSendingMailIn] = useState(false);
+  const [markingCheck, setMarkingCheck] = useState(false);
 
   async function refresh() {
     if (!id) return;
@@ -1132,6 +1133,7 @@ export default function OrderDetailPage() {
         </div>
 
         {order.invoice ? (
+          <>
           <a
             href={`/staff/invoices/${order.invoice.id}`}
             className="block rounded-xl border border-blue-200 bg-blue-50/50 p-4 hover:bg-blue-50 transition"
@@ -1167,6 +1169,46 @@ export default function OrderDetailPage() {
               </div>
             )}
           </a>
+          {order.invoice.balanceDue > 0 && order.invoice.status !== "void" && order.invoice.status !== "cancelled" && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+                disabled={markingCheck}
+                onClick={async () => {
+                  const ref = window.prompt(
+                    `Mark balance of $${(order.invoice.balanceDue / 100).toFixed(2)} as paid by check.\n\nOptional check # or note:`,
+                    "",
+                  );
+                  if (ref === null) return;
+                  setMarkingCheck(true);
+                  try {
+                    const res = await fetch(`/staff/api/invoices/${order.invoice.id}/payments`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount: order.invoice.balanceDue,
+                        method: "check",
+                        note: ref ? `Check ${ref}` : "Check payment",
+                      }),
+                    });
+                    const raw = await res.text();
+                    let out: any = {};
+                    try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                    if (!res.ok) { alert(out.error || raw || "Failed to record payment"); return; }
+                    await refresh();
+                  } catch (e: any) {
+                    alert(e?.message || "Failed to record payment");
+                  } finally {
+                    setMarkingCheck(false);
+                  }
+                }}
+              >
+                {markingCheck ? "Recording…" : `Mark Paid by Check ($${(order.invoice.balanceDue / 100).toFixed(2)})`}
+              </button>
+              <span className="text-xs text-neutral-500">Records payment on invoice without using the pay-link.</span>
+            </div>
+          )}
+          </>
         ) : (
           <p className="text-sm text-neutral-500">No invoice linked. Create one to track deposits and payments.</p>
         )}
@@ -1300,6 +1342,43 @@ export default function OrderDetailPage() {
             >
               Sync payment status
             </button>
+          </div>
+        )}
+
+        {!order.invoice && !order.paidInFull && order.squareInvoiceStatus?.toUpperCase() !== "PAID" && (
+          <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
+            <span className="text-neutral-700 font-medium">Paid by check?</span>
+            <button
+              className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+              disabled={markingCheck}
+              onClick={async () => {
+                const ref = window.prompt(
+                  `Mark this order as paid in full ($${(order.totalAmount / 100).toFixed(2)}) by check.\n\nOptional check # or note:`,
+                  "",
+                );
+                if (ref === null) return;
+                setMarkingCheck(true);
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/mark-paid-check`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ note: ref || "" }),
+                  });
+                  const raw = await res.text();
+                  let out: any = {};
+                  try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                  if (!res.ok) { alert(out.error || raw || "Failed to mark paid"); return; }
+                  await refresh();
+                } catch (e: any) {
+                  alert(e?.message || "Failed to mark paid");
+                } finally {
+                  setMarkingCheck(false);
+                }
+              }}
+            >
+              {markingCheck ? "Recording…" : "Mark Paid (Check)"}
+            </button>
+            <span className="text-xs text-neutral-500">Records a manual check payment without going through the invoice link.</span>
           </div>
         )}
 
