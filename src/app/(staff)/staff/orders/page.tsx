@@ -176,6 +176,7 @@ function OrdersBoardPage() {
 
   function isOverdue(order: OrderCard): boolean {
     if (!order.due_date) return false;
+    if (order.paid_status === "paid") return false;
     const dueDate = new Date(order.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);

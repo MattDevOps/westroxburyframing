@@ -20,8 +20,8 @@ test.describe("Staff Authentication", () => {
     // Should be on staff area (dashboard)
     await expect(page).toHaveURL(/\/staff/);
     // Nav bar links should be visible
-    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Orders", exact: true })).toBeVisible();
   });
 
   test("logout redirects to login page", async ({ page }) => {

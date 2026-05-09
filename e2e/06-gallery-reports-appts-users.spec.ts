@@ -65,10 +65,14 @@ test.describe("Reports", () => {
 
   test("CSV export button exists", async ({ page }) => {
     await page.goto("/staff/reports");
-    await page.waitForTimeout(2000);
 
-    const exportBtn = page.getByRole("button", { name: /export|csv|download/i });
-    await expect(exportBtn.first()).toBeVisible({ timeout: 10_000 });
+    // Export button is conditional — switch to the Orders report which exposes
+    // "Export Orders CSV". Default is the Sales report (no export button).
+    await page.getByRole("button", { name: "Orders", exact: true }).click();
+
+    await expect(
+      page.getByRole("button", { name: /export.*csv/i }).first(),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
 

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/fixtures";
 import { testPhone, testSuffix } from "./helpers/auth";
 
 test.describe("Public Site - Pages Load", () => {
@@ -86,49 +86,30 @@ test.describe("Public Site - Custom Framing Quote", () => {
     await expect(page.getByPlaceholder(/first/i).first()).toBeVisible();
   });
 
-  test("submit a custom framing quote request", async ({ page }) => {
+  test("submit a custom framing quote request", async ({ page, tracker }) => {
     const suffix = testSuffix();
     const phone = testPhone();
+    const email = `quote${suffix}@test.com`;
+
+    // Track the email up-front so cleanup runs even if the rate-limit branch fires
+    tracker.customerEmails.push(email);
 
     await page.goto("/custom-framing");
-    await page.waitForTimeout(2000);
 
-    // Fill out the quote form
-    await page.getByPlaceholder(/first/i).first().fill(`QuoteTest${suffix}`);
-    await page.getByPlaceholder(/last/i).first().fill(`E2E${suffix}`);
+    // Required fields are First/Last/Email/Phone (all marked required)
+    await page.getByPlaceholder("First name").fill(`QuoteTest${suffix}`);
+    await page.getByPlaceholder("Last name").fill(`E2E${suffix}`);
+    await page.getByPlaceholder("you@email.com").fill(email);
+    await page.getByPlaceholder("617-555-1234").fill(phone);
+    await page.locator("select").first().selectOption("art");
+    await page.locator("textarea").first().fill("E2E automated test quote request");
 
-    // Email and phone
-    const emailInput = page.getByPlaceholder(/email/i).first();
-    if (await emailInput.isVisible()) {
-      await emailInput.fill(`quote${suffix}@test.com`);
-    }
-    const phoneInput = page.getByPlaceholder(/phone/i).first();
-    if (await phoneInput.isVisible()) {
-      await phoneInput.fill(phone);
-    }
+    await page.getByRole("button", { name: /submit framing request/i }).click();
 
-    // Select item type
-    const itemSelect = page.locator("select").first();
-    if (await itemSelect.isVisible()) {
-      await itemSelect.selectOption("art");
-    }
-
-    // Fill description if visible
-    const descInput = page.locator("textarea").first();
-    if (await descInput.isVisible()) {
-      await descInput.fill("E2E automated test quote request");
-    }
-
-    // Submit
-    const submitBtn = page.getByRole("button", { name: /submit|request|send|get.*quote/i });
-    if (await submitBtn.isVisible()) {
-      await submitBtn.click();
-
-      // Should show a success state (order number or thank you) or rate-limit message
-      await expect(
-        page.getByText(/WRX-|thank|submitted|success|received|too many/i).first()
-      ).toBeVisible({ timeout: 15_000 });
-    }
+    // Success page shows "Request Received!" + the order number (WRX-XXXX)
+    await expect(
+      page.getByText(/request.*received|too many/i).first(),
+    ).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -142,27 +123,15 @@ test.describe("Public Site - Order Status Tracker", () => {
     page,
   }) => {
     await page.goto("/order-status");
-    await page.waitForTimeout(1000);
 
-    // Fill in order number
-    const orderInput = page.locator('input').first();
-    await orderInput.fill("WRX-999999");
+    // The order-status form has just one input ("Enter your order number")
+    // and a "Lookup" button — no contact-info field anymore.
+    await page.getByPlaceholder(/order number/i).fill("WRX-999999");
+    await page.getByRole("button", { name: /lookup/i }).click();
 
-    // Fill contact info
-    const contactInput = page.locator('input').nth(1);
-    await contactInput.fill("nobody@test.com");
-
-    // Submit
-    const searchBtn = page.getByRole("button", { name: /search|check|track|look/i });
-    if (await searchBtn.isVisible()) {
-      await searchBtn.click();
-      await page.waitForTimeout(3000);
-
-      // Should show "not found", error, or rate-limit message
-      await expect(
-        page.getByText(/not found|no order|couldn.*find|error|too many/i).first()
-      ).toBeVisible({ timeout: 10_000 });
-    }
+    await expect(
+      page.getByText(/not found|no order|couldn.*find|error|too many/i).first(),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
 

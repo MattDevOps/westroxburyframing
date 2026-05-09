@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./helpers/fixtures";
 import { testPhone, testSuffix } from "./helpers/auth";
 
 test.describe("Customer Management", () => {
@@ -8,8 +8,9 @@ test.describe("Customer Management", () => {
     await expect(page.getByPlaceholder(/search/i)).toBeVisible({ timeout: 10_000 });
   });
 
-  test("create customer via new order form and verify on customers page", async ({
+  test("create customer via API and verify on customers page", async ({
     page,
+    tracker,
   }) => {
     const phone = testPhone();
     const suffix = testSuffix();
@@ -17,40 +18,25 @@ test.describe("Customer Management", () => {
     const lastName = `TestLast${suffix}`;
     const email = `test${suffix}@e2e.test`;
 
-    // Go to new order (which creates the customer inline)
-    await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
+    // Create the customer via the staff API (the orders/new UI is now a multi-step wizard)
+    const custRes = await page.request.post("/staff/api/customers", {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        email,
+      },
+    });
+    expect(custRes.ok()).toBeTruthy();
+    const created = await custRes.json();
+    const customerId: string = created.id || created.customer?.id;
+    if (customerId) tracker.customerIds.push(customerId);
 
-    // Fill customer fields
-    await page.getByPlaceholder("e.g. 6175551234").fill(phone);
-    await page.getByPlaceholder("First name").fill(firstName);
-    await page.getByPlaceholder("Last name").fill(lastName);
-    await page.getByPlaceholder("name@email.com").fill(email);
-
-    // Fill minimum order fields
-    await page.locator('select').first().selectOption("art");
-
-    // Fill pricing (subtotal & tax)
-    const subtotalInput = page.locator('input[type="number"]').nth(2);
-    await subtotalInput.fill("100");
-    const taxInput = page.locator('input[type="number"]').nth(3);
-    await taxInput.fill("6.25");
-
-    // Submit order
-    await page.getByRole("button", { name: /create order/i }).click();
-
-    // Wait for redirect to order detail page
-    await page.waitForURL(/\/staff\/orders\//, { timeout: 15_000 });
-
-    // Now verify the customer exists
+    // Verify the customer appears on the customers page when searched
     await page.goto("/staff/customers");
     await page.getByPlaceholder(/search/i).fill(firstName);
-    // Trigger search
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(2000);
-
-    // Customer should appear in the list
-    await expect(page.getByText(firstName)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(firstName).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("customer detail page loads", async ({ page }) => {

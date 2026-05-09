@@ -159,11 +159,12 @@ export async function GET(req: Request) {
     recentActivityResult,
     topCustomersRaw,
   ] = await Promise.all([
-    // Overdue orders
+    // Overdue orders — past due AND not yet paid in full
     prisma.order.findMany({
       where: {
         ...locationFilter,
         dueDate: { lt: now },
+        paidInFull: false,
         status: {
           notIn: ["completed", "picked_up", "cancelled"],
         },
@@ -185,6 +186,7 @@ export async function GET(req: Request) {
       where: {
         ...locationFilter,
         dueDate: { lt: now },
+        paidInFull: false,
         status: { notIn: ["completed", "picked_up", "cancelled"] },
       },
     }),

@@ -1,107 +1,106 @@
-import { test, expect, Page } from "@playwright/test";
+import { APIRequestContext } from "@playwright/test";
+import { test, expect, TestDataTracker } from "./helpers/fixtures";
 import { testPhone, testSuffix } from "./helpers/auth";
 
 /**
- * Helper: create a paid order to test invoice features.
+ * Helper: create a customer + order via API and return the order id/url.
+ * Tracker captures IDs for afterEach cleanup.
  */
-async function createPaidOrder(page: Page) {
+async function createOrderForInvoice(
+  request: APIRequestContext,
+  tracker: TestDataTracker,
+  opts: {
+    discountType?: "percent" | "fixed";
+    discountValue?: number;
+  } = {},
+) {
   const phone = testPhone();
   const suffix = testSuffix();
 
-  await page.goto("/staff/orders/new");
-  await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
+  const custRes = await request.post("/staff/api/customers", {
+    data: {
+      first_name: `Invoice${suffix}`,
+      last_name: `Test${suffix}`,
+      phone,
+      email: `inv${suffix}@test.com`,
+    },
+  });
+  expect(custRes.ok()).toBeTruthy();
+  const custJson = await custRes.json();
+  const customerId: string = custJson.id || custJson.customer?.id;
+  expect(customerId).toBeTruthy();
+  tracker.customerIds.push(customerId);
 
-  await page.getByPlaceholder("e.g. 6175551234").fill(phone);
-  await page.getByPlaceholder("First name").fill(`Invoice${suffix}`);
-  await page.getByPlaceholder("Last name").fill(`Test${suffix}`);
-  await page
-    .getByPlaceholder("name@email.com")
-    .fill(`inv${suffix}@test.com`);
+  const orderRes = await request.post("/staff/api/orders", {
+    data: {
+      customer_id: customerId,
+      item_type: "diploma",
+      item_description: "Invoice test order",
+      intake_channel: "walk_in",
+      pricing: { subtotal_cents: 25000, tax_cents: 1563, total_cents: 26563 },
+      ...(opts.discountType
+        ? {
+            discount_type: opts.discountType,
+            discount_value: opts.discountValue ?? 0,
+          }
+        : {}),
+    },
+  });
+  expect(orderRes.ok()).toBeTruthy();
+  const orderJson = await orderRes.json();
+  const orderId: string = orderJson.id || orderJson.order?.id;
+  expect(orderId).toBeTruthy();
+  tracker.orderIds.push(orderId);
 
-  // Item
-  await page.locator("select").first().selectOption("diploma");
-
-  // Pricing
-  const numberInputs = page.locator('input[type="number"]');
-  await numberInputs.nth(2).fill("250"); // subtotal
-  await numberInputs.nth(3).fill("15.63"); // tax
-
-  await page.getByRole("button", { name: /create order/i }).click();
-  // Wait for redirect to order detail (UUID-based URL, not /new)
-  await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
+  return { orderId, url: `/staff/orders/${orderId}` };
 }
 
 test.describe("Invoice & Payments", () => {
 
-  test("order detail shows invoice section", async ({ page }) => {
-    await createPaidOrder(page);
+  test("order detail shows invoice section", async ({ page, request, tracker }) => {
+    const { url } = await createOrderForInvoice(request, tracker);
+    await page.goto(url);
 
-    // Look for invoice-related UI elements
-    // The SquareInvoiceButtons component should be visible
     await expect(
-      page
-        .getByText(/invoice|send invoice|square/i)
-        .first()
+      page.getByText(/invoice|send invoice|square/i).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
   test("send invoice button is present for orders with customer email", async ({
     page,
+    request,
+    tracker,
   }) => {
-    await createPaidOrder(page);
+    const { url } = await createOrderForInvoice(request, tracker);
+    await page.goto(url);
 
-    // The "Send Invoice" button should be visible since we provided an email
-    // It may or may not be visible depending on Square config — just verify
-    // the invoice section loaded without errors
     await expect(
-      page.getByText(/invoice|payment|square/i).first()
+      page.getByText(/invoice|payment|square/i).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("order detail shows payment status", async ({ page }) => {
-    await createPaidOrder(page);
+  test("order detail shows payment status", async ({ page, request, tracker }) => {
+    const { url } = await createOrderForInvoice(request, tracker);
+    await page.goto(url);
 
-    // Should display payment/paid status somewhere
     await expect(
-      page.getByText(/paid|unpaid|payment/i).first()
+      page.getByText(/paid|unpaid|payment/i).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("discount applies correctly on new order", async ({ page }) => {
-    const phone = testPhone();
-    const suffix = testSuffix();
+  test("discount applies correctly on new order", async ({ request, tracker }) => {
+    // 10% off $200 subtotal = $180 → totalAmount becomes $180 (tax recalculated)
+    const { orderId } = await createOrderForInvoice(request, tracker, {
+      discountType: "percent",
+      discountValue: 10,
+    });
 
-    await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
+    const verifyRes = await request.get(`/staff/api/orders/${orderId}`);
+    expect(verifyRes.ok()).toBeTruthy();
+    const verify = await verifyRes.json();
 
-    await page.getByPlaceholder("e.g. 6175551234").fill(phone);
-    await page.getByPlaceholder("First name").fill(`Disc${suffix}`);
-    await page.getByPlaceholder("Last name").fill(`Test${suffix}`);
-
-    // Pricing
-    const numberInputs = page.locator('input[type="number"]');
-    await numberInputs.nth(2).fill("200"); // subtotal
-
-    // Select percent discount — the discount type select is the 4th <select> on the page
-    // (Item type, Glass type, Mount type, Discount type)
-    const discountSelect = page.locator('select').nth(3);
-    if (await discountSelect.isVisible().catch(() => false)) {
-      await discountSelect.selectOption("percent");
-      await page.waitForTimeout(500);
-      // The discount value input appears after selecting a type
-      // Find the input labeled for discount value
-      const discountInput = page.locator('input[type="number"][step="1"]');
-      if (await discountInput.isVisible().catch(() => false)) {
-        await discountInput.fill("10");
-      }
-    }
-
-    await numberInputs.nth(3).fill("11.25"); // tax
-
-    await page.getByRole("button", { name: /create order/i }).click();
-    await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
-
-    // Order should be created; verify total reflects discount
-    await expect(page.getByText(/WRX-/)).toBeVisible({ timeout: 10_000 });
+    // Subtotal of 25000 cents → 10% discount → 22500 cents subtotalAmount
+    const subtotal = verify.subtotalAmount ?? verify.order?.subtotalAmount;
+    expect(subtotal).toBe(22500);
   });
 });

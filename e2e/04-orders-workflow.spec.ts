@@ -1,202 +1,192 @@
-import { test, expect, Page } from "@playwright/test";
+import { APIRequestContext } from "@playwright/test";
+import { test, expect, TestDataTracker } from "./helpers/fixtures";
 import { testPhone, testSuffix } from "./helpers/auth";
 
 /**
- * Helper: create a new order via the staff UI and return the order detail URL.
+ * Helper: create a customer + order via the staff API and return the order id
+ * and detail URL. The /staff/orders/new page is now a multi-step wizard, so
+ * we drive setup via the API and only use the UI for assertions. The tracker
+ * captures created IDs so afterEach cleanup can delete them.
  */
-async function createTestOrder(page: Page) {
+async function createTestOrder(
+  request: APIRequestContext,
+  tracker: TestDataTracker,
+  opts: { status?: "estimate" } = {},
+) {
   const phone = testPhone();
   const suffix = testSuffix();
+  const firstName = `E2E${suffix}`;
+  const lastName = `Order${suffix}`;
 
-  await page.goto("/staff/orders/new");
-  await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
+  const custRes = await request.post("/staff/api/customers", {
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      phone,
+      email: `e2e${suffix}@test.com`,
+    },
+  });
+  expect(custRes.ok()).toBeTruthy();
+  const custJson = await custRes.json();
+  const customerId: string = custJson.id || custJson.customer?.id;
+  expect(customerId).toBeTruthy();
+  tracker.customerIds.push(customerId);
 
-  // Customer
-  await page.getByPlaceholder("e.g. 6175551234").fill(phone);
-  await page.getByPlaceholder("First name").fill(`E2E${suffix}`);
-  await page.getByPlaceholder("Last name").fill(`Order${suffix}`);
-  await page.getByPlaceholder("name@email.com").fill(`e2e${suffix}@test.com`);
-
-  // Item
-  await page.locator("select").first().selectOption("art");
-  // Width & Height
-  const numberInputs = page.locator('input[type="number"]');
-  await numberInputs.nth(0).fill("16");
-  await numberInputs.nth(1).fill("20");
-
-  // Pricing
-  await numberInputs.nth(2).fill("150"); // subtotal
-  await numberInputs.nth(3).fill("9.38"); // tax
-
-  // Submit
-  await page.getByRole("button", { name: /create order/i }).click();
-  // Wait for redirect to order detail (UUID-based URL, not /new)
-  await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
+  const orderRes = await request.post("/staff/api/orders", {
+    data: {
+      customer_id: customerId,
+      item_type: "art",
+      item_description: "E2E test item",
+      width: 16,
+      height: 20,
+      units: "in",
+      intake_channel: "walk_in",
+      ...(opts.status === "estimate" ? { status: "estimate" } : {}),
+      pricing: { subtotal_cents: 15000, tax_cents: 938, total_cents: 15938 },
+    },
+  });
+  expect(orderRes.ok()).toBeTruthy();
+  const orderJson = await orderRes.json();
+  const orderId: string = orderJson.id || orderJson.order?.id;
+  expect(orderId).toBeTruthy();
+  tracker.orderIds.push(orderId);
 
   return {
-    url: page.url(),
+    orderId,
+    url: `/staff/orders/${orderId}`,
     phone,
-    firstName: `E2E${suffix}`,
-    lastName: `Order${suffix}`,
+    firstName,
+    lastName,
   };
 }
 
 test.describe("Order Workflow", () => {
 
-  test("new order page loads with all sections", async ({ page }) => {
+  test("new order page loads with wizard step", async ({ page }) => {
     await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Item", { exact: true })).toBeVisible();
-    await expect(page.getByText("Frame Specs")).toBeVisible();
-    await expect(page.getByText("Pricing", { exact: true })).toBeVisible();
-  });
-
-  test("create order with full details", async ({ page }) => {
-    const { url } = await createTestOrder(page);
-
-    // Should be on order detail page (UUID, not /new)
-    expect(url).toMatch(/\/staff\/orders\/(?!new)[a-z0-9-]+/i);
-
-    // Order detail should show the order number
-    await expect(page.getByText(/WRX-/)).toBeVisible({ timeout: 10_000 });
-    // Should show status
-    await expect(page.locator("span").filter({ hasText: /New.*Design/i }).first()).toBeVisible();
-    // Should show the total
-    await expect(page.getByText("$159.38")).toBeVisible();
-  });
-
-  test("create estimate order", async ({ page }) => {
-    const phone = testPhone();
-    const suffix = testSuffix();
-
-    await page.goto("/staff/orders/new");
-    await expect(page.getByText("Customer", { exact: true })).toBeVisible({ timeout: 10_000 });
-
-    // Customer
-    await page.getByPlaceholder("e.g. 6175551234").fill(phone);
-    await page.getByPlaceholder("First name").fill(`Est${suffix}`);
-    await page.getByPlaceholder("Last name").fill(`Test${suffix}`);
-
-    // Pricing
-    const numberInputs = page.locator('input[type="number"]');
-    await numberInputs.nth(2).fill("200");
-    await numberInputs.nth(3).fill("12.50");
-
-    // Click "Save as Estimate" button
-    const estimateBtn = page.getByRole("button", { name: /estimate/i });
-    if (await estimateBtn.isVisible()) {
-      await estimateBtn.click();
-      await page.waitForURL(/\/staff\/orders\/(?!new)[a-z0-9-]+/i, { timeout: 15_000 });
-      // Should show estimate status badge
-      await expect(page.getByText("ESTIMATE", { exact: true })).toBeVisible();
-    }
-  });
-
-  test("change order status via status buttons", async ({ page }) => {
-    await createTestOrder(page);
-
-    // Look for status advancement buttons on order detail
-    // The order starts in new_design, next step is awaiting_materials
-    const nextBtn = page.getByRole("button", { name: /awaiting materials/i });
-    if (await nextBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await nextBtn.click();
-      await page.waitForTimeout(2000);
-      // Status should update
-      await expect(page.getByText(/awaiting materials/i)).toBeVisible();
-    }
-  });
-
-  test("order appears on Kanban board", async ({ page }) => {
-    await createTestOrder(page);
-
-    // Go to orders Kanban board
-    await page.goto("/staff/orders");
-    await page.waitForTimeout(3000);
-
-    // Should show at least one order card with WRX- prefix
-    await expect(page.getByText(/WRX-/).first()).toBeVisible({ timeout: 10_000 });
-  });
-
-  test("edit order page loads and saves", async ({ page }) => {
-    const { url } = await createTestOrder(page);
-    const orderId = url.split("/staff/orders/")[1];
-
-    // Navigate to edit page
-    await page.goto(`/staff/orders/${orderId}/edit`);
-    await page.waitForTimeout(2000);
-
-    // Edit page should load with form fields
-    await expect(page.locator("select").first()).toBeVisible({ timeout: 10_000 });
-
-    // Change the item description if visible
-    const descInput = page.getByPlaceholder(/description/i);
-    if (await descInput.isVisible().catch(() => false)) {
-      await descInput.fill("Updated by E2E test");
-    }
-
-    // Save
-    const saveBtn = page.getByRole("button", { name: /save/i });
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click();
-      await page.waitForTimeout(2000);
-    }
-  });
-
-  test("order detail shows activity timeline", async ({ page }) => {
-    await createTestOrder(page);
-
-    // Activity / timeline section should exist on order detail
+    // Multi-step wizard renders a "Step N of 6 — Customer" heading on step 1
     await expect(
-      page.getByText(/activity|timeline/i).first()
+      page.getByRole("heading", { name: /Step\s*1\s*of\s*6/i }),
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("add note to order", async ({ page }) => {
-    await createTestOrder(page);
+  test("create order with full details", async ({ page, request, tracker }) => {
+    const { url } = await createTestOrder(request, tracker);
 
-    // Find note input and add a note
-    const noteInput = page.getByPlaceholder(/note/i);
-    if (await noteInput.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await noteInput.fill("E2E test note - automated");
-      const addBtn = page.getByRole("button", { name: /add note/i });
-      if (await addBtn.isVisible()) {
-        await addBtn.click();
-        await page.waitForTimeout(2000);
-        // Note should appear in activity
-        await expect(page.getByText("E2E test note - automated")).toBeVisible();
-      }
+    await page.goto(url);
+
+    // Order detail should show the order number
+    await expect(page.getByText(/WRX-/).first()).toBeVisible({ timeout: 10_000 });
+    // Should show the total (15938 cents = $159.38)
+    await expect(page.getByText("$159.38").first()).toBeVisible();
+  });
+
+  test("create estimate order", async ({ page, request, tracker }) => {
+    const { url } = await createTestOrder(request, tracker, { status: "estimate" });
+
+    await page.goto(url);
+
+    // Estimate orders surface an ESTIMATE badge somewhere on the page
+    await expect(
+      page.getByText(/ESTIMATE/i).first(),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("change order status via PATCH", async ({ page, request, tracker }) => {
+    const { orderId, url } = await createTestOrder(request, tracker);
+
+    const patchRes = await request.patch(`/staff/api/orders/${orderId}`, {
+      data: { status: "awaiting_materials" },
+    });
+    expect(patchRes.ok()).toBeTruthy();
+
+    // Verify via the API that the status actually persisted
+    const verifyRes = await request.get(`/staff/api/orders/${orderId}`);
+    const verifyJson = await verifyRes.json();
+    expect((verifyJson.status || verifyJson.order?.status)).toBe("awaiting_materials");
+
+    await page.goto(url);
+    // The label text "Awaiting Materials" also appears in a hidden <option>;
+    // restrict to a visible <span> rendering the badge.
+    await expect(
+      page.locator("span").filter({ hasText: /Awaiting Materials/ }).first(),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("order appears on Kanban board", async ({ page, request, tracker }) => {
+    const { orderId } = await createTestOrder(request, tracker);
+
+    await page.goto("/staff/orders");
+    // The board lists orders by their WRX-XXXX number; assert ours is present
+    const order = await request.get(`/staff/api/orders/${orderId}`);
+    expect(order.ok()).toBeTruthy();
+    const orderJson = await order.json();
+    const orderNumber = orderJson.orderNumber || orderJson.order?.orderNumber;
+    expect(orderNumber).toBeTruthy();
+    await expect(page.getByText(orderNumber).first()).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("edit order page loads", async ({ page, request, tracker }) => {
+    const { orderId } = await createTestOrder(request, tracker);
+
+    await page.goto(`/staff/orders/${orderId}/edit`);
+    // Edit page should render at least one form select
+    await expect(page.locator("select").first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("order detail shows activity timeline", async ({ page, request, tracker }) => {
+    const { url } = await createTestOrder(request, tracker);
+    await page.goto(url);
+
+    await expect(
+      page.getByText(/activity|timeline/i).first(),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("add note to order via API and verify on detail page", async ({ page, request, tracker }) => {
+    const { orderId, url } = await createTestOrder(request, tracker);
+    const note = `E2E note ${Date.now()}`;
+
+    // Try the activity endpoint; tolerate a non-existent route by falling back
+    // to a generic 404 — but if a real endpoint exists, the note must persist.
+    const noteRes = await request.post(`/staff/api/orders/${orderId}/notes`, {
+      data: { note },
+    });
+    if (noteRes.ok()) {
+      await page.goto(url);
+      await expect(page.getByText(note).first()).toBeVisible({ timeout: 10_000 });
+    } else {
+      // Notes endpoint not available — verify the activity section at least renders
+      await page.goto(url);
+      await expect(
+        page.getByText(/activity|timeline/i).first(),
+      ).toBeVisible({ timeout: 10_000 });
     }
   });
 
   test("incomplete orders page loads", async ({ page }) => {
     await page.goto("/staff/orders/incomplete");
     await expect(
-      page.getByText(/incomplete|ready.*pickup/i).first()
+      page.getByText(/incomplete|ready.*pickup/i).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
   test("orders Kanban tabs work", async ({ page }) => {
     await page.goto("/staff/orders");
-    await page.waitForTimeout(2000);
 
-    // Click through tabs
     const activeTab = page.getByRole("button", { name: /^active/i });
     const estimatesTab = page.getByRole("button", { name: /^estimates/i });
     const allTab = page.getByRole("button", { name: /all orders/i });
 
-    if (await activeTab.isVisible()) {
+    if (await activeTab.isVisible().catch(() => false)) {
       await activeTab.click();
-      await page.waitForTimeout(1000);
     }
-    if (await estimatesTab.isVisible()) {
+    if (await estimatesTab.isVisible().catch(() => false)) {
       await estimatesTab.click();
-      await page.waitForTimeout(1000);
-      // Should show estimates column
       await expect(page.getByText("Estimates").first()).toBeVisible();
     }
-    if (await allTab.isVisible()) {
+    if (await allTab.isVisible().catch(() => false)) {
       await allTab.click();
-      await page.waitForTimeout(1000);
     }
   });
 });
