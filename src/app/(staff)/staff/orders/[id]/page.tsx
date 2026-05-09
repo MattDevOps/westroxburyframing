@@ -201,6 +201,12 @@ export default function OrderDetailPage() {
   const orderHasOpenBalance =
     orderTotalPaid < (order.totalAmount || 0) &&
     order.squareInvoiceStatus?.toUpperCase() !== "PAID";
+  const hasPaidCheckPayment = (order.payments || []).some(
+    (p: any) =>
+      p.status === "paid" &&
+      p.processor === "manual" &&
+      p.rawMetadata?.method === "check",
+  );
 
   // Discount display helpers
   const discountType = order.discountType || "none";
@@ -1436,9 +1442,33 @@ export default function OrderDetailPage() {
                 }
               }}
             >
-              {markingCheck ? "Recording…" : "Mark Paid (Check)"}
+              {markingCheck ? "Recording…" : "Mark as paid by check"}
             </button>
             <span className="text-xs text-neutral-500">Records a manual check payment without going through the invoice link.</span>
+          </div>
+        )}
+
+        {!order.invoice && hasPaidCheckPayment && (
+          <div className="flex flex-wrap items-center gap-2 text-sm mt-3 pt-3 border-t border-neutral-200">
+            <button
+              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-600 hover:bg-neutral-50"
+              onClick={async () => {
+                if (!confirm("Reverse the check payment and mark this order unpaid?")) return;
+                try {
+                  const res = await fetch(`/staff/api/orders/${order.id}/mark-unpaid-check`, {
+                    method: "POST",
+                  });
+                  const raw = await res.text();
+                  let out: any = {};
+                  try { out = raw ? JSON.parse(raw) : {}; } catch { }
+                  if (!res.ok) { alert(out.error || raw || "Failed"); return; }
+                  await refresh();
+                } catch (e: any) { alert(e?.message || "Failed"); }
+              }}
+            >
+              Mark as unpaid
+            </button>
+            <span className="text-xs text-neutral-500">Voids the manual check payment.</span>
           </div>
         )}
 
