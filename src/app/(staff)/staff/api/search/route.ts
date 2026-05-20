@@ -17,8 +17,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ orders: [], customers: [], invoices: [], products: [] });
   }
 
+  // If the query looks like a price ("100", "$100", "100.50", "1,234.56"),
+  // build a range in cents so we can match totalAmount / retailPrice.
+  // - With a decimal point: exact cents match (e.g. "100.50" -> [10050, 10050])
+  // - Without a decimal: whole-dollar range (e.g. "100" -> [10000, 10099])
+  const priceRange = parsePriceToCentsRange(q);
+
   try {
-    // Search orders by order number, customer name, or item description
+    // Search orders by order number, customer name, item description, or total price
     const orders = await prisma.order.findMany({
       where: {
         OR: [
@@ -35,6 +41,9 @@ export async function GET(req: Request) {
               ],
             },
           },
+          ...(priceRange
+            ? [{ totalAmount: { gte: priceRange.min, lte: priceRange.max } }]
+            : []),
         ],
       },
       select: {
@@ -80,7 +89,7 @@ export async function GET(req: Request) {
       take: 20,
     });
 
-    // Search invoices by invoice number or customer
+    // Search invoices by invoice number, customer, or total price
     const invoices = await prisma.invoice.findMany({
       where: {
         OR: [
@@ -94,6 +103,9 @@ export async function GET(req: Request) {
               ],
             },
           },
+          ...(priceRange
+            ? [{ totalAmount: { gte: priceRange.min, lte: priceRange.max } }]
+            : []),
         ],
       },
       select: {
@@ -116,7 +128,7 @@ export async function GET(req: Request) {
       take: 20,
     });
 
-    // Search products by SKU, name, description, or barcode
+    // Search products by SKU, name, description, barcode, or retail price
     const products = await prisma.product.findMany({
       where: {
         OR: [
@@ -124,6 +136,9 @@ export async function GET(req: Request) {
           { name: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
           { barcode: { contains: q } },
+          ...(priceRange
+            ? [{ retailPrice: { gte: priceRange.min, lte: priceRange.max } }]
+            : []),
         ],
       },
       select: {
@@ -193,4 +208,20 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
+}
+
+function parsePriceToCentsRange(q: string): { min: number; max: number } | null {
+  const cleaned = q.replace(/[$,\s]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+
+  if (cleaned.includes(".")) {
+    const [dollars, fracRaw] = cleaned.split(".");
+    const frac = (fracRaw + "00").slice(0, 2);
+    const cents = Number(dollars) * 100 + Number(frac);
+    return { min: cents, max: cents };
+  }
+
+  const dollars = Number(cleaned);
+  if (!Number.isFinite(dollars)) return null;
+  return { min: dollars * 100, max: dollars * 100 + 99 };
 }
