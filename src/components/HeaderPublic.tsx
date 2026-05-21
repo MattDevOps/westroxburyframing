@@ -14,6 +14,7 @@ const navLinks = [
   { name: "Custom Framing", path: "/custom-framing" },
   { name: "Framed Art", path: "/framed-art" },
   { name: "Restoration", path: "/restoration" },
+  { name: "Gift Cards", path: "/gift-cards" },
   { name: "Testimonials", path: "/testimonials" },
   { name: "Contact Us", path: "/contact" },
 ];

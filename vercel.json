@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/customer-recall",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/gift-card-deliveries",
+      "schedule": "0 * * * *"
     }
   ]
 }

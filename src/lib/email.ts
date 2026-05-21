@@ -77,6 +77,12 @@ async function sendViaPostmark(params: {
   html?: string;
   replyTo?: string;
   cc?: string;
+  attachments?: Array<{
+    name: string;
+    content: string; // base64
+    contentType: string;
+    contentId?: string; // for inline images, e.g. "cid:certificate"
+  }>;
 }): Promise<{ ok: boolean; error?: string; messageId?: string }> {
   const apiKey =
     process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN;
@@ -85,7 +91,7 @@ async function sendViaPostmark(params: {
     return { ok: false, error: "Email not configured" };
   }
 
-  const body: Record<string, string | undefined> = {
+  const body: Record<string, unknown> = {
     From: params.from,
     To: params.to,
     Subject: params.subject,
@@ -94,6 +100,14 @@ async function sendViaPostmark(params: {
   };
   if (params.html) body.HtmlBody = params.html;
   if (params.cc) body.Cc = params.cc;
+  if (params.attachments && params.attachments.length > 0) {
+    body.Attachments = params.attachments.map((a) => ({
+      Name: a.name,
+      Content: a.content,
+      ContentType: a.contentType,
+      ...(a.contentId ? { ContentID: a.contentId } : {}),
+    }));
+  }
 
   const res = await fetch(POSTMARK_API, {
     method: "POST",
@@ -1116,6 +1130,163 @@ West Roxbury Framing`;
     `,
     cta: { label: "View & Print Invoice", url: params.invoiceUrl },
     footer: "Questions about this invoice? Reply to this email or call (617) 327-3890.",
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
+/* ─── Email: Gift Certificate to Recipient ───────────────────────── */
+
+export async function sendGiftCertificateToRecipient(params: {
+  to: string;
+  recipientName: string;
+  purchasedByName: string;
+  amount: string; // formatted, e.g. "$100.00"
+  certificateNumber: string;
+  redemptionCode: string;
+  message?: string | null;
+  pdfBase64: string;
+}) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const subject = `${params.purchasedByName} sent you a gift — West Roxbury Framing`;
+
+  const text = `Hi ${params.recipientName},
+
+${params.purchasedByName} sent you a ${params.amount} gift certificate to West Roxbury Framing!
+${params.message ? `\nA note from ${params.purchasedByName}:\n"${params.message}"\n` : ""}
+Your gift certificate is attached to this email as a PDF.
+
+Certificate Number: ${params.certificateNumber}
+Redemption Code: ${params.redemptionCode}
+Value: ${params.amount}
+
+How to use it:
+Bring the printed certificate (or the redemption code on your phone) to our shop, or mention the code when placing an order. We'll apply the credit to your purchase. Gift certificates do not expire.
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890
+${baseUrl}
+
+Enjoy!`;
+
+  const html = emailLayout({
+    preheader: `${params.purchasedByName} sent you a ${params.amount} gift certificate.`,
+    heading: "You've Received a Gift!",
+    body: `
+      <p>Hi ${params.recipientName},</p>
+      <p><strong>${params.purchasedByName}</strong> sent you a <strong>${params.amount}</strong> gift certificate to West Roxbury Framing!</p>
+      ${params.message ? `
+      <div style="background:#fffbe6;border-left:3px solid #b8860b;padding:16px;border-radius:0 6px 6px 0;margin:20px 0">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#737373;text-transform:uppercase;letter-spacing:0.5px">A note from ${params.purchasedByName}</p>
+        <p style="margin:0;font-size:15px;color:#1a1a1a;line-height:1.6;white-space:pre-wrap;font-style:italic">"${params.message}"</p>
+      </div>
+      ` : ""}
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e5e5e5;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:160px">Certificate Number</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600;font-family:Menlo,Consolas,monospace">${params.certificateNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Redemption Code</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600;font-family:Menlo,Consolas,monospace">${params.redemptionCode}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Value</td>
+              <td style="padding:6px 0;font-size:22px;color:#b8860b;font-weight:700">${params.amount}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+      <p style="font-size:14px;color:#404040">Your printable gift certificate is attached as a PDF. Bring it (or just the redemption code on your phone) to our shop, or mention the code when placing an order &mdash; we'll apply the credit to your purchase.</p>
+      <p style="font-size:13px;color:#737373">Gift certificates do not expire.</p>
+    `,
+    cta: { label: "Plan Your Visit", url: baseUrl },
+    footer: "Open year-round at 1741 Centre Street, West Roxbury &mdash; (617) 327-3890.",
+  });
+
+  const result = await sendViaPostmark({
+    to: params.to,
+    from: getFrom(),
+    subject,
+    text,
+    html,
+    attachments: [
+      {
+        name: `Gift-Certificate-${params.certificateNumber}.pdf`,
+        content: params.pdfBase64,
+        contentType: "application/pdf",
+      },
+    ],
+  });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
+/* ─── Email: Gift Certificate Purchase Confirmation (to buyer) ───── */
+
+export async function sendGiftCertificatePurchaseConfirmation(params: {
+  to: string;
+  purchasedByName: string;
+  recipientName: string;
+  recipientEmail: string;
+  amount: string;
+  certificateNumber: string;
+  deliverAt?: Date | null;
+}) {
+  const subject = `Your gift certificate purchase — ${params.amount}`;
+  const deliverNote = params.deliverAt
+    ? `It will be emailed to ${params.recipientEmail} on ${params.deliverAt.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}.`
+    : `It has been emailed to ${params.recipientEmail}.`;
+
+  const text = `Hi ${params.purchasedByName},
+
+Thank you for your purchase! We've issued a ${params.amount} gift certificate (${params.certificateNumber}) for ${params.recipientName}.
+
+${deliverNote}
+
+If anything looks wrong, just reply to this email and we'll fix it.
+
+West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const html = emailLayout({
+    preheader: `${params.amount} gift certificate purchased for ${params.recipientName}.`,
+    heading: "Thank You for Your Purchase",
+    body: `
+      <p>Hi ${params.purchasedByName},</p>
+      <p>Thank you! We've issued your gift certificate.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:140px">Certificate</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.certificateNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">For</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.recipientName}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373">Amount</td>
+              <td style="padding:6px 0;font-size:22px;color:#16a34a;font-weight:700">${params.amount}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+      <p style="font-size:14px;color:#404040">${deliverNote}</p>
+      <p style="font-size:13px;color:#737373">If anything looks wrong, just reply to this email and we'll fix it.</p>
+    `,
+    footer: "Thank you for choosing West Roxbury Framing!",
   });
 
   const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });

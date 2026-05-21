@@ -35,15 +35,15 @@ enum PaymentStatus {
 // ─── Multi-Site Support ───────────────────────────────────
 
 model Location {
-  id          String   @id @default(uuid())
-  name        String
-  code        String   @unique // e.g., "WRF", "BOS", "CAM"
-  address     String?
-  phone       String?
-  email       String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique // e.g., "WRF", "BOS", "CAM"
+  address   String?
+  phone     String?
+  email     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   orders         Order[]
   inventoryItems InventoryItem[]
@@ -52,17 +52,17 @@ model Location {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  role         String // "admin" | "staff"
-  passwordHash String
-  locationId   String? // null = admin (can access all), set = staff assigned to location
-  location     Location? @relation(fields: [locationId], references: [id])
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  role           String // "admin" | "staff"
+  passwordHash   String
+  locationId     String? // null = admin (can access all), set = staff assigned to location
+  location       Location? @relation(fields: [locationId], references: [id])
   /// Plain-text signature appended to outbound B2B outreach emails. Falls back
   /// to a hardcoded shop block if null.
   emailSignature String?
-  createdAt    DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   orders                 Order[]
   invoicesCreated        Invoice[]         @relation("InvoiceCreatedBy")
@@ -94,22 +94,22 @@ model Customer {
   marketingOptInAt DateTime?
   smsOptIn         Boolean   @default(false)
   smsOptInAt       DateTime?
-  photoUrl         String?   // Photo of artwork captured at kiosk (legacy single)
+  photoUrl         String? // Photo of artwork captured at kiosk (legacy single)
   photoUrls        Json      @default("[]") // Array of artwork photo URLs captured at kiosk
-  qboCustomerId   String?   // QuickBooks Online customer ID
+  qboCustomerId    String? // QuickBooks Online customer ID
   lastCheckedInAt  DateTime?
   checkInHistory   Json      @default("[]") // ISO timestamps of last 3 in-store kiosk check-ins, most recent first
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  orders           Order[]
-  invoices         Invoice[]
-  appointments     Appointment[]
-  tagAssignments   CustomerTagAssignment[]
-  giftCertificates GiftCertificate[]
-  products         Product[]
-  convertedFromLeads Lead[]                @relation("LeadConvertedCustomer")
-  recallSends      RecallCampaignSend[]
+  orders             Order[]
+  invoices           Invoice[]
+  appointments       Appointment[]
+  tagAssignments     CustomerTagAssignment[]
+  giftCertificates   GiftCertificate[]
+  products           Product[]
+  convertedFromLeads Lead[]                  @relation("LeadConvertedCustomer")
+  recallSends        RecallCampaignSend[]
 
   @@index([phone])
   @@index([email])
@@ -141,11 +141,11 @@ model CustomerTagAssignment {
 }
 
 model Order {
-  id          String   @id @default(uuid())
-  orderNumber String   @unique
+  id          String    @id @default(uuid())
+  orderNumber String    @unique
   customerId  String?
   customer    Customer? @relation(fields: [customerId], references: [id])
-  locationId  String?  // Optional initially for migration, will be required after data migration
+  locationId  String? // Optional initially for migration, will be required after data migration
   location    Location? @relation(fields: [locationId], references: [id])
 
   status          OrderStatus   @default(new_design)
@@ -165,7 +165,7 @@ model Order {
   discountValue  Decimal @default(0)
   taxAmount      Int
   totalAmount    Int
-  materialCost   Int      @default(0) // Actual cost of materials used (COGS) in cents
+  materialCost   Int     @default(0) // Actual cost of materials used (COGS) in cents
   currency       String  @default("USD")
   paidInFull     Boolean @default(true)
 
@@ -178,9 +178,9 @@ model Order {
   invoice   Invoice? @relation(fields: [invoiceId], references: [id])
 
   createdByUserId String
-  createdBy       User     @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdBy       User      @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   archivedAt      DateTime? // Auto-archived completed orders after 2 days (hidden from main view but visible in completed orders page)
 
   specs      OrderSpecs?
@@ -313,8 +313,8 @@ model OrderActivity {
 // ─── Phase 2A: Invoice Model ───────────────────────────────────
 
 model Invoice {
-  id            String   @id @default(uuid())
-  invoiceNumber String   @unique
+  id            String    @id @default(uuid())
+  invoiceNumber String    @unique
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])
 
@@ -335,9 +335,9 @@ model Invoice {
   squareInvoiceUrl String?
 
   // QuickBooks Online sync
-  qboInvoiceId   String?
-  qboSyncToken   String?
-  qboSyncedAt    DateTime?
+  qboInvoiceId String?
+  qboSyncToken String?
+  qboSyncedAt  DateTime?
 
   notes String?
 
@@ -483,8 +483,8 @@ model InventoryItem {
   id                String             @id @default(uuid())
   vendorItemId      String?
   vendorItem        VendorCatalogItem? @relation(fields: [vendorItemId], references: [id])
-  locationId        String?            // Optional initially for migration
-  location          Location?           @relation(fields: [locationId], references: [id])
+  locationId        String? // Optional initially for migration
+  location          Location?          @relation(fields: [locationId], references: [id])
   sku               String             @unique
   name              String
   category          String // moulding, matboard, glass, hardware, etc.
@@ -527,7 +527,7 @@ model PurchaseOrder {
   poNumber        String    @unique
   vendorId        String
   vendor          Vendor    @relation(fields: [vendorId], references: [id])
-  locationId      String?   // null = combined PO for multiple locations
+  locationId      String? // null = combined PO for multiple locations
   location        Location? @relation(fields: [locationId], references: [id])
   status          String    @default("draft") // draft, sent, partial, received, cancelled
   totalAmount     Int       @default(0) // cents
@@ -571,26 +571,41 @@ model PurchaseOrderLine {
 model GiftCertificate {
   id                 String    @id @default(uuid())
   certificateNumber  String    @unique // Human-readable number (e.g., GC-2026-001)
+  redemptionCode     String?   @unique // Random alphanumeric code shown on customer-facing certs
   amount             Int // cents
   balance            Int // cents (remaining balance)
   issuedToCustomerId String?
   issuedToCustomer   Customer? @relation(fields: [issuedToCustomerId], references: [id])
-  issuedByUserId     String
-  issuedBy           User      @relation(fields: [issuedByUserId], references: [id])
+  issuedByUserId     String?
+  issuedBy           User?     @relation(fields: [issuedByUserId], references: [id])
   issuedAt           DateTime  @default(now())
   expiresAt          DateTime?
   redeemedAt         DateTime?
   redeemedOnOrderId  String?
   redeemedOnOrder    Order?    @relation(fields: [redeemedOnOrderId], references: [id])
   notes              String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  vendor             Vendor?   @relation(fields: [vendorId], references: [id])
-  vendorId           String?
+
+  // Online purchase fields
+  source           String? // "online" | "staff"
+  purchasedByName  String?
+  purchasedByEmail String?
+  recipientName    String?
+  recipientEmail   String?
+  recipientMessage String?
+  deliverAt        DateTime? // null = send immediately on purchase
+  deliveredAt      DateTime?
+  squarePaymentId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id])
+  vendorId  String?
 
   @@index([certificateNumber])
+  @@index([redemptionCode])
   @@index([issuedToCustomerId])
   @@index([redeemedOnOrderId])
+  @@index([deliverAt, deliveredAt])
 }
 
 // ─── Phase 7: In-house Messaging ───────────────────────────────────
@@ -698,9 +713,9 @@ model Lead {
   source   String? // "IIDA Boston", "Houzz", manual entry, etc.
 
   // Internal
-  notes              String?
-  assignedToUserId   String?
-  assignedTo         User?   @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
+  notes            String?
+  assignedToUserId String?
+  assignedTo       User?   @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
 
   // First outreach
   emailSubject String?
@@ -724,11 +739,11 @@ model Lead {
 
   // Pending draft awaiting human review (review-before-send queue).
   // Set by bulk-send and the cron followup; cleared on approve (send) or discard.
-  draftSubject    String?
-  draftBody       String?   @db.Text
-  draftMode       String?   // "first_touch" | "followup"
-  draftSource     String?   // "bulk-send" | "cron-followup" | "manual"
-  draftCreatedAt  DateTime?
+  draftSubject   String?
+  draftBody      String?   @db.Text
+  draftMode      String? // "first_touch" | "followup"
+  draftSource    String? // "bulk-send" | "cron-followup" | "manual"
+  draftCreatedAt DateTime?
 
   // Conversion
   convertedCustomerId String?
@@ -763,7 +778,7 @@ model LeadEmail {
 
   direction LeadEmailDirection
   subject   String
-  body      String  @db.Text
+  body      String             @db.Text
 
   fromAddr String?
   toAddr   String?
@@ -781,9 +796,9 @@ model LeadEmail {
   // Auto-classification of inbound replies
   /// "positive" | "soft_pass" | "hard_pass" | "unsubscribe" | "ambiguous"
   /// (Legacy values "negative", "neutral", "needs_followup" still appear in older rows.)
-  classification    String?
+  classification  String?
   /// One-line next-action suggestion from Claude — surfaced in the thread view.
-  suggestedAction   String?
+  suggestedAction String?
 
   createdAt DateTime @default(now())
 
@@ -800,8 +815,8 @@ model LeadEmail {
 // anything actually goes to Postmark.
 
 model RecallCampaign {
-  id          String   @id @default(uuid())
-  slug        String   @unique
+  id          String  @id @default(uuid())
+  slug        String  @unique
   name        String
   description String?
 
@@ -825,13 +840,13 @@ model RecallCampaign {
 
   /// Email template. Supports {{firstName}}, {{lastName}}, {{shopName}}, {{shopPhone}}, {{shopUrl}}.
   subject  String
-  bodyHtml String @db.Text
+  bodyHtml String  @db.Text
   bodyText String? @db.Text
 
-  enabled    Boolean   @default(false)
-  lastRunAt  DateTime?
+  enabled   Boolean   @default(false)
+  lastRunAt DateTime?
   /// Max sends drafted per cron run as a safety throttle.
-  perRunCap  Int       @default(50)
+  perRunCap Int       @default(50)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

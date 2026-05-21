@@ -21,6 +21,11 @@ export async function GET(req: Request) {
   if (q) {
     searchConditions.push(
       { certificateNumber: { contains: q, mode: "insensitive" } },
+      { redemptionCode: { contains: q, mode: "insensitive" } },
+      { recipientName: { contains: q, mode: "insensitive" } },
+      { recipientEmail: { contains: q, mode: "insensitive" } },
+      { purchasedByName: { contains: q, mode: "insensitive" } },
+      { purchasedByEmail: { contains: q, mode: "insensitive" } },
       {
         issuedToCustomer: {
           OR: [
