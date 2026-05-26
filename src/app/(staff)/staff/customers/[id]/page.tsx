@@ -67,8 +67,13 @@ export default function CustomerDetailPage({
       const res = await fetch(`/staff/api/customers/${id}/notify-pickup`, {
         method: "POST",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      if (!res.ok) {
+        const msg = data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
       setMsg(`Pickup SMS sent to ${customer.phone}`);
     } catch (e: any) {
       setErr(e?.message || "Failed to send pickup SMS");

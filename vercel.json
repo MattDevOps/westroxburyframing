@@ -9,6 +9,10 @@
       "schedule": "0 3 * * *"
     },
     {
+      "path": "/api/cron/full-backup",
+      "schedule": "30 3 * * *"
+    },
+    {
       "path": "/api/cron/lead-followups",
       "schedule": "0 13 * * *"
     },

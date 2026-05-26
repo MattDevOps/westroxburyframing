@@ -137,8 +137,13 @@ export default function CustomersPage() {
         credentials: "same-origin",
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      if (!res.ok) {
+        const msg = data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
 
       const sentAt = new Date().toISOString();
       setRows((prev) =>
@@ -418,8 +423,13 @@ export default function CustomersPage() {
         method: "POST",
         credentials: "same-origin",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      if (!res.ok) {
+        const msg = data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
       const sentAt = new Date().toISOString();
       setRows((prev) =>
         prev.map((r) =>
@@ -456,8 +466,13 @@ export default function CustomersPage() {
         method: "POST",
         credentials: "same-origin",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to send");
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      if (!res.ok) {
+        const msg = data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
       const sentAt = new Date().toISOString();
       setRows((prev) =>
         prev.map((r) =>

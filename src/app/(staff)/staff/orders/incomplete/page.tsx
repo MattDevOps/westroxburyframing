@@ -167,12 +167,14 @@ export default function IncompleteOrdersPage() {
       const res = await fetch(`/staff/api/orders/${orderId}/pickup-reminder`, {
         method: "POST",
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
       if (res.ok) {
         const sent: string[] = [];
-        if (data.email) sent.push(`Email to ${data.email}`);
-        if (data.sms) sent.push(`SMS to ${data.sms}`);
-        if (data.errors && data.errors.length > 0) {
+        if (data?.email) sent.push(`Email to ${data.email}`);
+        if (data?.sms) sent.push(`SMS to ${data.sms}`);
+        if (data?.errors && data.errors.length > 0) {
           setMsg(`${sent.length > 0 ? sent.join(" and ") + ". " : ""}Errors: ${data.errors.join(", ")}`);
         } else if (sent.length > 0) {
           setMsg(`Pickup reminder sent: ${sent.join(" and ")}`);
@@ -180,16 +182,17 @@ export default function IncompleteOrdersPage() {
           setMsg("Pickup reminder sent!");
         }
       } else {
-        const errorMsg = data.error || "Unknown error";
+        const errorMsg =
+          data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
         // Show user-friendly error message
         if (errorMsg.includes("pending approval")) {
           alert("Email account is pending approval. Can only send to same domain addresses. SMS may still work if configured.");
         } else {
-          alert(`Failed to send reminder: ${errorMsg}`);
+          alert(`Failed to send reminder: [${res.status}] ${errorMsg}`);
         }
       }
-    } catch {
-      alert("Failed to send reminder");
+    } catch (e: any) {
+      alert(`Failed to send reminder: ${e?.message || "unknown error"}`);
     } finally {
       setSendingReminder(null);
     }
