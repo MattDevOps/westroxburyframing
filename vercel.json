@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/gift-card-deliveries",
-      "schedule": "0 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }
