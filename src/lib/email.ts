@@ -145,6 +145,43 @@ async function sendViaPostmark(params: {
   } catch {
     // ignore — body not JSON
   }
+
+  // Verify the message was actually accepted into the Postmark queue, not silently
+  // dropped (happens when an account is pending approval / trial-limited — the
+  // send-email API returns success + a phantom MessageID, but a follow-up lookup
+  // returns ErrorCode 701 "Message not found"). Skip when explicitly disabled.
+  if (messageId && process.env.POSTMARK_VERIFY_DELIVERY !== "false") {
+    // Postmark needs a moment to index; ~1.5s catches normal cases without
+    // making sends feel sluggish. Short enough to keep UX OK, long enough to
+    // distinguish real ingestion from a silent drop.
+    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const check = await fetch(
+        `https://api.postmarkapp.com/messages/outbound/${messageId}/details`,
+        { headers: { Accept: "application/json", "X-Postmark-Server-Token": apiKey } }
+      );
+      if (check.status === 422) {
+        const j: any = await check.json().catch(() => ({}));
+        if (j?.ErrorCode === 701) {
+          console.error(
+            "Postmark accepted but did not store message — account likely in approval-pending or trial-limit state. MessageID:",
+            messageId
+          );
+          return {
+            ok: false,
+            error:
+              "Postmark accepted the send but did not deliver it (likely account approval-pending or trial-limit). Check Postmark dashboard.",
+          };
+        }
+      }
+    } catch (verifyErr) {
+      // Verification call itself failed — don't punish the send for our check
+      // failing. Log and treat send as successful since Postmark's POST already
+      // returned 200.
+      console.warn("Postmark delivery verification check failed (non-fatal):", verifyErr);
+    }
+  }
+
   return { ok: true, messageId };
 }
 

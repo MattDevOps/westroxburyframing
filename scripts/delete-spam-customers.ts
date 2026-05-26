@@ -9,7 +9,12 @@ const TARGETS = [
   { firstName: "cICzThHTrlktAmnPHUyfpIU", lastName: "jeNwUkNKQINrRtvSWHAj" },
   { firstName: "VXBWKIBaRPdOHHzhjnkfmxiu", lastName: "lIYnZDWetradtZyJFCmqmS" },
 ];
-const EMAIL_TARGETS = ["ufarigo.d.ud.u.62@gmail.com"];
+const EMAIL_TARGETS = [
+  "ufarigo.d.ud.u.62@gmail.com",
+  "ef.ob.e.gol.03.7@gmail.com",
+  "ag.esuh.a.ne.v.i0.71@gmail.com",
+  "ze.ji.fim.o8.9.9@gmail.com",
+];
 
 async function main() {
   const apply = process.argv.includes("--apply");
