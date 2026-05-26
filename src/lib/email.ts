@@ -1,4 +1,5 @@
 const POSTMARK_API = "https://api.postmarkapp.com/email";
+const RESEND_API = "https://api.resend.com/emails";
 
 /* ─── Shared HTML layout ─────────────────────────────────────────── */
 
@@ -67,9 +68,9 @@ ${opts.preheader ? `<span style="display:none;max-height:0;overflow:hidden">${op
 </html>`;
 }
 
-/* ─── Postmark transport ─────────────────────────────────────────── */
+/* ─── Resend transport (failover when Postmark fails) ─────────────── */
 
-async function sendViaPostmark(params: {
+type SendParams = {
   to: string;
   from: string;
   subject: string;
@@ -79,16 +80,80 @@ async function sendViaPostmark(params: {
   cc?: string;
   attachments?: Array<{
     name: string;
-    content: string; // base64
+    content: string;
     contentType: string;
-    contentId?: string; // for inline images, e.g. "cid:certificate"
+    contentId?: string;
   }>;
-}): Promise<{ ok: boolean; error?: string; messageId?: string }> {
+};
+
+async function sendViaResend(
+  params: SendParams
+): Promise<{ ok: boolean; error?: string; messageId?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { ok: false, error: "Resend not configured (RESEND_API_KEY missing)" };
+  }
+
+  const body: Record<string, unknown> = {
+    from: process.env.RESEND_FROM || params.from,
+    to: [params.to],
+    subject: params.subject,
+    text: params.text,
+  };
+  if (params.html) body.html = params.html;
+  if (params.replyTo) body.reply_to = params.replyTo;
+  if (params.cc) body.cc = params.cc.split(",").map((s) => s.trim());
+  if (params.attachments && params.attachments.length > 0) {
+    body.attachments = params.attachments.map((a) => ({
+      filename: a.name,
+      content: a.content,
+      content_type: a.contentType,
+      ...(a.contentId ? { content_id: a.contentId } : {}),
+    }));
+  }
+
+  try {
+    const res = await fetch(RESEND_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let msg = text || `HTTP ${res.status}`;
+      try {
+        const j = JSON.parse(text);
+        if (j?.message) msg = j.message;
+      } catch {}
+      console.error("Resend send failed:", res.status, msg);
+      return { ok: false, error: msg };
+    }
+    let messageId: string | undefined;
+    try {
+      const j = JSON.parse(text);
+      if (j && typeof j.id === "string") messageId = j.id;
+    } catch {}
+    return { ok: true, messageId };
+  } catch (err: any) {
+    console.error("Resend transport error:", err);
+    return { ok: false, error: err?.message || "Resend transport error" };
+  }
+}
+
+/* ─── Postmark transport (primary, with Resend failover) ──────────── */
+
+async function sendViaPostmark(
+  params: SendParams
+): Promise<{ ok: boolean; error?: string; messageId?: string; via?: "postmark" | "resend" }> {
   const apiKey =
     process.env.EMAIL_PROVIDER_API_KEY || process.env.POSTMARK_SERVER_API_TOKEN;
   if (!apiKey) {
-    console.warn("EMAIL: No API key configured. Set EMAIL_PROVIDER_API_KEY or POSTMARK_SERVER_API_TOKEN.");
-    return { ok: false, error: "Email not configured" };
+    console.warn("EMAIL: No Postmark API key configured. Falling back to Resend if configured.");
+    const r = await sendViaResend(params);
+    return { ...r, via: "resend" };
   }
 
   const body: Record<string, unknown> = {
@@ -135,7 +200,13 @@ async function sendViaPostmark(params: {
     }
     
     console.error("Postmark send failed:", res.status, errorMessage);
-    return { ok: false, error: errorMessage };
+    // Postmark rejected the send — try Resend if configured.
+    const r = await sendViaResend(params);
+    if (r.ok) {
+      console.log("Resend failover succeeded after Postmark rejection. messageId:", r.messageId);
+      return { ...r, via: "resend" };
+    }
+    return { ok: false, error: errorMessage, via: "postmark" };
   }
   // Try to capture MessageID for inbound matching
   let messageId: string | undefined;
@@ -165,12 +236,20 @@ async function sendViaPostmark(params: {
         if (j?.ErrorCode === 701) {
           console.error(
             "Postmark accepted but did not store message — account likely in approval-pending or trial-limit state. MessageID:",
-            messageId
+            messageId,
+            "— attempting Resend failover."
           );
+          const r = await sendViaResend(params);
+          if (r.ok) {
+            console.log("Resend failover succeeded after Postmark silent-drop. messageId:", r.messageId);
+            return { ...r, via: "resend" };
+          }
           return {
             ok: false,
             error:
-              "Postmark accepted the send but did not deliver it (likely account approval-pending or trial-limit). Check Postmark dashboard.",
+              "Postmark accepted the send but did not deliver it (likely account approval-pending or trial-limit), and Resend failover is not configured or also failed: " +
+              (r.error || ""),
+            via: "postmark",
           };
         }
       }
@@ -182,7 +261,7 @@ async function sendViaPostmark(params: {
     }
   }
 
-  return { ok: true, messageId };
+  return { ok: true, messageId, via: "postmark" };
 }
 
 function getFrom(): string {
