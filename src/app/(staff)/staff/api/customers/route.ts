@@ -117,7 +117,6 @@ export async function GET(req: Request) {
     const customers = await prisma.customer.findMany({
       where: Object.keys(where).length > 0 ? where : {},
       orderBy: { createdAt: "desc" },
-      take: 200,
       include: includeOptions,
     });
 
@@ -157,7 +156,6 @@ export async function GET(req: Request) {
         const customers = await prisma.customer.findMany({
           where: Object.keys(where).length > 0 ? where : {},
           orderBy: { createdAt: "desc" },
-          take: 200,
           include: {
             _count: { select: { orders: true } },
           },
