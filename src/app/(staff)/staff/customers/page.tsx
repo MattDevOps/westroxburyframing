@@ -77,6 +77,7 @@ export default function CustomersPage() {
   // Pickup SMS state
   const [sendingPickupId, setSendingPickupId] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const [checkingInId, setCheckingInId] = useState<string | null>(null);
   const [pickupFlash, setPickupFlash] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
 
@@ -491,6 +492,39 @@ export default function CustomersPage() {
       setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
     } finally {
       setSendingEmailId(null);
+    }
+  }
+
+  async function checkIn(customer: Customer) {
+    const name = `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "this customer";
+    setCheckingInId(customer.id);
+    setPickupFlash(null);
+    try {
+      const res = await fetch(`/staff/api/customers/${customer.id}/check-in`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const raw = await res.text();
+      let data: any = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      if (!res.ok) {
+        const msg = data?.error || (raw?.slice?.(0, 300) || "") || `Request failed (${res.status})`;
+        throw new Error(`[${res.status}] ${msg}`);
+      }
+      const checkedInAt: string = data?.lastCheckedInAt || new Date().toISOString();
+      const history: string[] = Array.isArray(data?.checkInHistory) ? data.checkInHistory : [checkedInAt];
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === customer.id
+            ? { ...r, lastCheckedInAt: checkedInAt, checkInHistory: history }
+            : r
+        )
+      );
+      setPickupFlash({ kind: "ok", text: `Checked in ${name} at ${new Date(checkedInAt).toLocaleString()}` });
+    } catch (e: any) {
+      setPickupFlash({ kind: "err", text: `Failed: ${e?.message || "unknown error"}` });
+    } finally {
+      setCheckingInId(null);
     }
   }
 
@@ -1108,7 +1142,7 @@ export default function CustomersPage() {
                 <div className="col-span-1 text-neutral-600">
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
                 </div>
-                <div className="col-span-1 text-neutral-600 text-xs">
+                <div className="col-span-1 text-neutral-600 text-xs flex items-center gap-2">
                   {c.lastCheckedInAt ? (
                     <span
                       title={
@@ -1125,6 +1159,18 @@ export default function CustomersPage() {
                   ) : (
                     <span className="text-neutral-400">Never</span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      checkIn(c);
+                    }}
+                    disabled={checkingInId === c.id}
+                    className="rounded-md border border-emerald-400 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[11px] font-medium hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                    title="Check in this customer now"
+                  >
+                    {checkingInId === c.id ? "…" : "Check in"}
+                  </button>
                 </div>
                 <div className="col-span-1 text-neutral-600 text-xs">
                   {(() => {
