@@ -49,7 +49,6 @@ export async function GET(req: Request) {
         },
       },
     },
-    take: 200,
   });
 
   return NextResponse.json({

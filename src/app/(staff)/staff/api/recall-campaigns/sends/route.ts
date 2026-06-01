@@ -21,7 +21,6 @@ export async function GET(req: Request) {
   const sends = await prisma.recallCampaignSend.findMany({
     where,
     orderBy: { draftedAt: "desc" },
-    take: 200,
     include: {
       campaign: { select: { id: true, name: true, slug: true } },
       customer: {
