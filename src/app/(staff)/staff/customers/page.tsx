@@ -1142,7 +1142,7 @@ export default function CustomersPage() {
                 <div className="col-span-1 text-neutral-600">
                   {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
                 </div>
-                <div className="col-span-1 text-neutral-600 text-xs flex items-center gap-2">
+                <div className="col-span-1 text-neutral-600 text-xs flex flex-col items-start gap-1">
                   {c.lastCheckedInAt ? (
                     <span
                       title={
@@ -1166,7 +1166,7 @@ export default function CustomersPage() {
                       checkIn(c);
                     }}
                     disabled={checkingInId === c.id}
-                    className="rounded-md border border-emerald-400 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[11px] font-medium hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                    className="rounded border border-emerald-400 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
                     title="Check in this customer now"
                   >
                     {checkingInId === c.id ? "…" : "Check in"}
