@@ -1,19 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
-const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
-
-function hashPassword(pw, secret) {
-  return crypto.createHash("sha256").update(pw + secret).digest("hex");
-}
 
 async function main() {
   const email = (process.env.STAFF_SEED_ADMIN_EMAIL || "").toLowerCase();
   const password = process.env.STAFF_SEED_ADMIN_PASSWORD || "";
-  const secret = process.env.AUTH_SECRET || "";
 
-  if (!email || !password || password.length < 8 || !secret) {
-    throw new Error("Set STAFF_SEED_ADMIN_EMAIL, STAFF_SEED_ADMIN_PASSWORD (>=8 chars), AUTH_SECRET");
+  if (!email || !password || password.length < 8) {
+    throw new Error("Set STAFF_SEED_ADMIN_EMAIL, STAFF_SEED_ADMIN_PASSWORD (>=8 chars)");
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -27,7 +22,7 @@ async function main() {
       name: "Admin",
       email,
       role: "admin",
-      passwordHash: hashPassword(password, secret),
+      passwordHash: await bcrypt.hash(password, 12),
     },
   });
 

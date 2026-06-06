@@ -1411,3 +1411,77 @@ West Roxbury Framing
   }
   return result;
 }
+
+/* ─── Email: Customer Password Reset ──────────────────────────────── */
+
+export async function sendCustomerPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}) {
+  const subject = "Reset your West Roxbury Framing password";
+
+  const text = `Hi ${params.name},
+
+We received a request to reset the password for your West Roxbury Framing account.
+
+Reset your password using this link (expires in 1 hour):
+${params.resetUrl}
+
+If you didn't request this, you can safely ignore this email — your password will stay the same.`;
+
+  const html = emailLayout({
+    preheader: "Reset your West Roxbury Framing password. This link expires in 1 hour.",
+    heading: "Reset Your Password",
+    body: `
+      <p>Hi ${params.name},</p>
+      <p>We received a request to reset the password for your West Roxbury Framing account. Click the button below to choose a new password.</p>
+      <p style="font-size:13px;color:#737373">This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email — your password won't change.</p>
+    `,
+    cta: { label: "Reset Password", url: params.resetUrl },
+    footer: "If the button doesn't work, copy and paste this link into your browser:<br>" + params.resetUrl,
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}
+
+/* ─── Email: Staff Password Reset ─────────────────────────────────── */
+
+export async function sendStaffPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}) {
+  const subject = "Reset your West Roxbury Framing staff password";
+
+  const text = `Hi ${params.name},
+
+We received a request to reset the password for your West Roxbury Framing staff account.
+
+Reset your password using this link (expires in 1 hour):
+${params.resetUrl}
+
+If you didn't request this, you can safely ignore this email — your password will stay the same.`;
+
+  const html = emailLayout({
+    preheader: "Reset your West Roxbury Framing staff password. This link expires in 1 hour.",
+    heading: "Reset Your Password",
+    body: `
+      <p>Hi ${params.name},</p>
+      <p>We received a request to reset the password for your West Roxbury Framing staff account. Click the button below to choose a new password.</p>
+      <p style="font-size:13px;color:#737373">This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email — your password won't change.</p>
+    `,
+    cta: { label: "Reset Password", url: params.resetUrl },
+    footer: "If the button doesn't work, copy and paste this link into your browser:<br>" + params.resetUrl,
+  });
+
+  const result = await sendViaPostmark({ to: params.to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.log("EMAIL OUT (no API key, logged only)", { to: params.to, subject, text });
+  }
+  return result;
+}

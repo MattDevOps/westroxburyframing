@@ -30,6 +30,9 @@ export default function StaffLogin() {
         <input className="w-full rounded-xl border p-3" placeholder="Password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} />
         {err && <div className="text-sm text-red-600">{err}</div>}
         <button className="w-full rounded-xl bg-black px-5 py-3 text-white">Sign in</button>
+        <a className="block text-center text-sm text-blue-600 underline" href="/staff/forgot-password">
+          Forgot password?
+        </a>
       </form>
     </div>
   );

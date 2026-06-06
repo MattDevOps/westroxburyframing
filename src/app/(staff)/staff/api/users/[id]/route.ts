@@ -49,7 +49,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         data.locationId = body.locationId || null;
     }
     if (body.password && body.password.length >= 6) {
-        data.passwordHash = hashPassword(body.password);
+        data.passwordHash = await hashPassword(body.password);
     }
 
     const user = await prisma.user.update({
