@@ -1,21 +1,16 @@
 const { PrismaClient } = require("@prisma/client");
-const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
-
-function hashPassword(pw, secret) {
-  return crypto.createHash("sha256").update(pw + secret).digest("hex");
-}
 
 async function main() {
   const name = process.env.USER_NAME || "";
   const email = (process.env.USER_EMAIL || "").toLowerCase();
   const password = process.env.USER_PASSWORD || "";
   const role = process.env.USER_ROLE || "staff"; // "admin" or "staff"
-  const secret = process.env.AUTH_SECRET || "";
 
-  if (!name || !email || !password || password.length < 6 || !secret) {
-    throw new Error("Set USER_NAME, USER_EMAIL, USER_PASSWORD (>=6 chars), AUTH_SECRET. Optionally set USER_ROLE (admin or staff, default: staff)");
+  if (!name || !email || !password || password.length < 6) {
+    throw new Error("Set USER_NAME, USER_EMAIL, USER_PASSWORD (>=6 chars). Optionally set USER_ROLE (admin or staff, default: staff)");
   }
 
   if (role !== "admin" && role !== "staff") {
@@ -33,7 +28,7 @@ async function main() {
       name,
       email,
       role,
-      passwordHash: hashPassword(password, secret),
+      passwordHash: await bcrypt.hash(password, 12),
       locationId: role === "admin" ? null : undefined, // Staff users need location, but we'll let them set it via UI
     },
   });

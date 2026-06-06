@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { COOKIE_NAME, hashPassword, signStaffCookie } from "@/lib/auth";
+import { COOKIE_NAME, hashPassword, verifyPassword, isLegacyHash, signStaffCookie } from "@/lib/auth";
 import { normalizeEmail } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -27,8 +27,16 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
-  const hash = hashPassword(password);
-  if (hash !== user.passwordHash) return NextResponse.json({ ok: false }, { status: 401 });
+  const valid = await verifyPassword(password, user.passwordHash);
+  if (!valid) return NextResponse.json({ ok: false }, { status: 401 });
+
+  // Transparently upgrade legacy SHA256 hashes to bcrypt on successful login.
+  if (isLegacyHash(user.passwordHash)) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: await hashPassword(password) },
+    });
+  }
 
   const res = NextResponse.json({
     ok: true,

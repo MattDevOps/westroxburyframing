@@ -9,8 +9,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect staff pages (but allow the login page)
-  if (pathname.startsWith("/staff") && pathname !== "/staff/login") {
+  // Protect staff pages (but allow the login and password-reset pages)
+  const publicStaffPages = ["/staff/login", "/staff/forgot-password", "/staff/reset-password"];
+  if (pathname.startsWith("/staff") && !publicStaffPages.includes(pathname)) {
     const cookie = request.cookies.get("wrx_staff")?.value;
     if (!cookie) {
       const url = request.nextUrl.clone();

@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       data: {
         firstName: firstName || existing.firstName,
         lastName: lastName || existing.lastName,
-        passwordHash: hashCustomerPassword(password),
+        passwordHash: await hashCustomerPassword(password),
       },
     });
 
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       firstName,
       lastName,
       email: rawEmail,
-      passwordHash: hashCustomerPassword(password),
+      passwordHash: await hashCustomerPassword(password),
       preferredContact: "email",
       marketingOptIn: Boolean(body.marketingOptIn),
       marketingOptInAt: body.marketingOptIn ? new Date() : null,

@@ -88,7 +88,7 @@ export async function POST(req: Request) {
         data: {
             name,
             email,
-            passwordHash: hashPassword(password),
+            passwordHash: await hashPassword(password),
             role,
             locationId: role === "admin" || role === "receptionist" ? null : locationId, // Admin/Receptionist = null, Staff = assigned location
         },

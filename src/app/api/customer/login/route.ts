@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { CUSTOMER_COOKIE_NAME, hashCustomerPassword, signCustomerCookie } from "@/lib/customerAuth";
+import { CUSTOMER_COOKIE_NAME, hashCustomerPassword, verifyCustomerPassword, isLegacyHash, signCustomerCookie } from "@/lib/customerAuth";
 import { normalizeEmail } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -31,9 +31,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid email or password." }, { status: 401 });
   }
 
-  const hash = hashCustomerPassword(password);
-  if (hash !== customer.passwordHash) {
+  const valid = await verifyCustomerPassword(password, customer.passwordHash);
+  if (!valid) {
     return NextResponse.json({ ok: false, error: "Invalid email or password." }, { status: 401 });
+  }
+
+  // Transparently upgrade legacy SHA256 hashes to bcrypt on successful login.
+  if (isLegacyHash(customer.passwordHash)) {
+    await prisma.customer.update({
+      where: { id: customer.id },
+      data: { passwordHash: await hashCustomerPassword(password) },
+    });
   }
 
   const res = NextResponse.json({

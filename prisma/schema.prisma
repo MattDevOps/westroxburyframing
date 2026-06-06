@@ -57,6 +57,8 @@ model User {
   email          String    @unique
   role           String // "admin" | "staff"
   passwordHash   String
+  resetTokenHash      String?   // SHA256 of the active password-reset token, null when none outstanding
+  resetTokenExpiresAt DateTime? // expiry for the active reset token
   locationId     String? // null = admin (can access all), set = staff assigned to location
   location       Location? @relation(fields: [locationId], references: [id])
   /// Plain-text signature appended to outbound B2B outreach emails. Falls back
@@ -83,6 +85,8 @@ model Customer {
   phone            String?   @unique
   email            String?   @unique
   passwordHash     String? // null = staff-created (no login), set = customer account
+  resetTokenHash      String?   // SHA256 of the active password-reset token, null when none outstanding
+  resetTokenExpiresAt DateTime? // expiry for the active reset token
   organization     String?
   addressLine1     String?
   addressLine2     String?
