@@ -226,8 +226,6 @@ export default function StaffTopbar() {
                   ? [
                       { href: "/staff/welcome", label: "Welcome" },
                       { href: "/staff/customer-form", label: "Customer Form" },
-                      { href: "/staff/orders/intake", label: "New Order" },
-                      { href: "/staff/orders/new", label: "Quick Order", highlight: "blue" as const },
                     ]
                   : STAFF_NAV;
                 return navItems.map((link) => (
