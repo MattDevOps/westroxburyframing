@@ -11,6 +11,22 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        // /instant-quote feature removed; we only quote in store
+        source: "/instant-quote",
+        destination: "/book",
+        permanent: true,
+      },
+      {
+        // Legacy standalone Calendly embed; /book is the canonical booking page
+        source: "/appointment",
+        destination: "/book",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
