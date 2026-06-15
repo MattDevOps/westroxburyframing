@@ -1,5 +1,24 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import { sendTestimonialsDownAlert } from "@/lib/email";
+
+// Throttle the staff alert. This route runs on many page loads and a failing
+// Google call (e.g. REQUEST_DENIED) returns HTTP 200, so the failure can recur
+// often. Alert at most once per window per server instance, and only in
+// production (dev surfaces the reason via the `debug` field instead).
+const ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
+let lastAlertAt = 0;
+
+function alertReviewsDown(status: string, detail: string) {
+  if (process.env.NODE_ENV !== "production") return;
+  const now = Date.now();
+  if (now - lastAlertAt < ALERT_COOLDOWN_MS) return;
+  lastAlertAt = now;
+  // Fire-and-forget: a failed/slow alert must never block or break the page.
+  void sendTestimonialsDownAlert({ status, detail }).catch((e) =>
+    console.error("Testimonials-down alert failed to send", e),
+  );
+}
 
 // Curated fallback shown whenever live Google data is unavailable (keys not
 // set, billing off, quota exceeded, or zero reviews returned) so the public
@@ -74,7 +93,9 @@ export async function GET() {
     });
 
     if (!res.ok) {
-      console.error("Google Places API HTTP error", res.status, await res.text());
+      const body = await res.text();
+      console.error("Google Places API HTTP error", res.status, body);
+      alertReviewsDown(`HTTP ${res.status}`, body.slice(0, 300));
       return NextResponse.json(FALLBACK);
     }
 
@@ -85,6 +106,7 @@ export async function GET() {
     if (data?.status && data.status !== "OK") {
       const msg = data.error_message || "";
       console.error("Google Places API non-OK status", data.status, msg);
+      alertReviewsDown(data.status, msg);
       // Serve the fallback so the public page still looks good; surface the
       // real reason in dev so the owner can fix key/billing/restrictions.
       return NextResponse.json(
@@ -115,6 +137,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching testimonials", error);
+    alertReviewsDown("fetch_error", error instanceof Error ? error.message : String(error));
     return NextResponse.json(FALLBACK);
   }
 }

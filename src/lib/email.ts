@@ -1097,6 +1097,65 @@ Log in to the staff app to review and price this order.
   return result;
 }
 
+/* ─── Email: Internal ops alert — testimonials / Google reviews down ─ */
+// Sent to staff (not customers) when the website can't load live Google
+// reviews. Customers never see an error — the page shows curated fallback
+// reviews — but live reviews stay hidden until this is fixed, so staff need
+// a heads-up. Throttled by the caller so it doesn't fire on every page load.
+export async function sendTestimonialsDownAlert(params: {
+  status: string;
+  detail: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const to = process.env.STAFF_NOTIFICATIONS_EMAIL || "jake@westroxburyframing.com";
+  const subject = "⚠️ Website testimonials down — Google reviews not loading";
+
+  const text = `The website could not load live Google reviews for the testimonials page.
+
+Google Places status: ${params.status}
+Detail: ${params.detail || "(none)"}
+
+Customers are NOT seeing an error — the page is showing the curated fallback
+reviews instead. But live Google reviews will stay hidden until this is fixed.
+
+Most common cause: billing disabled on the Google Cloud project, or an API key
+restriction. Fix at https://console.cloud.google.com
+(Billing → link an account; APIs & Services → enable "Places API").
+
+— West Roxbury Framing Website (automated alert)`;
+
+  const html = emailLayout({
+    preheader: "Live Google reviews are not loading on the website.",
+    heading: "Testimonials Down ⚠️",
+    body: `
+      <p>The website could not load live Google reviews for the testimonials page.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin:16px 0">
+        <tr><td style="padding:20px">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;width:90px;vertical-align:top">Status</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a;font-weight:600">${params.status}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#737373;vertical-align:top">Detail</td>
+              <td style="padding:6px 0;font-size:15px;color:#1a1a1a">${params.detail || "(none)"}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+      <p>Customers are <strong>not</strong> seeing an error — the page is showing the curated fallback reviews. Live Google reviews will stay hidden until this is resolved.</p>
+      <p style="font-size:14px;color:#737373">Most common cause: billing disabled on the Google Cloud project, or an API key restriction.</p>
+    `,
+    cta: { label: "Open Google Cloud Console", url: "https://console.cloud.google.com" },
+    footer: "Automated alert — sent at most once every few hours while reviews are down.",
+  });
+
+  const result = await sendViaPostmark({ to, from: getFrom(), subject, text, html });
+  if (!result.ok) {
+    console.error("Failed to send testimonials-down alert email:", result.error);
+  }
+  return result;
+}
+
 /* ─── Email: Mail-In Invoice (pay by check) ──────────────────────── */
 
 export async function sendMailInInvoiceEmail(params: {
