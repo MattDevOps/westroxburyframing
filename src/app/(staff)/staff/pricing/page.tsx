@@ -35,6 +35,14 @@ export default function PricingPage() {
           <div className="text-lg font-semibold text-neutral-900 mb-2">Quick Price Check</div>
           <p className="text-sm text-neutral-600">Instantly look up retail prices for moulding and catalog items</p>
         </Link>
+
+        <Link
+          href="/staff/pricing/quote-calculator"
+          className="rounded-2xl border border-neutral-200 bg-white p-6 hover:border-neutral-300 hover:shadow-sm transition"
+        >
+          <div className="text-lg font-semibold text-neutral-900 mb-2">Quote Calculator</div>
+          <p className="text-sm text-neutral-600">Build a customer quote: size + options + prep, positioned under market</p>
+        </Link>
       </div>
     </div>
   );
