@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function ContactForm({ variant = "light" }: { variant?: "light" | "dark" }) {
   const isDark = variant === "dark";
@@ -17,6 +17,10 @@ export function ContactForm({ variant = "light" }: { variant?: "light" | "dark" 
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Honeypot field — hidden from real users, bots fill it in.
+  const [company, setCompany] = useState("");
+  // When the form first mounted, used to reject implausibly fast submissions.
+  const mountedAt = useRef(Date.now());
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -29,7 +33,14 @@ export function ContactForm({ variant = "light" }: { variant?: "light" | "dark" 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, phone, email, message }),
+        body: JSON.stringify({
+          name,
+          phone,
+          email,
+          message,
+          company,
+          elapsedMs: Date.now() - mountedAt.current,
+        }),
       });
 
       if (!res.ok) {
@@ -53,6 +64,19 @@ export function ContactForm({ variant = "light" }: { variant?: "light" | "dark" 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Honeypot: hidden from humans, only bots fill it. Do not remove. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden" >
+        <label htmlFor="company">Company (leave this blank)</label>
+        <input
+          id="company"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
           <label htmlFor="name" className={labelClass}>
