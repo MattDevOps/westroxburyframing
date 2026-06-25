@@ -502,6 +502,76 @@ ${params.message}
   return result;
 }
 
+/* ─── Email: Reply to a customer inbox message ───────────────────── */
+// Staff reply to a website inquiry, sent from the backend Customer Inbox.
+// From = shop branded address; Reply-To = shop contact inbox so the
+// customer's reply routes back through Postmark inbound and threads into
+// the same conversation.
+export async function sendCustomerReplyEmail(params: {
+  toEmail: string;
+  toName: string;
+  subject: string;
+  replyBody: string;
+  originalMessage?: string;
+  staffName?: string;
+}) {
+  const replyToInbox =
+    process.env.CONTACT_FORM_EMAIL || "jake@westroxburyframing.com";
+
+  const safeBody = params.replyBody
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  const quoted = params.originalMessage
+    ? `
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e5e5">
+        <p style="margin:0 0 6px;font-size:12px;color:#a3a3a3">On your earlier message you wrote:</p>
+        <blockquote style="margin:0;padding:0 0 0 12px;border-left:3px solid #e5e5e5;color:#737373;font-size:13px;white-space:pre-wrap">${params.originalMessage
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}</blockquote>
+      </div>`
+    : "";
+
+  const html = emailLayout({
+    preheader: `A reply from West Roxbury Framing.`,
+    heading: "West Roxbury Framing",
+    body: `
+      <p style="font-size:15px;color:#1a1a1a">Hi ${params.toName || "there"},</p>
+      <div style="font-size:15px;color:#1a1a1a;line-height:1.6;white-space:pre-wrap">${safeBody}</div>
+      ${
+        params.staffName
+          ? `<p style="margin-top:20px;font-size:15px;color:#1a1a1a">— ${params.staffName}<br><span style="font-size:13px;color:#737373">West Roxbury Framing</span></p>`
+          : `<p style="margin-top:20px;font-size:13px;color:#737373">— West Roxbury Framing</p>`
+      }
+      ${quoted}
+    `,
+    footer: "West Roxbury Framing · 1741 Centre Street, West Roxbury, MA 02132 · (617) 327-3890",
+  });
+
+  const text = `Hi ${params.toName || "there"},
+
+${params.replyBody}
+
+${params.staffName ? `— ${params.staffName}\n` : ""}West Roxbury Framing
+1741 Centre Street, West Roxbury, MA 02132
+(617) 327-3890`;
+
+  const subject = params.subject.toLowerCase().startsWith("re:")
+    ? params.subject
+    : `Re: ${params.subject}`;
+
+  return sendViaPostmark({
+    to: params.toEmail,
+    from: getFrom(),
+    subject,
+    text,
+    html,
+    replyTo: replyToInbox,
+  });
+}
+
 /* ─── Email: Invoice Paid (to staff) ─────────────────────────────── */
 
 export async function sendInvoicePaidNotification(params: {

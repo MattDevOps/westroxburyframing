@@ -632,6 +632,50 @@ model StaffMessage {
   @@index([createdAt])
 }
 
+// ─── Customer Inbox ─────────────────────────────────────────────────
+// Inbound messages from the public website — both the "Contact Us" form
+// and the custom-framing/quote request form land here so staff can read
+// and reply by email from inside the backend. Scalar links only (orderId,
+// fromUserName) to keep this purely additive — no FKs onto Order/User.
+
+model CustomerMessage {
+  id          String                  @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String?
+  body        String
+  source      String                  @default("contact_form") // "contact_form" | "quote_request"
+  orderId     String? // estimate order created for quote requests
+  orderNumber String?
+  status      String                  @default("new") // "new" | "replied" | "archived" | "spam"
+  spamReason  String? // populated when the spam filter flags it
+  read        Boolean                 @default(false)
+  readAt      DateTime?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  replies     CustomerMessageReply[]
+
+  @@index([status, createdAt])
+  @@index([read])
+  @@index([email])
+}
+
+model CustomerMessageReply {
+  id           String          @id @default(uuid())
+  messageId    String
+  message      CustomerMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  direction    String          @default("outbound") // "outbound" (staff -> customer) | "inbound" (customer -> us)
+  fromUserId   String? // staff user who sent it (outbound only)
+  fromUserName String?
+  body         String
+  emailOk      Boolean         @default(false) // whether the outbound send succeeded
+  emailError   String?
+  createdAt    DateTime        @default(now())
+
+  @@index([messageId, createdAt])
+}
+
 // ─── Phase 7: Art/Retail Products ───────────────────────────────────
 
 model Product {

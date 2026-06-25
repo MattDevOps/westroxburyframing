@@ -65,8 +65,32 @@ export async function POST(req: Request) {
     },
   });
   if (!lead) {
-    console.log(`Inbound from ${fromEmail} doesn't match any Lead — ignoring`);
-    return NextResponse.json({ ok: true, ignored: "no_lead_match" });
+    // Not a B2B lead — see if it's a customer replying to an inbox message.
+    const customerMsg = await prisma.customerMessage.findFirst({
+      where: { email: fromEmail },
+      orderBy: { createdAt: "desc" },
+    });
+    if (customerMsg) {
+      const replyBody = (
+        payload.StrippedTextReply || payload.TextBody || payload.HtmlBody || ""
+      ).trim();
+      await prisma.customerMessageReply.create({
+        data: {
+          messageId: customerMsg.id,
+          direction: "inbound",
+          body: replyBody || "(empty reply)",
+          emailOk: true,
+        },
+      });
+      await prisma.customerMessage.update({
+        where: { id: customerMsg.id },
+        data: { read: false, status: customerMsg.status === "archived" ? "new" : customerMsg.status },
+      });
+      console.log(`Inbound from ${fromEmail} threaded into customer message ${customerMsg.id}`);
+      return NextResponse.json({ ok: true, customerMessageId: customerMsg.id });
+    }
+    console.log(`Inbound from ${fromEmail} doesn't match any Lead or customer — ignoring`);
+    return NextResponse.json({ ok: true, ignored: "no_match" });
   }
 
   const body = (payload.StrippedTextReply || payload.TextBody || payload.HtmlBody || "").trim();

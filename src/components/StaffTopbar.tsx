@@ -16,6 +16,7 @@ const STAFF_NAV: Array<{
 }> = [
   { href: "/staff/dashboard", label: "Dashboard" },
   { href: "/staff/search", label: "Search", shortcut: "⌘K" },
+  { href: "/staff/inbox", label: "Inbox" },
   { href: "/staff/orders", label: "Orders" },
   { href: "/staff/orders/new", label: "Quick Order", highlight: "blue" },
   { href: "/staff/orders/intake", label: "New Order" },
@@ -27,6 +28,7 @@ const STAFF_NAV: Array<{
 // flat below the primary nav so phone users keep full access.
 const SECONDARY_NAV: Array<{ href: string; label: string }> = [
   { href: "/staff/orders/incomplete", label: "Incomplete Orders" },
+  { href: "/staff/messages", label: "Staff Messages" },
   { href: "/staff/invoices", label: "Invoices" },
   { href: "/staff/appointments", label: "Appointments" },
   { href: "/staff/gift-certificates", label: "Gift Certificates" },
