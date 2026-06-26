@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeEmail, normalizePhone } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { detectSpamName } from "@/lib/spam";
 
 const limiter = rateLimit({ limit: 20, windowSeconds: 600 }); // 20 per 10 min
 
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
         const phone = normalizePhone(body.phone ?? "");
         const email = normalizeEmail(body.email);
         const marketing = Boolean(body.marketing_opt_in);
+        // Honeypot: a hidden field real users never see. Any value = a bot.
+        const honeypot = (body.company ?? "").toString().trim();
         const photoUrls: string[] = Array.isArray(body.photo_urls) ? body.photo_urls.filter((u: unknown) => typeof u === "string" && u.trim()) : [];
         // Legacy single photo support
         const photoUrl = photoUrls[0] ?? ((body.photo_url ?? "").toString().trim() || null);
@@ -44,6 +47,16 @@ export async function POST(request: Request) {
                 { error: "Please provide a phone number or email address." },
                 { status: 400 },
             );
+        }
+
+        // Drop bot submissions before touching the DB. Return a benign
+        // success shape so bots don't learn to adapt; nothing is persisted.
+        const nameSpam = detectSpamName(firstName, lastName);
+        if (honeypot || nameSpam.spam) {
+            console.warn(
+                `Public customer-info spam blocked: ${honeypot ? "honeypot" : nameSpam.reason}`,
+            );
+            return NextResponse.json({ success: true });
         }
 
         // Check for existing customer by phone or email

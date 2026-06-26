@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizePhone, normalizeEmail } from "@/lib/ids";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+
+const limiter = rateLimit({ limit: 10, windowSeconds: 600 }); // 10 per 10 min
 
 /**
  * POST /api/public/sms-opt-in
@@ -8,6 +11,13 @@ import { normalizePhone, normalizeEmail } from "@/lib/ids";
  * This page URL can be provided to Twilio as proof of consent
  */
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  if (!limiter.check(ip).allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
   try {
     const body = await req.json();
     const phone = body.phone ? normalizePhone(String(body.phone)) : null;

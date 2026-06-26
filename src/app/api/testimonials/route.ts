@@ -1,29 +1,11 @@
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env";
-import { sendTestimonialsDownAlert } from "@/lib/email";
 
-// Throttle the staff alert. This route runs on many page loads and a failing
-// Google call (e.g. REQUEST_DENIED) returns HTTP 200, so the failure can recur
-// often. Alert at most once per window per server instance, and only in
-// production (dev surfaces the reason via the `debug` field instead).
-const ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
-let lastAlertAt = 0;
-
-function alertReviewsDown(status: string, detail: string) {
-  if (process.env.NODE_ENV !== "production") return;
-  const now = Date.now();
-  if (now - lastAlertAt < ALERT_COOLDOWN_MS) return;
-  lastAlertAt = now;
-  // Fire-and-forget: a failed/slow alert must never block or break the page.
-  void sendTestimonialsDownAlert({ status, detail }).catch((e) =>
-    console.error("Testimonials-down alert failed to send", e),
-  );
-}
-
-// Curated fallback shown whenever live Google data is unavailable (keys not
-// set, billing off, quota exceeded, or zero reviews returned) so the public
-// testimonials page never renders a broken/error state.
-const FALLBACK = {
+// Curated testimonials served on the public testimonials page. We deliberately
+// do NOT call the live Google Places API: that requires billing enabled on the
+// Google Cloud project, and the owner prefers to keep these curated reviews
+// rather than pay for the live feed. Because there is no live call, there is
+// nothing to fail and no "testimonials down" alert to send.
+const REVIEWS = {
   source: "static" as const,
   rating: 5,
   total: 100,
@@ -74,70 +56,5 @@ const FALLBACK = {
 };
 
 export async function GET() {
-  try {
-    if (!env.GOOGLE_PLACES_API_KEY || !env.GOOGLE_PLACES_PLACE_ID) {
-      // Keys not configured yet — serve the curated fallback.
-      return NextResponse.json(FALLBACK);
-    }
-
-    const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
-    url.searchParams.set("place_id", env.GOOGLE_PLACES_PLACE_ID);
-    url.searchParams.set("fields", "rating,user_ratings_total,reviews");
-    url.searchParams.set("reviews_sort", "newest");
-    url.searchParams.set("language", "en");
-    url.searchParams.set("key", env.GOOGLE_PLACES_API_KEY);
-
-    const res = await fetch(url.toString(), {
-      // Cache for 1 hour to avoid hitting rate limits unnecessarily
-      next: { revalidate: 3600 },
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("Google Places API HTTP error", res.status, body);
-      alertReviewsDown(`HTTP ${res.status}`, body.slice(0, 300));
-      return NextResponse.json(FALLBACK);
-    }
-
-    const data = await res.json();
-
-    // Google Places returns HTTP 200 even for API/key/billing errors.
-    // See: https://developers.google.com/maps/documentation/places/web-service/details#PlaceDetailsStatusCodes
-    if (data?.status && data.status !== "OK") {
-      const msg = data.error_message || "";
-      console.error("Google Places API non-OK status", data.status, msg);
-      alertReviewsDown(data.status, msg);
-      // Serve the fallback so the public page still looks good; surface the
-      // real reason in dev so the owner can fix key/billing/restrictions.
-      return NextResponse.json(
-        process.env.NODE_ENV === "development" && msg
-          ? { ...FALLBACK, debug: `Google: ${data.status} - ${msg}` }
-          : FALLBACK,
-      );
-    }
-
-    const result = data.result || {};
-    const reviews = Array.isArray(result.reviews) ? result.reviews : [];
-
-    // If Google returns no reviews, keep its real rating/total but use the
-    // curated review cards so the page isn't blank.
-    if (reviews.length === 0) {
-      return NextResponse.json({
-        ...FALLBACK,
-        rating: result.rating ?? FALLBACK.rating,
-        total: result.user_ratings_total ?? FALLBACK.total,
-      });
-    }
-
-    return NextResponse.json({
-      source: "google",
-      rating: result.rating,
-      total: result.user_ratings_total,
-      reviews,
-    });
-  } catch (error) {
-    console.error("Error fetching testimonials", error);
-    alertReviewsDown("fetch_error", error instanceof Error ? error.message : String(error));
-    return NextResponse.json(FALLBACK);
-  }
+  return NextResponse.json(REVIEWS);
 }

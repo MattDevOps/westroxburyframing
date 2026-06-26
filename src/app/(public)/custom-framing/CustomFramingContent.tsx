@@ -25,6 +25,8 @@ export default function CustomFramingContent() {
     const [itemType, setItemType] = useState("");
     const [description, setDescription] = useState("");
     const [optIn, setOptIn] = useState(false);
+    // Honeypot: hidden from real users; only bots fill it. See /api/public/orders.
+    const [company, setCompany] = useState("");
 
     const [photos, setPhotos] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,6 +81,7 @@ export default function CustomFramingContent() {
                     description,
                     notes: "",
                     marketing_opt_in: optIn,
+                    company,
                     photos,
                 }),
             });
@@ -184,6 +187,19 @@ export default function CustomFramingContent() {
                         onSubmit={handleSubmit}
                         className="bg-card rounded-sm border border-border p-8 space-y-8"
                     >
+                        {/* Honeypot: hidden from humans, irresistible to bots. Filed
+                            away off-screen and excluded from tab order + a11y tree. */}
+                        <input
+                            type="text"
+                            name="company"
+                            tabIndex={-1}
+                            autoComplete="off"
+                            aria-hidden="true"
+                            value={company}
+                            onChange={(e) => setCompany(e.target.value)}
+                            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                        />
+
                         {/* Contact Info */}
                         <div>
                             <h3 className="font-serif text-xl text-foreground mb-4">Your Information</h3>

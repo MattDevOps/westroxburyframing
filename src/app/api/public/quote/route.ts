@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
 import { sendNewWebLeadNotification } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { detectSpamName } from "@/lib/spam";
 
 const limiter = rateLimit({ limit: 15, windowSeconds: 600 }); // 15 per 10 min
 
@@ -34,6 +35,8 @@ export async function POST(req: Request) {
     const width = body.width ? Number(body.width) : null;
     const height = body.height ? Number(body.height) : null;
     const marketing = Boolean(body.marketing_opt_in);
+    // Honeypot: a hidden field real users never see. Any value = a bot.
+    const honeypot = (body.company ?? "").toString().trim();
 
     if (!firstName || !lastName) {
       return NextResponse.json(
@@ -47,6 +50,16 @@ export async function POST(req: Request) {
         { error: "Please provide a phone number or email so we can reach you." },
         { status: 400 }
       );
+    }
+
+    // Drop bot submissions before touching the DB. Return a benign success
+    // shape so bots don't learn to adapt; nothing is persisted.
+    const nameSpam = detectSpamName(firstName, lastName);
+    if (honeypot || nameSpam.spam) {
+      console.warn(
+        `Public quote spam blocked: ${honeypot ? "honeypot" : nameSpam.reason}`,
+      );
+      return NextResponse.json({ ok: true, order_number: null });
     }
 
     // Upsert customer by phone (or create new if no phone, keyed by generated placeholder)

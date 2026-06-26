@@ -65,3 +65,53 @@ export function detectSpam(fields: ContactFields): { spam: boolean; reason?: str
   }
   return { spam: false };
 }
+
+// True when a single name token (a first or last name on its own) looks
+// machine-generated. Tuned for the bot wave hitting the public order/quote/
+// kiosk endpoints, which submit names like "IqvZvYrtmZtkFTel" and
+// "UpVSodHSJjjAfiwmIDLHZtY": long blobs with erratic internal capitalization.
+//
+// Deliberately conservative so real customers are never blocked:
+//   - Only judges tokens of 12+ letters. Every real first/last name shorter
+//     than that is always allowed.
+//   - The primary signal is dense internal case-switching (BoTgIbBeRiSh),
+//     which "McDonald"/"DeAngelo"/"O'Shaughnessy"-style names don't reach.
+//   - The secondary signal is an absurd consonant run (7+), which no real
+//     name has, while consonant-heavy surnames (Schwartzkopf, Krzyzewski)
+//     stay under it.
+function nameTokenIsRandom(value: string): boolean {
+  const letters = value.replace(/[^A-Za-z]/g, "");
+  if (letters.length < 12) return false;
+
+  let caseSwitches = 0;
+  for (let i = 1; i < letters.length; i++) {
+    const prevLower = letters[i - 1] >= "a" && letters[i - 1] <= "z";
+    const curLower = letters[i] >= "a" && letters[i] <= "z";
+    if (prevLower !== curLower) caseSwitches++;
+  }
+  if (caseSwitches >= 5 && caseSwitches / letters.length > 0.3) return true;
+
+  let run = 0;
+  let maxConsonantRun = 0;
+  for (const ch of letters.toLowerCase()) {
+    if ("aeiou".includes(ch)) {
+      run = 0;
+    } else {
+      run++;
+      if (run > maxConsonantRun) maxConsonantRun = run;
+    }
+  }
+  return maxConsonantRun >= 7;
+}
+
+// Spam check for the public customer-creating endpoints (orders, quote,
+// kiosk check-in). These take a structured first/last name rather than the
+// free-text name the contact form gets, so each token is judged on its own.
+export function detectSpamName(
+  firstName: string,
+  lastName: string,
+): { spam: boolean; reason?: string } {
+  if (nameTokenIsRandom(firstName)) return { spam: true, reason: "random-first-name" };
+  if (nameTokenIsRandom(lastName)) return { spam: true, reason: "random-last-name" };
+  return { spam: false };
+}

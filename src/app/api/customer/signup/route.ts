@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { CUSTOMER_COOKIE_NAME, hashCustomerPassword, signCustomerCookie } from "@/lib/customerAuth";
 import { normalizeEmail } from "@/lib/ids";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { detectSpamName } from "@/lib/spam";
 
 const limiter = rateLimit({ limit: 10, windowSeconds: 300 }); // 10 signups per 5 min per IP
 
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
 
   if (password.length < 6) {
     return NextResponse.json({ ok: false, error: "Password must be at least 6 characters." }, { status: 400 });
+  }
+
+  // Reject machine-generated gibberish names before creating an account.
+  if (detectSpamName(firstName, lastName).spam) {
+    console.warn("Customer signup spam blocked: random name");
+    return NextResponse.json({ ok: false, error: "Please enter your real name." }, { status: 400 });
   }
 
   // Check if email already exists
