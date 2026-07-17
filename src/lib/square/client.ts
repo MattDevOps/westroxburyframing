@@ -30,6 +30,35 @@ function parseRetryAfterSeconds(res: Response): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+/**
+ * Structured Square API error. Carries the non-sensitive diagnostic fields
+ * (`code`, `category`, `requestId`, HTTP `status`) so callers can surface a
+ * request_id to staff/customers without echoing the raw request body (which
+ * contains the single-use card token).
+ */
+export class SquareApiError extends Error {
+  status: number;
+  code?: string;
+  category?: string;
+  requestId?: string;
+  squareErrors?: any[];
+
+  constructor(message: string, fields: {
+    status: number;
+    requestId?: string;
+    json?: any;
+  }) {
+    super(message);
+    this.name = "SquareApiError";
+    this.status = fields.status;
+    this.requestId = fields.requestId;
+    const first = Array.isArray(fields.json?.errors) ? fields.json.errors[0] : null;
+    this.code = first?.code;
+    this.category = first?.category;
+    this.squareErrors = fields.json?.errors;
+  }
+}
+
 function summarizeSquareErrors(json: any): string | null {
   const errors = json?.errors;
   if (!Array.isArray(errors) || errors.length === 0) return null;
@@ -97,18 +126,20 @@ export async function squareFetch<T = any>(path: string, init: RequestInit = {})
 
     // Authentication errors: do not retry; fix token/env/scopes. :contentReference[oaicite:3]{index=3}
     if (res.status === 401 || res.status === 403) {
-      throw new Error(
+      throw new SquareApiError(
         `Square ${res.status} ${path}: ${detail}` +
-          (requestId ? ` | request_id=${requestId}` : "")
+          (requestId ? ` | request_id=${requestId}` : ""),
+        { status: res.status, requestId, json }
       );
     }
 
     // Non-retryable client errors (400–499 except 429)
     if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-      throw new Error(
+      throw new SquareApiError(
         `Square ${res.status} ${path}: ${detail}` +
           (requestId ? ` | request_id=${requestId}` : "") +
-          (reqBody ? ` | body=${reqBody}` : "")
+          (reqBody ? ` | body=${reqBody}` : ""),
+        { status: res.status, requestId, json }
       );
     }
 
@@ -133,10 +164,11 @@ export async function squareFetch<T = any>(path: string, init: RequestInit = {})
     }
 
     // Out of retries or not retryable
-    throw new Error(
+    throw new SquareApiError(
       `Square ${res.status} ${path}: ${detail}` +
         (requestId ? ` | request_id=${requestId}` : "") +
-        (reqBody ? ` | body=${reqBody}` : "")
+        (reqBody ? ` | body=${reqBody}` : ""),
+      { status: res.status, requestId, json }
     );
   }
 }

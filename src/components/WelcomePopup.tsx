@@ -13,9 +13,11 @@ export default function WelcomePopup() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Don't show if already dismissed or if on staff pages
+    // Don't show if already dismissed, on staff pages, or on invoice payment
+    // pages (a marketing popup must never overlay the checkout / card form).
     if (typeof window === "undefined") return;
-    if (window.location.pathname.startsWith("/staff")) return;
+    const path = window.location.pathname;
+    if (path.startsWith("/staff") || path.startsWith("/pay")) return;
 
     const dismissed = localStorage.getItem(DISMISSED_KEY);
     if (dismissed) return;

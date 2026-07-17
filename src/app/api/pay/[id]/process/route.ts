@@ -214,29 +214,72 @@ export async function POST(req: Request, ctx: Ctx) {
       receiptUrl: sqPayment.receipt_url || null,
     });
   } catch (err: any) {
-    console.error("Payment processing error:", err);
+    // Structured diagnostics (safe to surface): Square error code + request_id.
+    // The raw err.message may contain the card token, so it is logged only, never returned.
+    const code: string | undefined = err?.code;
+    const requestId: string | undefined = err?.requestId;
+    console.error(
+      `Payment processing error for invoice ${invoice.invoiceNumber} (${id}):`,
+      {
+        code,
+        category: err?.category,
+        requestId,
+        status: err?.status,
+        message: err?.message,
+      }
+    );
 
-    // Parse Square errors for user-friendly messages
+    // Card was tokenized fine but the bank/Square declined it → 402, retryable by customer.
+    const DECLINE_CODES = new Set([
+      "CARD_DECLINED",
+      "GENERIC_DECLINE",
+      "INSUFFICIENT_FUNDS",
+      "CVV_FAILURE",
+      "VERIFY_CVV_FAILURE",
+      "ADDRESS_VERIFICATION_FAILURE",
+      "CARD_DECLINED_VERIFICATION_REQUIRED",
+      "CARD_DECLINED_CALL_ISSUER",
+      "ALLOWABLE_PIN_TRIES_EXCEEDED",
+      "TRANSACTION_LIMIT",
+    ]);
+    // Card details themselves are unusable/invalid → 400, customer must fix input.
+    const INVALID_CARD_CODES = new Set([
+      "INVALID_CARD",
+      "INVALID_CARD_DATA",
+      "BAD_EXPIRATION",
+      "INVALID_EXPIRATION",
+      "CARD_EXPIRED",
+      "CARD_TOKEN_EXPIRED",
+      "CARD_TOKEN_USED",
+      "NOT_FOUND",
+    ]);
+
     const msg = err?.message || "Payment failed";
-    if (
+    const isDecline =
+      (code && DECLINE_CODES.has(code)) ||
       msg.includes("CARD_DECLINED") ||
       msg.includes("CVV") ||
-      msg.includes("INSUFFICIENT")
-    ) {
+      msg.includes("INSUFFICIENT");
+    const isInvalidCard =
+      (code && INVALID_CARD_CODES.has(code)) ||
+      msg.includes("INVALID_CARD") ||
+      msg.includes("BAD_EXPIRATION");
+
+    if (isDecline) {
       return NextResponse.json(
-        { error: "Your card was declined. Please try a different card." },
+        { error: "Your card was declined. Please try a different card.", code, requestId },
         { status: 402 }
       );
     }
-    if (msg.includes("INVALID_CARD") || msg.includes("BAD_EXPIRATION")) {
+    if (isInvalidCard) {
       return NextResponse.json(
-        { error: "Invalid card details. Please check and try again." },
+        { error: "Invalid card details. Please check and try again.", code, requestId },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: "Payment could not be processed. Please try again." },
+      { error: "Payment could not be processed. Please try again.", code, requestId },
       { status: 500 }
     );
   }
