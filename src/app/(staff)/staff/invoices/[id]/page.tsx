@@ -257,7 +257,7 @@ export default function InvoiceDetailPage({
   const isPaid = invoice.status === "paid";
   const isVoid = invoice.status === "void" || invoice.status === "cancelled";
   const canPay = !isPaid && !isVoid;
-  const canSend = canPay && invoice.customer.email;
+  const canSend = canPay && invoice.customer?.email;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
@@ -271,14 +271,22 @@ export default function InvoiceDetailPage({
             </span>
           </div>
           <div className="text-sm text-neutral-600 mt-1">
-            <Link
-              href={`/staff/customers/${invoice.customer.id}`}
-              className="text-blue-600 hover:underline"
-            >
-              {invoice.customer.firstName} {invoice.customer.lastName}
-            </Link>
-            {invoice.customer.email && ` · ${invoice.customer.email}`}
-            {invoice.customer.phone && ` · ${invoice.customer.phone}`}
+            {invoice.customer ? (
+              <>
+                <Link
+                  href={`/staff/customers/${invoice.customer.id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {invoice.customer.firstName} {invoice.customer.lastName}
+                </Link>
+                {invoice.customer.email && ` · ${invoice.customer.email}`}
+                {invoice.customer.phone && ` · ${invoice.customer.phone}`}
+              </>
+            ) : (
+              <span className="text-neutral-500">
+                Quick invoice — no customer attached
+              </span>
+            )}
           </div>
           <div className="text-xs text-neutral-400 mt-1">
             Created {new Date(invoice.createdAt).toLocaleDateString()}{" "}
@@ -365,9 +373,15 @@ export default function InvoiceDetailPage({
           </div>
           <button
             onClick={syncToQBO}
-            disabled={syncingQBO || invoice.status === "draft"}
+            disabled={syncingQBO || invoice.status === "draft" || !invoice.customer}
             className="rounded-xl border border-purple-300 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={invoice.status === "draft" ? "Invoice must be sent before syncing to QuickBooks" : "Sync to QuickBooks Online"}
+            title={
+              !invoice.customer
+                ? "QuickBooks sync needs a customer on the invoice"
+                : invoice.status === "draft"
+                ? "Invoice must be sent before syncing to QuickBooks"
+                : "Sync to QuickBooks Online"
+            }
           >
             {syncingQBO ? "Syncing..." : invoice.qboInvoiceId ? "Re-sync to QBO" : "Sync to QBO"}
           </button>
@@ -544,13 +558,15 @@ export default function InvoiceDetailPage({
                 {sending ? "Sending…" : `Send Deposit (${invoice.depositPercent}%)`}
               </button>
             )}
-            {!invoice.customer.email && (
+            {!invoice.customer?.email && (
               <span className="text-xs text-amber-600">Customer email required to send</span>
             )}
           </div>
         ) : (
           <div className="text-sm text-neutral-500">
-            {!invoice.customer.email
+            {!invoice.customer
+              ? "No customer on this invoice — use the pay link below."
+              : !invoice.customer.email
               ? "Add customer email to send via Square."
               : "Invoice is already paid or voided."}
           </div>
@@ -603,20 +619,22 @@ export default function InvoiceDetailPage({
           <h3 className="font-semibold text-neutral-900">
             Linked Orders ({invoice.orders?.length || 0})
           </h3>
-          <div className="flex gap-2">
-            <Link
-              href={`/staff/orders/intake?customerId=${invoice.customer.id}`}
-              className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
-            >
-              + New Order
-            </Link>
-            <Link
-              href={`/staff/orders/new?customerId=${invoice.customer.id}`}
-              className="rounded-lg border border-neutral-300 text-neutral-700 px-3 py-1.5 text-xs hover:bg-neutral-50"
-            >
-              + Quick Order
-            </Link>
-          </div>
+          {invoice.customer && (
+            <div className="flex gap-2">
+              <Link
+                href={`/staff/orders/intake?customerId=${invoice.customer.id}`}
+                className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
+              >
+                + New Order
+              </Link>
+              <Link
+                href={`/staff/orders/new?customerId=${invoice.customer.id}`}
+                className="rounded-lg border border-neutral-300 text-neutral-700 px-3 py-1.5 text-xs hover:bg-neutral-50"
+              >
+                + Quick Order
+              </Link>
+            </div>
+          )}
         </div>
 
         {(!invoice.orders || invoice.orders.length === 0) ? (

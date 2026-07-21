@@ -24,13 +24,17 @@ export async function GET(req: Request) {
   if (customerId) where.customerId = customerId;
   if (status) where.status = status;
   
-  // Filter invoices by location through their orders
+  // Filter invoices by location through their orders. Quick invoices have no
+  // orders at all, so they are never location-scoped and always stay visible.
   if (locationFilter.locationId) {
-    where.orders = {
-      some: {
-        locationId: locationFilter.locationId,
+    where.AND = [
+      {
+        OR: [
+          { orders: { some: { locationId: locationFilter.locationId } } },
+          { orders: { none: {} } },
+        ],
       },
-    };
+    ];
   }
   if (search) {
     where.OR = [
@@ -38,6 +42,8 @@ export async function GET(req: Request) {
       { customer: { firstName: { contains: search, mode: "insensitive" } } },
       { customer: { lastName: { contains: search, mode: "insensitive" } } },
       { customer: { phone: { contains: search } } },
+      // Quick invoices have no customer — their note is the only handle on them.
+      { notes: { contains: search, mode: "insensitive" } },
     ];
   }
 
@@ -70,7 +76,7 @@ export async function GET(req: Request) {
  * Create a new invoice. Can optionally link existing orders.
  *
  * Body: {
- *   customerId: string,
+ *   customerId?: string,          // omit for a quick invoice (no customer, no orders)
  *   orderIds?: string[],          // orders to attach
  *   depositPercent?: number,      // e.g. 50
  *   notes?: string,
@@ -87,14 +93,17 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
 
-  if (!body.customerId) {
-    return NextResponse.json({ error: "customerId is required" }, { status: 400 });
-  }
-
-  // Verify customer exists
-  const customer = await prisma.customer.findUnique({ where: { id: body.customerId } });
-  if (!customer) {
-    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+  // customerId is optional — quick invoices (price + message only) have no customer.
+  if (body.customerId) {
+    const customer = await prisma.customer.findUnique({ where: { id: body.customerId } });
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+  } else if (body.orderIds?.length) {
+    return NextResponse.json(
+      { error: "customerId is required when linking orders" },
+      { status: 400 }
+    );
   }
 
   // Generate invoice number
@@ -139,9 +148,19 @@ export async function POST(req: Request) {
     }
   } else {
     // Manual amounts (for invoice-only creation without existing orders)
-    subtotalAmount = body.subtotalAmount || 0;
-    taxAmount = body.taxAmount || 0;
-    discountAmount = body.discountAmount || 0;
+    const cents = (v: any) => {
+      const n = Math.round(Number(v) || 0);
+      return Number.isFinite(n) && n >= 0 ? n : NaN;
+    };
+    subtotalAmount = cents(body.subtotalAmount);
+    taxAmount = cents(body.taxAmount);
+    discountAmount = cents(body.discountAmount);
+    if ([subtotalAmount, taxAmount, discountAmount].some((n) => Number.isNaN(n))) {
+      return NextResponse.json(
+        { error: "Amounts must be whole, non-negative numbers of cents" },
+        { status: 400 }
+      );
+    }
     totalAmount = subtotalAmount - discountAmount + taxAmount;
   }
 
@@ -157,7 +176,7 @@ export async function POST(req: Request) {
   const invoice = await prisma.invoice.create({
     data: {
       invoiceNumber,
-      customerId: body.customerId,
+      customerId: body.customerId || null,
       subtotalAmount,
       discountAmount,
       taxAmount,
@@ -167,7 +186,7 @@ export async function POST(req: Request) {
       amountPaid: 0,
       balanceDue,
       currency: "USD",
-      status: "draft",
+      status: body.status === "sent" ? "sent" : "draft",
       notes: body.notes || null,
       createdByUserId: userId,
     },

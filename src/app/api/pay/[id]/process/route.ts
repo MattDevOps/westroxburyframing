@@ -83,15 +83,12 @@ export async function POST(req: Request, ctx: Ctx) {
     .toString(36)
     .slice(2, 10)}`;
 
-  if (!invoice.customer) {
-    return NextResponse.json(
-      { error: "Invoice has no customer associated" },
-      { status: 400 }
-    );
-  }
-
+  // Quick invoices have no customer attached — payment still works, we just
+  // don't have a name to put on the Square note or a customer email to notify.
   const orderNumbers = invoice.orders.map((o) => o.orderNumber).join(", ");
-  const customerName = `${invoice.customer.firstName} ${invoice.customer.lastName}`;
+  const customerName = invoice.customer
+    ? `${invoice.customer.firstName} ${invoice.customer.lastName}`
+    : "Customer";
 
   try {
     // Create payment via Square Payments API
@@ -189,7 +186,7 @@ export async function POST(req: Request, ctx: Ctx) {
     }
 
     // Send confirmation email to customer
-    if (invoice.customer.email) {
+    if (invoice.customer?.email) {
       try {
         await sendPaymentConfirmationToCustomer({
           to: invoice.customer.email,

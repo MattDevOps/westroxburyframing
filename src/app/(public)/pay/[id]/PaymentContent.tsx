@@ -32,7 +32,7 @@ interface InvoicePayment {
 interface InvoiceData {
   id: string;
   invoiceNumber: string;
-  customerName: string;
+  customerName: string | null;
   customerEmail: string | null;
   status: string;
   subtotalAmount: number;
@@ -45,7 +45,8 @@ interface InvoiceData {
   balanceDue: number;
   currency: string;
   squareInvoiceUrl: string | null;
-  notes: string | null;
+  /** Customer-facing description. Only set for quick invoices. */
+  message: string | null;
   createdAt: string;
   orders: InvoiceOrder[];
   payments: InvoicePayment[];
@@ -350,9 +351,19 @@ export default function PaymentContent() {
               <h2 className="text-foreground font-semibold text-lg">
                 Invoice #{invoice.invoiceNumber}
               </h2>
-              <p className="text-muted-foreground text-sm mt-0.5">
-                {invoice.customerName}
-              </p>
+              {invoice.customerName ? (
+                <p className="text-muted-foreground text-sm mt-0.5">
+                  {invoice.customerName}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm mt-0.5">
+                  {new Date(invoice.createdAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
             <span
               className={`text-xs px-3 py-1 rounded-full font-medium ${
@@ -400,6 +411,18 @@ export default function PaymentContent() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Message / description from the shop */}
+          {invoice.message && (
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Description
+              </h3>
+              <p className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">
+                {invoice.message}
+              </p>
             </div>
           )}
 

@@ -99,10 +99,18 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   // Link additional orders
   if (body.addOrderIds && Array.isArray(body.addOrderIds)) {
-    const whereClause: any = { id: { in: body.addOrderIds } };
-    if (existing.customerId) {
-      whereClause.customerId = existing.customerId;
+    // A quick invoice has no customer, so there is nothing to scope orders to —
+    // linking would attach another customer's work and wipe the manual total.
+    if (!existing.customerId) {
+      return NextResponse.json(
+        { error: "Add a customer to this invoice before linking orders" },
+        { status: 400 }
+      );
     }
+    const whereClause: any = {
+      id: { in: body.addOrderIds },
+      customerId: existing.customerId,
+    };
     const validOrders = await prisma.order.findMany({
       where: whereClause,
       select: { id: true, subtotalAmount: true, taxAmount: true, totalAmount: true },

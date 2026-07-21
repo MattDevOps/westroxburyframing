@@ -58,10 +58,6 @@ export async function GET(req: Request, ctx: Ctx) {
     return new Response("Invoice not found", { status: 404 });
   }
 
-  if (!invoice.customer) {
-    return new Response("Invoice has no customer associated", { status: 400 });
-  }
-
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const h = (str: string | null | undefined) => {
@@ -75,11 +71,11 @@ export async function GET(req: Request, ctx: Ctx) {
   };
 
   const customerAddress = [
-    invoice.customer.addressLine1,
-    invoice.customer.addressLine2,
-    invoice.customer.city,
-    invoice.customer.state,
-    invoice.customer.zip,
+    invoice.customer?.addressLine1,
+    invoice.customer?.addressLine2,
+    invoice.customer?.city,
+    invoice.customer?.state,
+    invoice.customer?.zip,
   ]
     .filter(Boolean)
     .join(", ");
@@ -174,13 +170,17 @@ export async function GET(req: Request, ctx: Ctx) {
   </div>
 
   <div class="customer-info">
-    <h2>Bill To:</h2>
+    ${
+      invoice.customer
+        ? `<h2>Bill To:</h2>
     <p>
       ${h(invoice.customer.firstName)} ${h(invoice.customer.lastName)}<br />
       ${customerAddress ? `${h(customerAddress)}<br />` : ""}
       ${invoice.customer.email ? `${h(invoice.customer.email)}<br />` : ""}
       ${invoice.customer.phone ? h(invoice.customer.phone) : ""}
-    </p>
+    </p>`
+        : ""
+    }
     <p style="margin-top: 12px; font-size: 11px; color: #999;">
       Invoice Date: ${new Date(invoice.createdAt).toLocaleDateString()}<br />
       ${invoice.createdBy?.name ? `Created by: ${h(invoice.createdBy.name)}` : ""}
@@ -197,7 +197,16 @@ export async function GET(req: Request, ctx: Ctx) {
       </tr>
     </thead>
     <tbody>
-      ${orderRows}
+      ${
+        orderRows.trim()
+          ? orderRows
+          : `<tr>
+        <td>—</td>
+        ${showItemTypeCol ? "<td></td>" : ""}
+        <td>${h((!invoice.customerId && invoice.notes) || "Services rendered")}</td>
+        <td class="amount">${fmt(invoice.totalAmount)}</td>
+      </tr>`
+      }
     </tbody>
   </table>
 

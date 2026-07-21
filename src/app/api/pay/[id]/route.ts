@@ -42,19 +42,14 @@ export async function GET(_req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
-  if (!invoice.customer) {
-    return NextResponse.json(
-      { error: "Invoice has no customer associated" },
-      { status: 400 }
-    );
-  }
-
-  // Don't expose internal IDs or sensitive fields
+  // A quick invoice (price + message only) has no customer attached — that's fine.
   return NextResponse.json({
     id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
-    customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
-    customerEmail: invoice.customer.email
+    customerName: invoice.customer
+      ? `${invoice.customer.firstName} ${invoice.customer.lastName}`
+      : null,
+    customerEmail: invoice.customer?.email
       ? invoice.customer.email.replace(
           /^(.{2})(.*)(@.*)$/,
           (_, a, b, c) => a + "*".repeat(b.length) + c
@@ -71,7 +66,11 @@ export async function GET(_req: Request, ctx: Ctx) {
     balanceDue: invoice.balanceDue,
     currency: invoice.currency,
     squareInvoiceUrl: invoice.squareInvoiceUrl,
-    notes: invoice.notes,
+    // `notes` is an internal staff field on normal invoices, so it stays private.
+    // On a quick invoice (no customer, no orders) the note IS the customer-facing
+    // description typed on the Quick Invoice screen, so it is shown.
+    message:
+      !invoice.customerId && invoice.orders.length === 0 ? invoice.notes : null,
     createdAt: invoice.createdAt,
     orders: invoice.orders.map((o) => ({
       orderNumber: o.orderNumber,

@@ -25,7 +25,7 @@ interface Invoice {
     lastName: string | null;
     phone: string | null;
     email: string | null;
-  };
+  } | null;
   orders: { id: string; orderNumber: string; totalAmount: number; status: string }[];
   payments: { id: string; amount: number; method: string; paidAt: string }[];
   createdBy: { name: string } | null;
@@ -146,9 +146,15 @@ function InvoicesListPage() {
           </Link>
           <Link
             href="/staff/invoices/new"
-            className="rounded-xl bg-black text-white px-5 py-2.5 text-sm text-center"
+            className="rounded-xl border border-neutral-300 text-neutral-800 px-5 py-2.5 text-sm text-center hover:bg-neutral-50"
           >
             + New Invoice
+          </Link>
+          <Link
+            href="/staff/invoices/quick"
+            className="rounded-xl bg-black text-white px-5 py-2.5 text-sm text-center"
+          >
+            ⚡ Quick Invoice
           </Link>
         </div>
       </div>
@@ -229,8 +235,16 @@ function InvoicesListPage() {
                     </span>
                   </div>
                   <div className="text-sm text-neutral-600">
-                    {inv.customer.firstName} {inv.customer.lastName}
-                    {inv.customer.phone && ` · ${inv.customer.phone}`}
+                    {inv.customer ? (
+                      <>
+                        {inv.customer.firstName} {inv.customer.lastName}
+                        {inv.customer.phone && ` · ${inv.customer.phone}`}
+                      </>
+                    ) : (
+                      <span className="text-neutral-500">
+                        {inv.notes ? inv.notes.slice(0, 70) : "Quick invoice"}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {inv.orders.map((o) => (
