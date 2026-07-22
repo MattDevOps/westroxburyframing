@@ -5,13 +5,15 @@ export function nextOrderNumber(last?: string) {
 }
 
 /**
- * Next invoice number, unpadded (INV-1, INV-2, ...).
- * Takes ALL existing invoice numbers and picks the numeric max, because
- * without zero-padding a lexicographic "last" is wrong (INV-9 > INV-10).
- * Handles legacy padded numbers (INV-000003) transparently.
+ * Next invoice number: 6 digits starting at 100001 (INV-100001, INV-100002, ...)
+ * so numbers never lead with a zero. Takes ALL existing invoice numbers and
+ * picks the numeric max rather than a lexicographic "last", which is safe
+ * across legacy formats (INV-000003, INV-3) and beyond 999999.
  */
+const INVOICE_NUMBER_BASE = 100000;
+
 export function nextInvoiceNumber(existing: Array<string | null | undefined>) {
-  let max = 0;
+  let max = INVOICE_NUMBER_BASE;
   for (const num of existing) {
     const n = num?.split("-")[1] ? parseInt(num.split("-")[1], 10) : 0;
     if (Number.isFinite(n) && n > max) max = n;

@@ -193,7 +193,8 @@ export default function OrderDetailPage() {
   const isEstimate = order.status === "estimate";
   const isOnHold = order.status === "on_hold";
 
-  // paidInFull defaults to true in the schema, so we can't rely on it as an
+  // Orders created before 2026-07-22 were defaulted to paidInFull=true
+  // regardless of actual payment, so the flag alone isn't a reliable
   // "unpaid" signal. Compute open-balance from actual Payment records instead.
   const orderTotalPaid = (order.payments || [])
     .filter((p: any) => p.status === "paid")
@@ -276,7 +277,7 @@ export default function OrderDetailPage() {
       taxAmount: (order.taxAmount / 100).toFixed(2),
       totalAmount: (order.totalAmount / 100).toFixed(2),
       currency: order.currency || "USD",
-      paidInFull: order.paidInFull ?? true,
+      paidInFull: order.paidInFull ?? false,
       discountType: order.discountType || "none",
       discountValue: discountType === "fixed" ? discountValue.toFixed(2) : String(discountValue),
       customerFirstName: order.customer?.firstName || "",

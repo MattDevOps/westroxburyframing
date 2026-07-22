@@ -98,7 +98,8 @@ export async function POST(req: Request) {
   const amountFormatted = `$${(amountCents / 100).toFixed(2)}`;
   const certificateNumber = await nextCertificateNumber();
   const redemptionCode = generateRedemptionCode();
-  const idempotencyKey = `gc-${certificateNumber}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  // Square caps idempotency_key at 45 chars — a UUID (36) always fits.
+  const idempotencyKey = crypto.randomUUID();
 
   // ── 1. Charge Square ────────────────────────────────────────────
   let squarePaymentId: string | null = null;

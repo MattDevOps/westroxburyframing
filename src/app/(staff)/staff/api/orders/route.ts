@@ -410,7 +410,9 @@ export async function POST(req: Request) {
       totalAmount: finalTotal,
       materialCost: estimatedMaterialCost, // Estimated cost from vendor catalog (will be updated to actual cost when inventory is deducted)
       currency: "USD",
-      paidInFull: true,
+      // Orders start unpaid; the flag flips via process-payment, mark-paid-check,
+      // or invoice payment. Callers may override explicitly (e.g. paid at intake).
+      paidInFull: body.paid_in_full === true,
       createdByUserId: userId,
       // Phase 2C: Create components if provided, otherwise create legacy specs
       ...(componentsData.length > 0
