@@ -242,6 +242,7 @@ export async function POST(req: Request, ctx: Ctx) {
     const INVALID_CARD_CODES = new Set([
       "INVALID_CARD",
       "INVALID_CARD_DATA",
+      "PAN_FAILURE",
       "BAD_EXPIRATION",
       "INVALID_EXPIRATION",
       "CARD_EXPIRED",
