@@ -356,13 +356,20 @@ export default function PaymentContent() {
                   {invoice.customerName}
                 </p>
               ) : (
-                <p className="text-muted-foreground text-sm mt-0.5">
-                  {new Date(invoice.createdAt).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
+                <>
+                  <p className="text-muted-foreground text-sm mt-0.5">
+                    {new Date(invoice.createdAt).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <p className="text-muted-foreground/70 text-xs mt-1">
+                    West Roxbury Framing
+                    <br />
+                    1741 Centre Street, West Roxbury, MA 02132
+                  </p>
+                </>
               )}
             </div>
             <span

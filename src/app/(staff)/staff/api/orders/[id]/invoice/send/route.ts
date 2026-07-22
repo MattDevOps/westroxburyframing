@@ -202,8 +202,8 @@ export async function POST(req: Request, ctx: any) {
     // Create a local Invoice record so it shows up in Staff → Invoices
     try {
       const staffUserId = getStaffUserIdFromRequest(req);
-      const lastInv = await prisma.invoice.findFirst({ orderBy: { createdAt: "desc" }, select: { invoiceNumber: true } });
-      const invNumber = nextInvoiceNumber(lastInv?.invoiceNumber ?? undefined);
+      const allInvs = await prisma.invoice.findMany({ select: { invoiceNumber: true } });
+      const invNumber = nextInvoiceNumber(allInvs.map((i) => i.invoiceNumber));
       const depPct = kind === "deposit" ? (depositPercent ?? 50) : null;
       const depAmt = depPct ? Math.max(1, Math.round((invoiceAmountCents * depPct) / 100)) : 0;
 

@@ -106,12 +106,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // Generate invoice number
-  const lastInvoice = await prisma.invoice.findFirst({
-    orderBy: { invoiceNumber: "desc" },
+  // Generate invoice number from the numeric max of all existing numbers
+  // (unpadded numbers don't sort lexicographically: INV-9 > INV-10)
+  const existingInvoices = await prisma.invoice.findMany({
     select: { invoiceNumber: true },
   });
-  const invoiceNumber = nextInvoiceNumber(lastInvoice?.invoiceNumber);
+  const invoiceNumber = nextInvoiceNumber(
+    existingInvoices.map((i) => i.invoiceNumber)
+  );
 
   // Calculate totals from linked orders or manual amounts
   let subtotalAmount = 0;

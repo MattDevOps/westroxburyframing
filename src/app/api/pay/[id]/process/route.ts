@@ -78,10 +78,9 @@ export async function POST(req: Request, ctx: Ctx) {
     );
   }
 
-  // Generate idempotency key
-  const idempotencyKey = `pay-${id}-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  // Generate idempotency key. Square caps this at 45 characters — a UUID
+  // (36 chars) fits; anything longer is rejected with VALUE_TOO_LONG.
+  const idempotencyKey = crypto.randomUUID();
 
   // Quick invoices have no customer attached — payment still works, we just
   // don't have a name to put on the Square note or a customer email to notify.
