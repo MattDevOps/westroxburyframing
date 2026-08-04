@@ -1,5 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "path";
+import dotenv from "dotenv";
+
+// Load .env.local so the test runner sees STAFF_EMAIL / STAFF_PASSWORD
+// (the dedicated e2e account). The Next.js dev server loads it on its own,
+// but the Playwright process does not.
+dotenv.config({ path: path.join(__dirname, ".env.local") });
 
 /**
  * ──── HEADLESS TOGGLE ────

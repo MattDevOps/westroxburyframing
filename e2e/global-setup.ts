@@ -39,8 +39,14 @@ export default async function globalSetup() {
 
     console.log("✅ Global setup: Staff login successful");
   } catch (error) {
-    console.error("❌ Global setup: Staff login FAILED. Tests requiring auth will fail.");
-    console.error(error);
+    await browser.close();
+    // Abort the whole run: without a staff session the tracker fixture cannot
+    // clean up created records via the staff API, so tests would silently
+    // pollute the shared database.
+    throw new Error(
+      `Global setup: staff login as ${STAFF_EMAIL} failed — aborting run. ` +
+        `Check STAFF_EMAIL / STAFF_PASSWORD in .env.local. Original error: ${error}`
+    );
   }
 
   // Save the signed-in state (includes httpOnly cookies)
