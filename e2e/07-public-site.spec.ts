@@ -113,6 +113,34 @@ test.describe("Public Site - Custom Framing Quote", () => {
   });
 });
 
+test.describe("Public Site - Welcome Popup", () => {
+  test("popup captures email, reveals promo code, links to booking", async ({
+    page,
+    tracker,
+  }) => {
+    const email = `popup${testSuffix()}@test.com`;
+
+    // Track up-front so cleanup runs even if the assertion below fails
+    tracker.customerEmails.push(email);
+
+    await page.goto("/");
+
+    // Popup appears after a ~3s delay when not previously dismissed
+    await expect(page.getByText(/get.*10% off/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByLabel("Email address").fill(email);
+    await page.getByRole("button", { name: /get my 10% off/i }).click();
+
+    // Code is only revealed after the email is captured
+    await expect(page.getByText("WELCOME10")).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole("link", { name: /book a free consultation/i }),
+    ).toHaveAttribute("href", "/book");
+  });
+});
+
 test.describe("Public Site - Order Status Tracker", () => {
   test("order status page loads with form", async ({ page }) => {
     await page.goto("/order-status");
