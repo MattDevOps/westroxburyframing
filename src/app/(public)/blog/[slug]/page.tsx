@@ -23,11 +23,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: post.title,
       description: post.metaDescription,
-      url: `https://westroxburyframing.com/blog/${post.slug}`,
+      url: `https://www.westroxburyframing.com/blog/${post.slug}`,
       type: "article",
     },
     alternates: {
-      canonical: `https://westroxburyframing.com/blog/${post.slug}`,
+      canonical: `https://www.westroxburyframing.com/blog/${post.slug}`,
     },
   };
 }
@@ -51,11 +51,11 @@ export default async function BlogPostPage({ params }: Props) {
       name: "West Roxbury Framing",
       logo: {
         "@type": "ImageObject",
-        url: "https://westroxburyframing.com/logo.png",
+        url: "https://www.westroxburyframing.com/logo.png",
       },
     },
     datePublished: post.date,
-    url: `https://westroxburyframing.com/blog/${post.slug}`,
+    url: `https://www.westroxburyframing.com/blog/${post.slug}`,
   };
 
   return (

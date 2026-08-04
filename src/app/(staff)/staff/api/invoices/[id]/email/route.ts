@@ -46,7 +46,7 @@ export async function POST(req: Request, ctx: Ctx) {
     );
   }
 
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const payUrl = `${baseUrl}/pay/${invoice.id}`;
   const customerName = `${invoice.customer.firstName} ${invoice.customer.lastName}`;
 

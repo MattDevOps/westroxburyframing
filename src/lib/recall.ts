@@ -13,7 +13,7 @@ export type RecallSegmentRule = {
 const SHOP_NAME = "West Roxbury Framing";
 const SHOP_PHONE = "(617) 327-3890";
 const SHOP_URL =
-  process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
 
 export function renderTemplate(
   template: string,

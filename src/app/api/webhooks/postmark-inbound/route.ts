@@ -8,7 +8,7 @@ import Anthropic from "@anthropic-ai/sdk";
  * Setup:
  *   1. Postmark → Servers → (your server) → Default Inbound Stream → Settings →
  *      set webhook URL to:
- *        https://westroxburyframing.com/api/webhooks/postmark-inbound?token=<secret>
+ *        https://www.westroxburyframing.com/api/webhooks/postmark-inbound?token=<secret>
  *   2. Set env var POSTMARK_INBOUND_TOKEN=<same secret>
  *   3. Forward replies (jake@westroxburyframing.com) to the <hash>@inbound.postmarkapp.com
  *      address Postmark assigns.

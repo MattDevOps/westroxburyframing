@@ -103,7 +103,7 @@ export async function POST(req: Request, ctx: Ctx) {
     };
   });
 
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const receiptUrl = `${baseUrl}/staff/api/orders/${order.id}/receipt`;
 
   const customerName = `${order.customer.firstName} ${order.customer.lastName}`;

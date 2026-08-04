@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
-      url: `https://westroxburyframing.com/areas/${area.slug}`,
+      url: `https://www.westroxburyframing.com/areas/${area.slug}`,
       images: [
         {
           url: "/framed-art/01.webp",
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ],
     },
     alternates: {
-      canonical: `https://westroxburyframing.com/areas/${area.slug}`,
+      canonical: `https://www.westroxburyframing.com/areas/${area.slug}`,
     },
   };
 }
@@ -61,7 +61,7 @@ export default async function AreaPage({ params }: PageProps) {
     "@type": "LocalBusiness",
     name: "West Roxbury Framing",
     description: `Custom picture framing shop serving ${area.name}, MA and Greater Boston since 1981.`,
-    url: `https://westroxburyframing.com/areas/${area.slug}`,
+    url: `https://www.westroxburyframing.com/areas/${area.slug}`,
     telephone: "+1-617-327-3890",
     address: {
       "@type": "PostalAddress",

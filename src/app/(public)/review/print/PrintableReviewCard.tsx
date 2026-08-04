@@ -2,7 +2,7 @@
 
 import { QRCodeSVG } from "qrcode.react";
 
-const REVIEW_URL = "https://westroxburyframing.com/review";
+const REVIEW_URL = "https://www.westroxburyframing.com/review";
 
 export default function PrintableReviewCard() {
   return (

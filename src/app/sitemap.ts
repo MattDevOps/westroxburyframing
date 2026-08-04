@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { blogPosts } from "./(public)/blog/posts";
 import { SERVICES as NICHE_SERVICES } from "./(public)/services/[slug]/serviceData";
 
-const BASE_URL = "https://westroxburyframing.com";
+const BASE_URL = "https://www.westroxburyframing.com";
 
 // Neighborhoods we serve — each gets a landing page
 const SERVICE_AREAS = [

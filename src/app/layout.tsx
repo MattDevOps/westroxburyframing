@@ -27,6 +27,7 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.westroxburyframing.com"),
   title: {
     default: "West Roxbury Framing | Custom Picture Framing in West Roxbury, MA",
     template: "%s | West Roxbury Framing",
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
     title: "West Roxbury Framing | Custom Picture Framing in West Roxbury, MA",
     description:
       "Family-owned custom picture framing shop serving Boston since 1981. Art, photos, diplomas, memorabilia, shadowboxes & more. Walk-ins welcome.",
-    url: "https://westroxburyframing.com",
+    url: "https://www.westroxburyframing.com",
     siteName: "West Roxbury Framing",
     locale: "en_US",
     type: "website",
@@ -88,22 +89,22 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://westroxburyframing.com",
+    canonical: "https://www.westroxburyframing.com",
   },
 };
 
 const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
-  "@id": "https://westroxburyframing.com",
+  "@id": "https://www.westroxburyframing.com",
   name: "West Roxbury Framing",
   description:
     "Your local framer in West Roxbury, MA. Custom picture frame shop specializing in art, photos, diplomas, memorabilia, shadowboxes, restoration and repair since 1981. Walk-ins welcome.",
-  url: "https://westroxburyframing.com",
+  url: "https://www.westroxburyframing.com",
   telephone: "+1-617-327-3890",
   email: "jake@westroxburyframing.com",
-  image: "https://westroxburyframing.com/framed-art/01.webp",
-  logo: "https://westroxburyframing.com/logo.png",
+  image: "https://www.westroxburyframing.com/framed-art/01.webp",
+  logo: "https://www.westroxburyframing.com/logo.png",
   address: {
     "@type": "PostalAddress",
     streetAddress: "1741 Centre St",

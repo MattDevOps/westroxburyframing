@@ -105,7 +105,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
   }
 
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const invoiceUrl = `${baseUrl}/api/invoice/${order.id}`;
 
   const customerName = `${order.customer.firstName} ${order.customer.lastName}`;

@@ -16,10 +16,10 @@ export const metadata: Metadata = {
     title: "Book a Free Framing Consultation | West Roxbury Framing",
     description:
       "Schedule a complimentary framing consultation. Meet in person at our West Roxbury shop or talk over the phone. No obligation.",
-    url: "https://westroxburyframing.com/book",
+    url: "https://www.westroxburyframing.com/book",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/book",
+    canonical: "https://www.westroxburyframing.com/book",
   },
 };
 

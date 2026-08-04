@@ -100,6 +100,8 @@ export async function sendPickupReminderSMS(params: {
 Hours: M-F: 10-6, Sunday: 10:30am-4:30pm
 617-327-3890
 
+Love how it came out? We'd be grateful for a review: www.westroxburyframing.com/review
+
 Thank you.`;
 
   return sendSMS({
@@ -126,7 +128,7 @@ export async function sendOrderStatusUpdateSMS(params: {
   } else if (params.status === "quality_check") {
     message += " Your order is being quality checked before final assembly.";
   } else if (params.status === "completed") {
-    message += " Your order is complete and ready for pickup!";
+    message += " Your order is complete and ready for pickup! Love how it came out? We'd be grateful for a review: www.westroxburyframing.com/review";
   }
 
   return sendSMS({

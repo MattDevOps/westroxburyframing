@@ -19,10 +19,10 @@ export const metadata: Metadata = {
     title: "Tell Us About Your Custom Framing Project | West Roxbury Framing",
     description:
       "Tell us about your custom framing project online and we'll set up a time for you to come in. Pricing is always worked out in person at the shop.",
-    url: "https://westroxburyframing.com/custom-framing",
+    url: "https://www.westroxburyframing.com/custom-framing",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/custom-framing",
+    canonical: "https://www.westroxburyframing.com/custom-framing",
   },
 };
 

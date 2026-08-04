@@ -65,7 +65,7 @@ function emailLayout(opts: {
   body: string;
   cta?: { label: string; url: string };
 }): string {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const ctaHtml = opts.cta
     ? `<tr><td style="padding:24px 0 0">
         <a href="${opts.cta.url}" style="display:inline-block;background:#b8860b;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:6px">${opts.cta.label}</a>
@@ -256,7 +256,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: errorMsg }, { status: 400 });
   }
 
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const results = {
     sent: 0,
     failed: 0,

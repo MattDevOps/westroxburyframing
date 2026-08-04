@@ -17,10 +17,10 @@ export const metadata: Metadata = {
     title: "Contact West Roxbury Framing",
     description:
       "Visit us at 1741 Centre Street, West Roxbury, MA 02132. Call (617) 327-3890. Walk-ins welcome, free parking.",
-    url: "https://westroxburyframing.com/contact",
+    url: "https://www.westroxburyframing.com/contact",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/contact",
+    canonical: "https://www.westroxburyframing.com/contact",
   },
 };
 

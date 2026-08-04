@@ -12,6 +12,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/staff/", "/api/", "/pay/"],
       },
     ],
-    sitemap: "https://westroxburyframing.com/sitemap.xml",
+    sitemap: "https://www.westroxburyframing.com/sitemap.xml",
   };
 }

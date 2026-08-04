@@ -18,10 +18,10 @@ export const metadata: Metadata = {
     title: "Framing Tips & Guides | West Roxbury Framing Blog",
     description:
       "Expert framing tips, guides, and inspiration from the team at West Roxbury Framing.",
-    url: "https://westroxburyframing.com/blog",
+    url: "https://www.westroxburyframing.com/blog",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/blog",
+    canonical: "https://www.westroxburyframing.com/blog",
   },
 };
 

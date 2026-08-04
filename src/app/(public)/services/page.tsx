@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     title: "Frame Shop & Rush Same-Day Framing | West Roxbury Framing",
     description:
       "Your local framer — rush same-day framing, custom picture frames, shadow boxes, photo restoration, museum glass & more. Family-owned frame shop in West Roxbury since 1981.",
-    url: "https://westroxburyframing.com/services",
+    url: "https://www.westroxburyframing.com/services",
     images: [
       {
         url: "/framed-art/01.webp",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/services",
+    canonical: "https://www.westroxburyframing.com/services",
   },
 };
 

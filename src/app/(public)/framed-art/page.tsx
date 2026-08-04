@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "Our Work — Custom Framing Gallery | West Roxbury Framing",
     description:
       "Browse our portfolio of custom framed pieces — jerseys, diplomas, fine art, shadow boxes & more.",
-    url: "https://westroxburyframing.com/framed-art",
+    url: "https://www.westroxburyframing.com/framed-art",
     images: [
       {
         url: "/framed-art/brady-jersey.webp",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/framed-art",
+    canonical: "https://www.westroxburyframing.com/framed-art",
   },
 };
 

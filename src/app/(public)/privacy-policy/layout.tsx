@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "How West Roxbury Framing collects, uses, and protects your information, including email and SMS communication preferences and payment processing.",
-  alternates: { canonical: "https://westroxburyframing.com/policies" },
+  alternates: { canonical: "https://www.westroxburyframing.com/policies" },
 };
 
 export default function PrivacyPolicyLayout({ children }: { children: ReactNode }) {

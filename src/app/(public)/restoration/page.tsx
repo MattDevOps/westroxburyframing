@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "Photo & Frame Restoration | West Roxbury Framing",
     description:
       "Professional photo restoration and frame repair in West Roxbury, MA. Antique photos, water damage, torn photos, broken frames — bring it in for a free assessment.",
-    url: "https://westroxburyframing.com/restoration",
+    url: "https://www.westroxburyframing.com/restoration",
     images: [
       {
         url: "/restoration/1.jpg",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/restoration",
+    canonical: "https://www.westroxburyframing.com/restoration",
   },
 };
 

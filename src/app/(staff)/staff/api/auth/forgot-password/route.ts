@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         data: { resetTokenHash: hashResetToken(token), resetTokenExpiresAt: expiresAt },
       });
 
-      const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+      const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
       const resetUrl = `${baseUrl}/staff/reset-password?token=${token}`;
       await sendStaffPasswordResetEmail({ to: email, name: user.name, resetUrl });
     }

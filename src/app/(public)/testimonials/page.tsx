@@ -16,10 +16,10 @@ export const metadata: Metadata = {
     title: "Customer Reviews | West Roxbury Framing",
     description:
       "100+ five-star Google reviews. See why customers across Boston trust West Roxbury Framing for their custom picture framing needs.",
-    url: "https://westroxburyframing.com/testimonials",
+    url: "https://www.westroxburyframing.com/testimonials",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/testimonials",
+    canonical: "https://www.westroxburyframing.com/testimonials",
   },
 };
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "SMS Updates & Opt-In",
   description:
     "Opt in to receive order status updates and pickup reminders from West Roxbury Framing by text message. Message and data rates may apply. Reply STOP to opt out.",
-  alternates: { canonical: "https://westroxburyframing.com/sms-opt-in" },
+  alternates: { canonical: "https://www.westroxburyframing.com/sms-opt-in" },
 };
 
 export default function SmsOptInLayout({ children }: { children: ReactNode }) {

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "About West Roxbury Framing | Family-Owned Since 1981",
     description:
       "Family-owned custom picture framing shop serving Boston since 1981. 2024 Boston Legacy Business Award recipient.",
-    url: "https://westroxburyframing.com/about",
+    url: "https://www.westroxburyframing.com/about",
     images: [
       {
         url: "/home/2024-legacy-award-mayor-wu.jpg",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/about",
+    canonical: "https://www.westroxburyframing.com/about",
   },
 };
 

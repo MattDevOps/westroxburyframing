@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     },
   });
 
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const results = {
     sent: 0,
     failed: 0,

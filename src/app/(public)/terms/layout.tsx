@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
     "The terms and conditions for using West Roxbury Framing's website and custom framing services.",
-  alternates: { canonical: "https://westroxburyframing.com/terms" },
+  alternates: { canonical: "https://www.westroxburyframing.com/terms" },
 };
 
 export default function TermsLayout({ children }: { children: ReactNode }) {

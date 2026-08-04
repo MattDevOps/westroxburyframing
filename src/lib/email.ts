@@ -10,7 +10,7 @@ function emailLayout(opts: {
   cta?: { label: string; url: string };
   footer?: string;
 }): string {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const ctaHtml = opts.cta
     ? `<tr><td style="padding:24px 0 0">
         <a href="${opts.cta.url}" style="display:inline-block;background:#b8860b;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:6px">${opts.cta.label}</a>
@@ -326,7 +326,7 @@ export async function sendReadyForPickupEmail(params: {
   orderNumber: string;
   customerName: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `Your order is ready for pickup (${params.orderNumber})`;
 
   const text = `Hi ${params.customerName},
@@ -581,7 +581,7 @@ export async function sendInvoicePaidNotification(params: {
   amount: string;
   customerName: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `💰 Invoice Paid: ${params.orderNumber} — ${params.amount}`;
 
   const text = `Invoice Payment Received
@@ -644,7 +644,7 @@ export async function sendInvoiceToCustomer(params: {
   payUrl: string;
   orderSummary?: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `Your Invoice from West Roxbury Framing — ${params.invoiceNumber}`;
 
   const text = `Hi ${params.customerName},
@@ -786,7 +786,7 @@ export async function sendOrderInProductionEmail(params: {
   estimatedTotal?: string;
   dueDate?: Date;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `Your order is in production — ${params.orderNumber}`;
 
   const text = `Hi ${params.customerName},
@@ -862,7 +862,7 @@ export async function sendEstimateFollowUpEmail(params: {
   estimatedTotal: string;
   estimateUrl?: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `Estimate Reminder — ${params.orderNumber}`;
 
   const text = `Hi ${params.customerName},
@@ -936,7 +936,7 @@ export async function sendReceiptToCustomer(params: {
   notes?: string;
   receiptUrl?: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `Your Receipt — Order ${params.orderNumber}`;
 
   const lineItemsHtml = params.lineItems
@@ -1077,7 +1077,7 @@ export async function sendNewWebLeadNotification(params: {
   description: string;
   notes: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   // Web leads always go to jake@westroxburyframing.com
   const to = "jake@westroxburyframing.com";
   const subject = `🖼️ New Web Quote: ${params.orderNumber} from ${params.customerName}`;
@@ -1396,7 +1396,7 @@ export async function sendGiftCertificateToRecipient(params: {
   message?: string | null;
   pdfBase64: string;
 }) {
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://westroxburyframing.com";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.westroxburyframing.com";
   const subject = `${params.purchasedByName} sent you a gift — West Roxbury Framing`;
 
   const text = `Hi ${params.recipientName},

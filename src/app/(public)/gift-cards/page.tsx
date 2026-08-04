@@ -16,10 +16,10 @@ export const metadata: Metadata = {
     title: "Gift Cards — West Roxbury Framing",
     description:
       "Send a gift card by email — recipients can use it for custom framing, photo restoration, or anything in our shop. Never expires.",
-    url: "https://westroxburyframing.com/gift-cards",
+    url: "https://www.westroxburyframing.com/gift-cards",
   },
   alternates: {
-    canonical: "https://westroxburyframing.com/gift-cards",
+    canonical: "https://www.westroxburyframing.com/gift-cards",
   },
 };
 

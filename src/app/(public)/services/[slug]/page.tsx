@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: service.metaTitle,
       description: service.metaDescription,
-      url: `https://westroxburyframing.com/services/${service.slug}`,
+      url: `https://www.westroxburyframing.com/services/${service.slug}`,
       images: [
         {
           url: ogImage,
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ],
     },
     alternates: {
-      canonical: `https://westroxburyframing.com/services/${service.slug}`,
+      canonical: `https://www.westroxburyframing.com/services/${service.slug}`,
     },
   };
 }
@@ -58,7 +58,7 @@ export default async function ServicePage({ params }: PageProps) {
     provider: {
       "@type": "LocalBusiness",
       name: "West Roxbury Framing",
-      url: "https://westroxburyframing.com",
+      url: "https://www.westroxburyframing.com",
       telephone: "+1-617-327-3890",
       address: {
         "@type": "PostalAddress",
