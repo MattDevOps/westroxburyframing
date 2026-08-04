@@ -128,7 +128,10 @@ export async function sendOrderStatusUpdateSMS(params: {
   } else if (params.status === "quality_check") {
     message += " Your order is being quality checked before final assembly.";
   } else if (params.status === "completed") {
-    message += " Your order is complete and ready for pickup! Love how it came out? We'd be grateful for a review: www.westroxburyframing.com/review";
+    // No review ask here: the pickup-reminder SMS already carries it, and a
+    // customer whose order goes ready_for_pickup -> completed must not get
+    // asked twice.
+    message += " Your order is complete and ready for pickup!";
   }
 
   return sendSMS({
