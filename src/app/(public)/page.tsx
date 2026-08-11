@@ -4,6 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy, Hammer } from "lucide-react";
+// Names + taglines only; the bios are a few KB of text and ride along in the
+// client bundle, which is cheaper than letting a second copy of the list drift.
+import { sortedArtists } from "./artists/artists";
 
 const services = [
   { icon: Frame, title: "Custom & Handmade Frames", description: "Hundreds of styles, finishes, and colors in wood and aluminum — designed in-shop to suit your piece." },
@@ -447,6 +450,61 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured artists — internal links into /artists/<slug> from the
+          highest-authority page on the site. */}
+      {sortedArtists.length > 0 && (
+        <section className="py-24 bg-background">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-gold text-sm font-semibold tracking-[0.3em] uppercase mb-3">
+                Featured Artists
+              </motion.p>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
+              >
+                Artists We <span className="text-gold">Frame For</span>
+              </motion.h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Painters, printmakers, and collage artists working around Greater Boston. We handle the mats, glass, and mouldings so their work shows the way they intended.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+              {sortedArtists.map((artist, i) => (
+                <motion.div
+                  key={artist.slug}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link
+                    href={`/artists/${artist.slug}`}
+                    className="block h-full border border-border rounded-sm p-5 hover:border-gold/40 transition-colors"
+                  >
+                    <h3 className="font-serif text-lg text-foreground">{artist.name}</h3>
+                    <p className="text-muted-foreground text-xs uppercase tracking-wide mt-1">
+                      {artist.tagline}
+                      {artist.location && ` · ${artist.location}`}
+                    </p>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+            <div className="text-center">
+              <Link
+                href="/artists"
+                className="inline-block px-8 py-3.5 border border-gold text-gold font-semibold tracking-wide uppercase text-sm rounded-sm hover:bg-gold hover:text-primary-foreground transition-colors"
+              >
+                Meet the Artists
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Visit Us — map, hours, parking */}
       <section className="py-24 bg-background">

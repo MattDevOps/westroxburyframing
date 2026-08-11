@@ -10,8 +10,13 @@ import {
 } from "./artists";
 
 const TITLE = "Featured Artists | West Roxbury Framing";
-const DESCRIPTION =
-  "Meet the local artists we frame for. Boston-area painters, photographers, and makers whose work we prepare, mat, and frame by hand at our West Roxbury shop.";
+
+// Naming the artists in the description gives Google the entity association
+// between each artist and the shop, and it is what shows in the SERP snippet.
+const ARTIST_NAMES = sortedArtists.map((a) => a.name).join(", ");
+const DESCRIPTION = sortedArtists.length
+  ? `Boston-area artists we frame for — ${ARTIST_NAMES}. Painters, printmakers, and collage artists whose work we mat, glaze, and frame by hand at our West Roxbury shop.`
+  : "Meet the local artists we frame for. Boston-area painters, photographers, and makers whose work we prepare, mat, and frame by hand at our West Roxbury shop.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -23,6 +28,7 @@ export const metadata: Metadata = {
     "gallery framing West Roxbury",
     "local painters Boston",
     "artwork framing for artists",
+    ...sortedArtists.map((a) => a.name),
   ],
   openGraph: {
     title: TITLE,
@@ -35,6 +41,34 @@ export const metadata: Metadata = {
   // Keep the placeholder page out of the index until there's an artist on it.
   robots: hasArtists ? undefined : { index: false, follow: true },
 };
+
+/**
+ * Answers to what people actually type when they're looking for a framer for
+ * their own work. Rendered on the page and mirrored into FAQPage schema, so it
+ * feeds both classic search and AI answer engines.
+ */
+const FAQS = [
+  {
+    q: "Do you frame artwork for working artists?",
+    a: "Yes. We frame for painters, printmakers, photographers, and collage artists across Greater Boston — full gallery shows, commissions, and single pieces. Bring the work in and we'll design the frame around it.",
+  },
+  {
+    q: "Can you frame a whole gallery show?",
+    a: "We do. Bring in the full body of work and we'll spec a consistent moulding, mat, and glazing package across every piece, then build and deliver on your show date.",
+  },
+  {
+    q: "What glass should I use on work that's for sale?",
+    a: "For work heading into a collection, UV-protective or museum glass is worth it — it cuts fading and, in the museum grade, nearly eliminates reflection. We'll walk through the options and prices with the piece in front of us.",
+  },
+  {
+    q: "Do you frame original prints and works on paper?",
+    a: "Yes, with conservation matting and hinging so nothing acidic touches the paper and the work can be removed later without damage. That's how we handle white-line woodblock prints, collage, and original works on paper.",
+  },
+  {
+    q: "Where are you located?",
+    a: "1741 Centre St, West Roxbury, MA 02132 — free street parking out front and a municipal lot behind the building. Call 617-327-3890.",
+  },
+];
 
 export default function ArtistsIndexPage() {
   // Only the tab-strip fields cross to the client — bios stay on the server.
@@ -78,6 +112,35 @@ export default function ArtistsIndexPage() {
     },
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://www.westroxburyframing.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Featured Artists",
+        item: "https://www.westroxburyframing.com/artists",
+      },
+    ],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  };
+
   return (
     <>
       {hasArtists && (
@@ -86,6 +149,14 @@ export default function ArtistsIndexPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(listSchema) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="min-h-screen bg-background pt-28 pb-20">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -116,6 +187,28 @@ export default function ArtistsIndexPage() {
               </p>
             </div>
           )}
+
+          {/* Framing-for-artists FAQ — mirrored in FAQPage schema above */}
+          <section className="mt-20 max-w-3xl mx-auto">
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
+              Framing for <span className="text-gold">Artists</span>
+            </h2>
+            <dl className="space-y-6">
+              {FAQS.map((faq) => (
+                <div
+                  key={faq.q}
+                  className="border-b border-border pb-6 last:border-0"
+                >
+                  <dt className="font-serif text-lg text-foreground mb-2">
+                    {faq.q}
+                  </dt>
+                  <dd className="text-muted-foreground text-sm leading-relaxed">
+                    {faq.a}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
 
           {/* CTA — recruit artists for the program */}
           <div className="mt-20 p-10 bg-secondary rounded-sm border border-border text-center">

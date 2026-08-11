@@ -9,9 +9,13 @@
  * 3. Nothing else to wire up: the nav link, footer link, sitemap entries and
  *    detail pages all come online automatically once this array is non-empty.
  *
- * Ask each artist for: a headshot, 3-6 photos of work, a 2-3 sentence blurb, a
- * longer bio, their website/Instagram links, and written permission to publish
- * the images (plus whatever credit line they want on them).
+ * Ask each artist for: a headshot, 3-6 photos of work, their website/Instagram
+ * links, and written permission to publish the images (plus whatever credit
+ * line they want on them).
+ *
+ * COPY RULE (Jake, Aug 2026): highlight the work, not the resume. A sentence
+ * or two on what they make and how it looks. No birth dates, no "moved to
+ * Boston in 19xx", no year-by-year exhibition history.
  */
 
 export interface ArtistWork {
@@ -41,9 +45,9 @@ export interface Artist {
   name: string;
   /** Short line under the name, e.g. "Oil painter, Jamaica Plain" */
   tagline: string;
-  /** 2-3 sentences shown on the artist's tab. */
+  /** A sentence or two about the work, shown on the artist's tab. */
   blurb: string;
-  /** Longer bio for the detail page. Blank lines separate paragraphs. */
+  /** Detail-page copy — still short, still about the work. Blank lines separate paragraphs. */
   bio: string;
   /** Headshot / studio photo path under /public. Falls back to initials. */
   portrait?: string;
@@ -75,9 +79,7 @@ export interface Artist {
  *   blurb:
  *     "Jane paints the marshes and harbors of the South Shore in heavy oils. " +
  *     "We've framed her last three gallery shows, start to finish.",
- *   bio: `Jane Doe has painted the Massachusetts coastline for over twenty years...
- *
- * Her work hangs in private collections across New England...`,
+ *   bio: `Jane Doe paints the Massachusetts coastline in heavy oils — marsh grass, working harbors, weather coming in off the water.`,
  *   portrait: "/artists/jane-doe/portrait.jpg",
  *   portraitAlt: "Jane Doe in her Jamaica Plain studio",
  *   works: [
@@ -102,15 +104,11 @@ const PAUL_GOODNIGHT: Artist = {
   name: "Paul Goodnight",
   tagline: "Painter",
   blurb:
-    "Paul Goodnight is one of Boston's best-known painters, working out of the " +
-    "South End for decades. His figurative work carries the rhythm of the African " +
-    "diaspora, and it hangs everywhere from private collections to the " +
-    "Smithsonian American Art Museum.",
-  bio: `Paul Goodnight has been a fixture of the Boston art world since the 1970s. Born in Chicago in 1946 and raised by a foster family in the Boston area, he served two years in Vietnam and turned to painting on his return. He went on to study at the Vesper George School of Art and earned his degree from the Massachusetts College of Art in 1976.
+    "Paul Goodnight's figurative paintings carry the rhythm of the African " +
+    "diaspora. His work hangs in the Smithsonian American Art Museum.",
+  bio: `Paul Goodnight is one of Boston's best-known painters. His figurative work carries the rhythm of the African diaspora, and it hangs everywhere from private collections to the Smithsonian American Art Museum.
 
-His paintings reached a national audience through television and film — most famously on the set of The Cosby Show — and he was commissioned to paint the official commemorative poster for the 1996 Olympic Games in Atlanta. His work is held in the Smithsonian American Art Museum.
-
-For more than twenty years he has worked out of the Piano Factory artists' compound in Boston's South End, where he remains a driving force in the city's art community.`,
+He works out of the Piano Factory artists' compound in Boston's South End, and his paintings have reached a wide audience through film and television.`,
   works: [],
   website: "https://www.paulgoodnight.com/",
   websiteLabel: "paulgoodnight.com",
@@ -136,11 +134,11 @@ const WENDI_GRAY: Artist = {
   name: "Wendi Gray",
   tagline: "Painter",
   blurb:
-    "Wendi Gray paints on the North Shore, working out of Salem. She posts new " +
-    "pieces as they come off the easel over on Instagram.",
-  bio: `Wendi Gray is a painter based in Salem, Massachusetts, on Boston's North Shore.
+    "Wendi Gray paints out of Salem, on Boston's North Shore. New pieces go up " +
+    "on Instagram as they come off the easel.",
+  bio: `Wendi Gray is a painter working out of Salem, on Boston's North Shore.
 
-Her studio work and new pieces show up first on Instagram, which is the best place to follow what she's working on.`,
+Instagram is the best place to see what's currently on the easel.`,
   works: [],
   instagram: "https://www.instagram.com/graywendi/",
   location: "Salem, MA",
@@ -157,17 +155,12 @@ const DARRELL_SMITH: Artist = {
   name: "Darrell Smith",
   tagline: "White-line woodblock printmaker",
   blurb:
-    "Darrell Smith works in the Provincetown tradition of white-line woodblock " +
-    "printing — one block, hand-carved, each color painted and pulled by hand. " +
-    "It is a technique native to Cape Cod and practiced by very few people.",
-  // Lineage below is quoted from his own site: "Darrell learned white-line
-  // woodblock printing from Kathryn Lee Smith (no relation), who was taught by
-  // her grandmother Ferol Sibley Warthen. Warthen was taught by Blanche Lazzell."
-  bio: `Darrell Smith is a printmaker in Provincetown, Massachusetts, working in the white-line woodblock print — a technique developed in Provincetown in 1915 and carried on there ever since. Unlike a conventional woodcut, the whole image is carved into a single block, with each area painted and printed by hand so a thin white line of uncarved wood separates every color.
+    "Darrell Smith makes white-line woodblock prints — one hand-carved block, " +
+    "every color painted and pulled by hand. It's a Provincetown technique " +
+    "practiced by very few people.",
+  bio: `Darrell Smith is a Provincetown printmaker working in the white-line woodblock print. Unlike a conventional woodcut, the whole image is carved into a single block, and each area is painted and printed by hand so a thin white line of uncarved wood separates every color.
 
-He learned the method through a direct line of Provincetown printmakers: he studied under Kathryn Lee Smith, who trained with her grandmother Ferol Sibley Warthen, who in turn learned from Blanche Lazzell.
-
-His prints are made and sold under Smith Provincetown Prints.`,
+It's a technique born in Provincetown and still practiced by only a handful of people. His prints are made and sold under Smith Provincetown Prints.`,
   works: [],
   website: "https://smithprovincetownprints.com/",
   websiteLabel: "smithprovincetownprints.com",
@@ -191,16 +184,12 @@ const LAURENCE_PIERCE: Artist = {
   name: "Laurence Pierce",
   tagline: "Artist, photographer & illustrator",
   blurb:
-    "Laurence Pierce is a Boston artist, photographer and illustrator, and the " +
-    "founder of African Winter Gallery/Studio. His paintings, drawings and " +
-    "constructions put his aesthetic and social concerns in the same frame.",
-  // 1991 move and the Boston African-American Artists Association come from the
-  // NCAAA page linked below. The March 2005 gallery opening in Dorchester comes
-  // from the Dorchester Reporter, "Basement gallery spotlights artists of color"
-  // (Oct 26, 2005): dotnews.com/2005/basement-gallery-spotlights-artists-color/
-  bio: `Laurence Pierce is a Boston-based artist, photographer and illustrator whose paintings, drawings and constructions bring together his aesthetic and his social concerns.
+    "Laurence Pierce makes paintings, drawings and constructions that put his " +
+    "aesthetic and his social concerns in the same frame. He works out of " +
+    "African Winter Studio in Dorchester.",
+  bio: `Laurence Pierce is a Boston artist, photographer and illustrator whose paintings, drawings and constructions bring his aesthetic and his social concerns together in the same piece.
 
-He moved to Boston in 1991 and joined the Boston African-American Artists Association. In March 2005 he opened African Winter Gallery — now African Winter Studio — in the basement of his Dorchester home. His solo exhibition Think About It was shown at the National Center of Afro-American Artists.`,
+He works out of African Winter Studio in Dorchester, and his solo exhibition Think About It was shown at the National Center of Afro-American Artists.`,
   works: [],
   instagram: "https://www.instagram.com/laurencempierce/",
   links: [
@@ -223,12 +212,12 @@ const JAMEEL_RADCLIFFE: Artist = {
   name: "Jameel Radcliffe",
   tagline: "Painter",
   blurb:
-    "Jameel Radcliffe is a Boston-based painter working in both figurative and " +
-    "abstract painting. His portraits and large oils have been shown around the " +
-    "city and featured by WBUR.",
-  bio: `Jameel Radcliffe is a painter based in Boston, working across figurative and abstract painting — portraits in oil on one hand, large abstract canvases on the other.
+    "Jameel Radcliffe paints both ways — portraits in oil on one hand, large " +
+    "abstract canvases on the other. WBUR featured him in its series on Boston " +
+    "makers.",
+  bio: `Jameel Radcliffe is a Boston painter working across figurative and abstract painting — oil portraits on one hand, large abstract canvases on the other.
 
-His work has been shown through the Boston Center for the Arts and ShowUp, and WBUR featured him in its series on Boston makers in 2024.`,
+His work has been shown through the Boston Center for the Arts and ShowUp, and WBUR featured him in its series on Boston makers.`,
   works: [],
   website: "https://www.jameelradcliffe.com/",
   websiteLabel: "jameelradcliffe.com",
@@ -258,11 +247,10 @@ const DEBORAH_ELLINGTON: Artist = {
   tagline: "Paper collage artist",
   blurb:
     "Deborah Ellington makes hand-cut paper collage out of painted book pages, " +
-    "typography and poetry. The work is layered, textural, and the kind of piece " +
-    "that rewards a deep mat and a close look.",
+    "typography and poetry — layered, textural work that rewards a close look.",
   bio: `Deborah Ellington is a collage artist in Roslindale. She builds her work by hand, cutting into painted book pages and setting typography, poetry, color and texture against each other on the page.
 
-Her work is carried by Green Lion Gallery, and she posts new pieces on Instagram.`,
+Her work is carried by Green Lion Gallery, and new pieces go up on Instagram.`,
   works: [],
   instagram: "https://www.instagram.com/deborahellington3/",
   links: [

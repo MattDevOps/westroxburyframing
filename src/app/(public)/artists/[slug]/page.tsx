@@ -77,27 +77,79 @@ export default async function ArtistPage({ params }: PageProps) {
   const others = getOtherArtists(artist.slug);
   const sameAs = artistSameAs(artist);
 
-  const personSchema = {
+  // ProfilePage wrapping a Person is the shape Google documents for a page
+  // that is *about* one person — it reads better than a bare Person node.
+  const profileSchema = {
     "@context": "https://schema.org",
-    "@type": "Person",
-    name: artist.name,
-    description: artist.blurb,
-    ...(artist.portrait
-      ? { image: `https://www.westroxburyframing.com${artist.portrait}` }
-      : {}),
-    jobTitle: artist.tagline,
+    "@type": "ProfilePage",
     url: `https://www.westroxburyframing.com/artists/${artist.slug}`,
-    ...(sameAs.length ? { sameAs } : {}),
-    ...(artist.location
-      ? { homeLocation: { "@type": "Place", name: artist.location } }
+    mainEntity: {
+      "@type": "Person",
+      "@id": `https://www.westroxburyframing.com/artists/${artist.slug}#person`,
+      name: artist.name,
+      description: artist.blurb,
+      ...(artist.portrait
+        ? { image: `https://www.westroxburyframing.com${artist.portrait}` }
+        : {}),
+      jobTitle: artist.tagline,
+      url: `https://www.westroxburyframing.com/artists/${artist.slug}`,
+      ...(sameAs.length ? { sameAs } : {}),
+      ...(artist.location
+        ? { homeLocation: { "@type": "Place", name: artist.location } }
+        : {}),
+    },
+    // The artwork hangs off the page as hasPart, with creator pointing back at
+    // the Person. schema.org has no "works created by" property on Person —
+    // the relationship only runs the other way, CreativeWork -> creator.
+    ...(artist.works.length
+      ? {
+          hasPart: artist.works.map((work) => ({
+            "@type": "VisualArtwork",
+            name: work.title || work.alt,
+            ...(work.medium ? { artMedium: work.medium } : {}),
+            image: `https://www.westroxburyframing.com${work.src}`,
+            creator: {
+              "@id": `https://www.westroxburyframing.com/artists/${artist.slug}#person`,
+            },
+          })),
+        }
       : {}),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://www.westroxburyframing.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Featured Artists",
+        item: "https://www.westroxburyframing.com/artists",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: artist.name,
+        item: `https://www.westroxburyframing.com/artists/${artist.slug}`,
+      },
+    ],
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <div className="min-h-screen bg-background pt-28 pb-20">
         <div className="max-w-5xl mx-auto px-6">
@@ -304,7 +356,14 @@ export default async function ArtistPage({ params }: PageProps) {
             </h2>
             <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
               Gallery shows, commissions, or a single piece — bring your work in
-              and we&apos;ll design the frame around it.
+              and we&apos;ll design the{" "}
+              <Link
+                href="/custom-framing"
+                className="text-gold hover:text-gold-light underline underline-offset-4 decoration-border hover:decoration-gold"
+              >
+                custom frame
+              </Link>{" "}
+              around it.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
