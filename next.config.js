@@ -65,6 +65,16 @@ const nextConfig = {
       },
       {
         // Cache static assets aggressively
+        source: "/artists/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Cache static assets aggressively
         source: "/framed-art/:path*",
         headers: [
           {

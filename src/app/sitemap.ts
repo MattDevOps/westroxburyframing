@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { blogPosts } from "./(public)/blog/posts";
 import { SERVICES as NICHE_SERVICES } from "./(public)/services/[slug]/serviceData";
+import { artists } from "./(public)/artists/artists";
 
 const BASE_URL = "https://www.westroxburyframing.com";
 
@@ -54,5 +55,29 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...serviceAreaPages, ...nicheServicePages, ...blogPages];
+  // Only listed once there's at least one artist profile to land on.
+  const artistPages: MetadataRoute.Sitemap = artists.length
+    ? [
+        {
+          url: `${BASE_URL}/artists`,
+          lastModified: now,
+          changeFrequency: "monthly" as const,
+          priority: 0.7,
+        },
+        ...artists.map((a) => ({
+          url: `${BASE_URL}/artists/${a.slug}`,
+          lastModified: now,
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        })),
+      ]
+    : [];
+
+  return [
+    ...staticPages,
+    ...serviceAreaPages,
+    ...nicheServicePages,
+    ...blogPages,
+    ...artistPages,
+  ];
 }

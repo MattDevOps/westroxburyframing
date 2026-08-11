@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const navLinks = [
+const baseNavLinks = [
   { name: "Home", path: "/" },
   { name: "About Us", path: "/about" },
   { name: "Services", path: "/services" },
@@ -19,9 +19,17 @@ const navLinks = [
   { name: "Contact Us", path: "/contact" },
 ];
 
-export default function HeaderPublic() {
+const ARTISTS_LINK = { name: "Artists", path: "/artists" };
+
+// showArtists comes from the server layout so the artist data never ships to
+// the client — the tab only appears once there's at least one artist profile.
+export default function HeaderPublic({ showArtists = false }: { showArtists?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+
+  const navLinks = showArtists
+    ? [...baseNavLinks.slice(0, 6), ARTISTS_LINK, ...baseNavLinks.slice(6)]
+    : baseNavLinks;
   // TODO: re-enable customer sign-in when needed
   // const [loggedIn, setLoggedIn] = useState(false);
   // useEffect(() => {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
+import { hasArtists } from "@/app/(public)/artists/artists";
 
 export default function FooterPublic() {
   return (
@@ -22,6 +23,9 @@ export default function FooterPublic() {
               <Link href="/services" className="text-muted-foreground text-sm hover:text-gold transition-colors">Services</Link>
               <Link href="/framed-art" className="text-muted-foreground text-sm hover:text-gold transition-colors">Framed Art</Link>
               <Link href="/restoration" className="text-muted-foreground text-sm hover:text-gold transition-colors">Repair & Restoration</Link>
+              {hasArtists && (
+                <Link href="/artists" className="text-muted-foreground text-sm hover:text-gold transition-colors">Featured Artists</Link>
+              )}
               <Link href="/testimonials" className="text-muted-foreground text-sm hover:text-gold transition-colors">Testimonials</Link>
               <Link href="/blog" className="text-muted-foreground text-sm hover:text-gold transition-colors">Framing Tips & Blog</Link>
               <Link href="/contact" className="text-muted-foreground text-sm hover:text-gold transition-colors">Contact Us</Link>
