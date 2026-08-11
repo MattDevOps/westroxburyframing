@@ -1,7 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
-import { sortedArtists, hasArtists, websiteLabel } from "./artists";
+import ArtistTabs, { ArtistTab } from "./ArtistTabs";
+import {
+  sortedArtists,
+  hasArtists,
+  websiteLabel,
+  artistSameAs,
+  artistInitials,
+} from "./artists";
 
 const TITLE = "Featured Artists | West Roxbury Framing";
 const DESCRIPTION =
@@ -31,6 +37,23 @@ export const metadata: Metadata = {
 };
 
 export default function ArtistsIndexPage() {
+  // Only the tab-strip fields cross to the client — bios stay on the server.
+  const tabs: ArtistTab[] = sortedArtists.map((artist) => ({
+    slug: artist.slug,
+    name: artist.name,
+    tagline: artist.tagline,
+    blurb: artist.blurb,
+    initials: artistInitials(artist.name),
+    portrait: artist.portrait,
+    portraitAlt: artist.portraitAlt,
+    location: artist.location,
+    website: artist.website,
+    websiteLabel: websiteLabel(artist),
+    instagram: artist.instagram,
+    links: artist.links,
+    workCount: artist.works.length,
+  }));
+
   const listSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -47,7 +70,9 @@ export default function ArtistsIndexPage() {
           name: artist.name,
           description: artist.blurb,
           url: `https://www.westroxburyframing.com/artists/${artist.slug}`,
-          ...(artist.website ? { sameAs: [artist.website] } : {}),
+          ...(artistSameAs(artist).length
+            ? { sameAs: artistSameAs(artist) }
+            : {}),
         },
       })),
     },
@@ -71,71 +96,15 @@ export default function ArtistsIndexPage() {
               Featured <span className="text-gold">Artists</span>
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Local painters, photographers, and makers whose work comes through
-              our shop. We handle the mats, the glass, and the mouldings so their
-              work shows the way they intended — and we&apos;re glad to send you
-              their way.
+              Painters, printmakers, photographers, and collage artists working
+              around Greater Boston. We handle the mats, the glass, and the
+              mouldings so their work shows the way they intended — and
+              we&apos;re glad to send you their way.
             </p>
           </div>
 
           {hasArtists ? (
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {sortedArtists.map((artist) => (
-                <article
-                  key={artist.slug}
-                  className="border border-border rounded-sm overflow-hidden bg-card hover:border-gold/30 transition-colors flex flex-col"
-                >
-                  <Link href={`/artists/${artist.slug}`} className="block group">
-                    <div className="relative aspect-[4/3] bg-secondary">
-                      <Image
-                        src={artist.portrait}
-                        alt={artist.portraitAlt}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        unoptimized={artist.portrait.startsWith("http")}
-                      />
-                    </div>
-                  </Link>
-                  <div className="p-6 flex flex-col flex-1">
-                    {artist.featured && (
-                      <p className="text-gold text-[11px] font-semibold tracking-[0.2em] uppercase mb-2">
-                        Featured
-                      </p>
-                    )}
-                    <Link href={`/artists/${artist.slug}`}>
-                      <h2 className="font-serif text-xl font-bold text-foreground hover:text-gold transition-colors">
-                        {artist.name}
-                      </h2>
-                    </Link>
-                    <p className="text-muted-foreground text-xs uppercase tracking-wide mt-1 mb-3">
-                      {artist.tagline}
-                    </p>
-                    <p className="text-muted-foreground text-sm leading-relaxed flex-1">
-                      {artist.blurb}
-                    </p>
-                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
-                      <Link
-                        href={`/artists/${artist.slug}`}
-                        className="text-gold text-sm font-semibold hover:text-gold-light transition-colors"
-                      >
-                        See Their Work →
-                      </Link>
-                      {artist.website && (
-                        <a
-                          href={artist.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground text-xs hover:text-gold transition-colors"
-                        >
-                          {websiteLabel(artist)}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <ArtistTabs artists={tabs} />
           ) : (
             <div className="border border-border rounded-sm bg-secondary p-12 text-center max-w-2xl mx-auto">
               <h2 className="font-serif text-2xl font-bold text-foreground mb-3">

@@ -7,6 +7,8 @@ import {
   getArtistBySlug,
   getOtherArtists,
   websiteLabel,
+  artistSameAs,
+  artistInitials,
 } from "../artists";
 
 interface PageProps {
@@ -27,6 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     artist.metaDescription ||
     `${artist.name}: ${artist.blurb} Framed by hand at West Roxbury Framing.`;
 
+  // No artwork or headshot yet — fall back to the site-wide OG image.
+  const ogImage = artist.works[0]?.src || artist.portrait;
+
   return {
     title,
     description,
@@ -42,14 +47,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: `https://www.westroxburyframing.com/artists/${artist.slug}`,
       type: "profile",
-      images: [
-        {
-          url: artist.works[0]?.src || artist.portrait,
-          width: 1200,
-          height: 630,
-          alt: artist.works[0]?.alt || artist.portraitAlt,
-        },
-      ],
+      ...(ogImage
+        ? {
+            images: [
+              {
+                url: ogImage,
+                width: 1200,
+                height: 630,
+                alt:
+                  artist.works[0]?.alt ||
+                  artist.portraitAlt ||
+                  `Work by ${artist.name}`,
+              },
+            ],
+          }
+        : {}),
     },
     alternates: {
       canonical: `https://www.westroxburyframing.com/artists/${artist.slug}`,
@@ -63,14 +75,16 @@ export default async function ArtistPage({ params }: PageProps) {
   if (!artist) notFound();
 
   const others = getOtherArtists(artist.slug);
-  const sameAs = [artist.website, artist.instagram].filter(Boolean) as string[];
+  const sameAs = artistSameAs(artist);
 
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: artist.name,
     description: artist.blurb,
-    image: `https://www.westroxburyframing.com${artist.portrait}`,
+    ...(artist.portrait
+      ? { image: `https://www.westroxburyframing.com${artist.portrait}` }
+      : {}),
     jobTitle: artist.tagline,
     url: `https://www.westroxburyframing.com/artists/${artist.slug}`,
     ...(sameAs.length ? { sameAs } : {}),
@@ -97,15 +111,26 @@ export default async function ArtistPage({ params }: PageProps) {
           {/* Header: portrait + intro */}
           <div className="mt-8 grid gap-10 md:grid-cols-[320px_1fr] items-start">
             <div className="relative aspect-[4/5] rounded-sm overflow-hidden border border-border bg-secondary">
-              <Image
-                src={artist.portrait}
-                alt={artist.portraitAlt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 320px"
-                priority
-                unoptimized={artist.portrait.startsWith("http")}
-              />
+              {artist.portrait ? (
+                <Image
+                  src={artist.portrait}
+                  alt={artist.portraitAlt || artist.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 320px"
+                  priority
+                  unoptimized={artist.portrait.startsWith("http")}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    aria-hidden="true"
+                    className="font-serif text-6xl text-gold/40"
+                  >
+                    {artistInitials(artist.name)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -155,17 +180,51 @@ export default async function ArtistPage({ params }: PageProps) {
                   )}
                 </div>
               )}
+
+              {artist.links && artist.links.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-border">
+                  <p className="text-muted-foreground text-[11px] uppercase tracking-[0.2em] mb-3">
+                    {artist.name.split(" ")[0]} Elsewhere
+                  </p>
+                  <ul className="space-y-2">
+                    {artist.links.map((link) => (
+                      <li key={link.url}>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-gold transition-colors underline underline-offset-4 decoration-border hover:decoration-gold"
+                        >
+                          {link.label} →
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Their work, framed by us */}
-          {artist.works.length > 0 && (
+          {artist.works.length === 0 ? (
+            <section className="mt-16 border border-border rounded-sm bg-secondary p-8 text-center">
+              <h2 className="font-serif text-xl font-bold text-foreground mb-2">
+                Work Coming <span className="text-gold">Soon</span>
+              </h2>
+              <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                We&apos;re adding photographs of {artist.name.split(" ")[0]}
+                &apos;s work to this page.
+                {(artist.website || artist.instagram) &&
+                  " In the meantime, the links above go straight to it."}
+              </p>
+            </section>
+          ) : (
             <section className="mt-20">
               <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
                 Their <span className="text-gold">Work</span>
               </h2>
               <p className="text-muted-foreground text-sm mb-8">
-                Pieces by {artist.name}, framed by hand in our West Roxbury shop.
+                Selected work by {artist.name}.
               </p>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {artist.works.map((work) => (
@@ -183,7 +242,7 @@ export default async function ArtistPage({ params }: PageProps) {
                         unoptimized={work.src.startsWith("http")}
                       />
                     </div>
-                    {(work.title || work.medium || work.framing) && (
+                    {(work.title || work.medium || work.framing || work.credit) && (
                       <figcaption className="p-4">
                         {work.title && (
                           <h3 className="text-sm font-medium text-foreground">
@@ -198,6 +257,11 @@ export default async function ArtistPage({ params }: PageProps) {
                         {work.framing && (
                           <p className="text-xs text-gold/80 mt-1">
                             {work.framing}
+                          </p>
+                        )}
+                        {work.credit && (
+                          <p className="text-[11px] text-muted-foreground/70 mt-2">
+                            {work.credit}
                           </p>
                         )}
                       </figcaption>
