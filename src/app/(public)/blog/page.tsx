@@ -3,7 +3,7 @@ import Link from "next/link";
 import { blogPosts } from "./posts";
 
 export const metadata: Metadata = {
-  title: "Framing Tips & Guides | West Roxbury Framing Blog",
+  title: { absolute: "Framing Tips & Guides | West Roxbury Framing Blog" },
   description:
     "Expert framing tips, guides, and inspiration from West Roxbury Framing. Learn about custom framing costs, how to choose the right frame, preservation techniques, and more.",
   keywords: [

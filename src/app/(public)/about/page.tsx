@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import AboutContent from "./AboutContent";
 
 export const metadata: Metadata = {
-  title: "About West Roxbury Framing | Family-Owned Since 1981",
+  title: { absolute: "About West Roxbury Framing | Family-Owned Since 1981" },
   description:
     "West Roxbury Framing is a family-owned custom picture framing shop in West Roxbury, MA. Serving Boston since 1981. 2024 Boston Legacy Business Award recipient. Custom frames, restoration, shadow boxes & more.",
   keywords: [

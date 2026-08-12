@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import FramedArtContent from "./FramedArtContent";
 
 export const metadata: Metadata = {
-  title: "Custom Framing Gallery | Our Work — West Roxbury Framing",
+  title: { absolute: "Custom Framing Gallery | Our Work — West Roxbury Framing" },
   description:
     "Browse our custom framing gallery. Sports jerseys, diplomas, fine art, shadow boxes, flags, memorabilia & more — all framed by hand in West Roxbury, MA. See our recent projects.",
   keywords: [

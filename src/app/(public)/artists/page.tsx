@@ -19,7 +19,7 @@ const DESCRIPTION = sortedArtists.length
   : "Meet the local artists we frame for. Boston-area painters, photographers, and makers whose work we prepare, mat, and frame by hand at our West Roxbury shop.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: [
     "Boston local artists",

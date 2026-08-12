@@ -20,7 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = `Custom picture framing for ${area.name} residents — ${area.distance} from ${area.name}. Custom frames, shadow boxes, photo restoration, museum glass & more. 40+ years experience. Walk-ins welcome. Free parking.`;
 
   return {
-    title,
+    // Already ends in the shop name, so skip the layout's title template.
+    title: { absolute: title },
     description,
     keywords: [
       `custom framing ${area.name}`,

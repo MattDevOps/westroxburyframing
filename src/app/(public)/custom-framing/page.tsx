@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import CustomFramingContent from "./CustomFramingContent";
 
 export const metadata: Metadata = {
-  title: "Tell Us About Your Custom Framing Project | West Roxbury Framing",
+  title: { absolute: "Tell Us About Your Custom Framing Project | West Roxbury Framing" },
   description:
     "Tell us about your custom framing project online — upload photos and describe what you'd like framed, and we'll set up a time for you to come in for a design consultation. Boston-area framer since 1981.",
   keywords: [

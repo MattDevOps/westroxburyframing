@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import GiftCardsContent from "./GiftCardsContent";
 
 export const metadata: Metadata = {
-  title: "Gift Cards | West Roxbury Framing",
+  title: { absolute: "Gift Cards | West Roxbury Framing" },
   description:
     "Send a West Roxbury Framing gift card by email. Choose any amount from $10 to $1,000. Recipients pick out a custom frame, photo restoration, or any service in our Boston shop. Gift certificates never expire.",
   keywords: [

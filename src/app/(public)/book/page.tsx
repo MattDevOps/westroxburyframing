@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import BookContent from "./BookContent";
 
 export const metadata: Metadata = {
-  title: "Book a Free Framing Consultation | West Roxbury Framing",
+  title: { absolute: "Book a Free Framing Consultation | West Roxbury Framing" },
   description:
     "Book a free custom framing consultation with West Roxbury Framing. Meet in person at our West Roxbury, MA shop or over the phone. Walk-ins also welcome. Expert framing design advice — no obligation.",
   keywords: [

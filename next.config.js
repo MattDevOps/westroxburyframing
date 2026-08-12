@@ -25,6 +25,20 @@ const nextConfig = {
         destination: "/book",
         permanent: true,
       },
+      // Pages from the pre-Next.js static site. Google still has these in its
+      // index and they were 404ing, which throws away their age and links.
+      { source: "/about-us.html", destination: "/about", permanent: true },
+      { source: "/contact-us.html", destination: "/contact", permanent: true },
+      { source: "/framed-art.html", destination: "/framed-art", permanent: true },
+      { source: "/restoration.html", destination: "/restoration", permanent: true },
+      { source: "/services.html", destination: "/services", permanent: true },
+      { source: "/testimonials.html", destination: "/testimonials", permanent: true },
+      { source: "/special-offers.html", destination: "/gift-cards", permanent: true },
+      { source: "/thank-you.html", destination: "/", permanent: true },
+      { source: "/gerald-riveron.html", destination: "/artists", permanent: true },
+      // Same pages under the WordPress permalink shape that replaced them.
+      { source: "/about-us", destination: "/about", permanent: true },
+      { source: "/contact-us", destination: "/contact", permanent: true },
     ];
   },
   async headers() {

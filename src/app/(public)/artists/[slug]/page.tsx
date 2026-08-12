@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = artist.works[0]?.src || artist.portrait;
 
   return {
-    title,
+    // Already ends in the shop name, so skip the layout's title template.
+    title: { absolute: title },
     description,
     keywords: artist.keywords || [
       artist.name,
