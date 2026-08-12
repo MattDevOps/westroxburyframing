@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Oswald } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { GoogleAnalytics } from "@next/third-parties/google";
+
+// GA4 loads only where NEXT_PUBLIC_GA_ID is set, so local dev and preview
+// deploys stay out of the shop's numbers. Set it in Vercel for Production only.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -179,6 +184,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
+        {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
       </body>
     </html>
   );
