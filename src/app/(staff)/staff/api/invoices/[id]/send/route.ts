@@ -86,6 +86,9 @@ export async function POST(req: Request, ctx: Ctx) {
       customerEmail: invoice.customer.email,
       customerGivenName: invoice.customer.firstName || undefined,
       customerFamilyName: invoice.customer.lastName || undefined,
+      // Bill the company on the Square-hosted invoice too, not just our PDF.
+      customerCompanyName:
+        (invoice.billToCompany ?? invoice.customer.organization) || undefined,
       title: `West Roxbury Framing - ${invoice.invoiceNumber}`,
       message: `Invoice for ${orderDescs.length} order(s). Thank you for your business!`,
       lines: [

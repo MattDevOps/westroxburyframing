@@ -18,6 +18,7 @@ interface Invoice {
   squareInvoiceId: string | null;
   squareInvoiceUrl: string | null;
   notes: string | null;
+  billToCompany: string | null;
   createdAt: string;
   customer: {
     id: string;
@@ -237,7 +238,16 @@ function InvoicesListPage() {
                   <div className="text-sm text-neutral-600">
                     {inv.customer ? (
                       <>
-                        {inv.customer.firstName} {inv.customer.lastName}
+                        {inv.billToCompany ? (
+                          <>
+                            <span className="font-medium">{inv.billToCompany}</span>
+                            {` · ATTN ${inv.customer.firstName || ""} ${inv.customer.lastName || ""}`.trimEnd()}
+                          </>
+                        ) : (
+                          <>
+                            {inv.customer.firstName} {inv.customer.lastName}
+                          </>
+                        )}
                         {inv.customer.phone && ` · ${inv.customer.phone}`}
                       </>
                     ) : (

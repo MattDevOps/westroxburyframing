@@ -106,6 +106,12 @@ export async function PATCH(req: Request, ctx: Ctx) {
     data.phone = phone;
   }
   if (email !== undefined) data.email = email;
+  if ("organization" in body) data.organization = String(body.organization || "").trim() || null;
+  if ("org_address_line1" in body) data.orgAddressLine1 = String(body.org_address_line1 || "").trim() || null;
+  if ("org_address_line2" in body) data.orgAddressLine2 = String(body.org_address_line2 || "").trim() || null;
+  if ("org_city" in body) data.orgCity = String(body.org_city || "").trim() || null;
+  if ("org_state" in body) data.orgState = String(body.org_state || "").trim() || null;
+  if ("org_zip" in body) data.orgZip = String(body.org_zip || "").trim() || null;
   if ("address_line1" in body) data.addressLine1 = String(body.address_line1 || "").trim() || null;
   if ("address_line2" in body) data.addressLine2 = String(body.address_line2 || "").trim() || null;
   if ("city" in body) data.city = String(body.city || "").trim() || null;

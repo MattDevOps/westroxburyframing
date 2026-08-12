@@ -88,6 +88,13 @@ model Customer {
   resetTokenHash      String?   // SHA256 of the active password-reset token, null when none outstanding
   resetTokenExpiresAt DateTime? // expiry for the active reset token
   organization     String?
+  /// Billing address for the customer's company. Used when an invoice bills the
+  /// company rather than the person; falls back to the personal address below.
+  orgAddressLine1  String?
+  orgAddressLine2  String?
+  orgCity          String?
+  orgState         String?
+  orgZip           String?
   addressLine1     String?
   addressLine2     String?
   city             String?
@@ -334,6 +341,11 @@ model Invoice {
 
   currency String @default("USD")
   status   String @default("draft") // draft, sent, partial, paid, void, cancelled
+
+  /// Bill the company instead of the person: renders as the company name with
+  /// "ATTN: <customer>" underneath. Defaults from Customer.organization at
+  /// creation; null means bill the customer personally.
+  billToCompany String?
 
   squareInvoiceId  String?
   squareInvoiceUrl String?

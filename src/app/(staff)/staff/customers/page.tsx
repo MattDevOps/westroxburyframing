@@ -26,6 +26,7 @@ type Customer = {
   lastName: string | null;
   email: string | null;
   phone: string | null;
+  organization?: string | null;
   preferredContact?: "email" | "call" | null;
   marketingOptIn?: boolean | null;
   createdAt?: string;
@@ -186,6 +187,12 @@ export default function CustomersPage() {
   const [newCustomerLastName, setNewCustomerLastName] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerOrganization, setNewCustomerOrganization] = useState("");
+  const [newCustomerOrgAddressLine1, setNewCustomerOrgAddressLine1] = useState("");
+  const [newCustomerOrgAddressLine2, setNewCustomerOrgAddressLine2] = useState("");
+  const [newCustomerOrgCity, setNewCustomerOrgCity] = useState("");
+  const [newCustomerOrgState, setNewCustomerOrgState] = useState("");
+  const [newCustomerOrgZip, setNewCustomerOrgZip] = useState("");
   const [newCustomerAddressLine1, setNewCustomerAddressLine1] = useState("");
   const [newCustomerAddressLine2, setNewCustomerAddressLine2] = useState("");
   const [newCustomerCity, setNewCustomerCity] = useState("");
@@ -363,6 +370,13 @@ export default function CustomersPage() {
           last_name: newCustomerLastName.trim(),
           email: newCustomerEmail.trim() || null,
           phone: newCustomerPhone.trim() || null,
+          // Omitted when blank so a matched existing customer keeps its company
+          organization: newCustomerOrganization.trim() || undefined,
+          org_address_line1: newCustomerOrgAddressLine1.trim() || undefined,
+          org_address_line2: newCustomerOrgAddressLine2.trim() || undefined,
+          org_city: newCustomerOrgCity.trim() || undefined,
+          org_state: newCustomerOrgState.trim() || undefined,
+          org_zip: newCustomerOrgZip.trim() || undefined,
           address_line1: newCustomerAddressLine1.trim() || null,
           address_line2: newCustomerAddressLine2.trim() || null,
           city: newCustomerCity.trim() || null,
@@ -384,6 +398,12 @@ export default function CustomersPage() {
       setNewCustomerLastName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
+      setNewCustomerOrganization("");
+      setNewCustomerOrgAddressLine1("");
+      setNewCustomerOrgAddressLine2("");
+      setNewCustomerOrgCity("");
+      setNewCustomerOrgState("");
+      setNewCustomerOrgZip("");
       setNewCustomerAddressLine1("");
       setNewCustomerAddressLine2("");
       setNewCustomerCity("");
@@ -536,7 +556,13 @@ export default function CustomersPage() {
         const name = `${c.firstName || ""} ${c.lastName || ""}`.toLowerCase();
         const email = (c.email || "").toLowerCase();
         const phone = (c.phone || "").toLowerCase();
-        return name.includes(needle) || email.includes(needle) || phone.includes(needle);
+        const organization = (c.organization || "").toLowerCase();
+        return (
+          name.includes(needle) ||
+          email.includes(needle) ||
+          phone.includes(needle) ||
+          organization.includes(needle)
+        );
       });
     }
     const sorted = [...result].sort((a, b) => {
@@ -693,6 +719,12 @@ export default function CustomersPage() {
                     setNewCustomerLastName("");
                     setNewCustomerEmail("");
                     setNewCustomerPhone("");
+                    setNewCustomerOrganization("");
+                    setNewCustomerOrgAddressLine1("");
+                    setNewCustomerOrgAddressLine2("");
+                    setNewCustomerOrgCity("");
+                    setNewCustomerOrgState("");
+                    setNewCustomerOrgZip("");
                     setNewCustomerAddressLine1("");
                     setNewCustomerAddressLine2("");
                     setNewCustomerCity("");
@@ -766,6 +798,68 @@ export default function CustomersPage() {
                   placeholder="e.g. 6175551234"
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                 />
+              </div>
+
+              <div className="pt-2 border-t border-neutral-200">
+                <div className="text-xs font-medium text-neutral-700 mb-3">Company (Optional)</div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-700 mb-1">
+                    Company / Organization
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomerOrganization}
+                    onChange={(e) => setNewCustomerOrganization(e.target.value)}
+                    placeholder="e.g. Boston Police Dept"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                {newCustomerOrganization.trim() && (
+                  <div className="space-y-3 mt-3">
+                    <p className="text-xs text-neutral-500">
+                      Billing address for the company. Leave blank to use their
+                      personal address below.
+                    </p>
+                    <input
+                      type="text"
+                      value={newCustomerOrgAddressLine1}
+                      onChange={(e) => setNewCustomerOrgAddressLine1(e.target.value)}
+                      placeholder="Company street address"
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={newCustomerOrgAddressLine2}
+                      onChange={(e) => setNewCustomerOrgAddressLine2(e.target.value)}
+                      placeholder="Suite, floor, mail stop, etc."
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={newCustomerOrgCity}
+                        onChange={(e) => setNewCustomerOrgCity(e.target.value)}
+                        placeholder="City"
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={newCustomerOrgState}
+                        onChange={(e) => setNewCustomerOrgState(e.target.value)}
+                        placeholder="State"
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={newCustomerOrgZip}
+                      onChange={(e) => setNewCustomerOrgZip(e.target.value)}
+                      placeholder="ZIP code"
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 border-t border-neutral-200">
@@ -1102,7 +1196,14 @@ export default function CustomersPage() {
                 href={`/staff/customers/${c.id}`}
                 className="grid grid-cols-12 gap-3 px-4 py-3 text-sm border-t border-neutral-200 hover:bg-neutral-50 items-center"
               >
-                <div className="col-span-2 font-medium">{name}</div>
+                <div className="col-span-2 font-medium">
+                  {name}
+                  {c.organization && (
+                    <div className="text-xs font-normal text-neutral-500 truncate">
+                      {c.organization}
+                    </div>
+                  )}
+                </div>
                 <div className="col-span-2 text-neutral-600 truncate">{c.email || "—"}</div>
                 <div className="col-span-1 text-neutral-600">{c.phone || "—"}</div>
                 <div className="col-span-1">

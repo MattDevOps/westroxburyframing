@@ -36,6 +36,7 @@ interface QBOInvoice {
 
 interface QBOCustomer {
   DisplayName: string;
+  CompanyName?: string;
   GivenName?: string;
   FamilyName?: string;
   PrimaryEmailAddr?: { Address: string };
@@ -195,7 +196,42 @@ async function qboRequest(
 }
 
 /**
- * Create or update customer in QuickBooks Online
+ * Look up a QBO customer by DisplayName.
+ *
+ * QBO requires DisplayName to be unique, so a second create with the same name
+ * fails outright. Company customers aren't cached on our Customer row (that
+ * field holds the person's QBO id), so we look them up by name each time.
+ */
+export async function findQBOCustomerByDisplayName(
+  accessToken: string,
+  realmId: string,
+  displayName: string
+): Promise<{ id: string; syncToken: string } | null> {
+  // QBO's query language escapes single quotes by doubling them.
+  const escaped = displayName.replace(/'/g, "''");
+  const sql = `SELECT Id, SyncToken FROM Customer WHERE DisplayName = '${escaped}'`;
+
+  try {
+    const response = await qboRequest(
+      accessToken,
+      realmId,
+      "GET",
+      `query?query=${encodeURIComponent(sql)}`
+    );
+    const found = response.QueryResponse?.Customer?.[0];
+    return found ? { id: found.Id, syncToken: found.SyncToken } : null;
+  } catch (e) {
+    console.warn("QBO customer lookup failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Create or update customer in QuickBooks Online.
+ *
+ * When `companyName` is set the company is the QBO customer — DisplayName and
+ * CompanyName are the company, and the person stays on as the contact name so
+ * the receivable is booked against the company, not the individual.
  */
 export async function syncCustomerToQBO(
   accessToken: string,
@@ -203,6 +239,7 @@ export async function syncCustomerToQBO(
   customer: {
     firstName: string;
     lastName: string;
+    companyName?: string | null;
     email?: string | null;
     phone?: string | null;
     addressLine1?: string | null;
@@ -212,8 +249,17 @@ export async function syncCustomerToQBO(
     zip?: string | null;
   }
 ): Promise<{ id: string; syncToken: string }> {
+  const company = (customer.companyName || "").trim();
+
+  // QBO rejects a duplicate DisplayName, so reuse the company record if it's there.
+  if (company) {
+    const existing = await findQBOCustomerByDisplayName(accessToken, realmId, company);
+    if (existing) return existing;
+  }
+
   const qboCustomer: QBOCustomer = {
-    DisplayName: `${customer.firstName} ${customer.lastName}`,
+    DisplayName: company || `${customer.firstName} ${customer.lastName}`,
+    ...(company && { CompanyName: company }),
     GivenName: customer.firstName,
     FamilyName: customer.lastName,
     ...(customer.email && { PrimaryEmailAddr: { Address: customer.email } }),

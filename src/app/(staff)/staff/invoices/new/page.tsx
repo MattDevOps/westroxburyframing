@@ -53,8 +53,14 @@ function NewInvoicePage() {
     lastName: "",
     phone: "",
     email: "",
+    organization: "",
   });
   const [savingCustomer, setSavingCustomer] = useState(false);
+
+  // Who the invoice is addressed to. Defaults to the customer's company when they
+  // have one — billing Boston Police Dept, ATTN the person who dropped the work off.
+  const [billToPerson, setBillToPerson] = useState(false);
+  const [billToCompany, setBillToCompany] = useState("");
 
   // Invoice an amount directly, with no order attached
   const [manualMode, setManualMode] = useState(false);
@@ -112,6 +118,12 @@ function NewInvoicePage() {
     return () => clearTimeout(timeout);
   }, [customerSearch, preselectedCustomerId]);
 
+  // Reset the bill-to block whenever the customer changes
+  useEffect(() => {
+    setBillToCompany(selectedCustomer?.organization || "");
+    setBillToPerson(false);
+  }, [selectedCustomer]);
+
   // Load customer's orders when selected
   useEffect(() => {
     if (!selectedCustomer) {
@@ -151,7 +163,7 @@ function NewInvoicePage() {
   // the new-customer form starts pre-filled.
   function openNewCustomerForm() {
     const q = customerSearch.trim();
-    const prefill = { firstName: "", lastName: "", phone: "", email: "" };
+    const prefill = { firstName: "", lastName: "", phone: "", email: "", organization: "" };
     if (q.includes("@")) {
       prefill.email = q;
     } else if (q.replace(/\D/g, "").length >= 7) {
@@ -171,6 +183,7 @@ function NewInvoicePage() {
     const lastName = newCustomer.lastName.trim();
     const phone = newCustomer.phone.trim();
     const email = newCustomer.email.trim();
+    const organization = newCustomer.organization.trim();
 
     if (!firstName || !lastName) {
       setError("First and last name are required.");
@@ -192,6 +205,7 @@ function NewInvoicePage() {
           last_name: lastName,
           phone,
           email,
+          organization: organization || undefined,
         }),
       });
       const data = await res.json();
@@ -206,6 +220,7 @@ function NewInvoicePage() {
         lastName,
         phone: phone || null,
         email: email || null,
+        organization: organization || null,
       });
       setShowNewCustomer(false);
       setCustomerSearch("");
@@ -244,6 +259,9 @@ function NewInvoicePage() {
             : { orderIds: selectedOrderIds }),
           depositPercent,
           notes: notes.trim() || undefined,
+          ...(billToPerson
+            ? { billToPerson: true }
+            : { billToCompany: billToCompany.trim() }),
         }),
       });
 
@@ -311,6 +329,9 @@ function NewInvoicePage() {
               <span className="font-medium">
                 {selectedCustomer.firstName} {selectedCustomer.lastName}
               </span>
+              {selectedCustomer.organization && (
+                <span className="text-neutral-600 ml-2">{selectedCustomer.organization}</span>
+              )}
               {selectedCustomer.email && (
                 <span className="text-neutral-600 ml-2">{selectedCustomer.email}</span>
               )}
@@ -372,6 +393,18 @@ function NewInvoicePage() {
                   value={newCustomer.email}
                   onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
                   id="nc-email"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="nc-org" className="block text-xs text-neutral-600 mb-1">
+                  Company (optional)
+                </label>
+                <input
+                  value={newCustomer.organization}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, organization: e.target.value })}
+                  id="nc-org"
+                  placeholder="e.g. Boston Police Dept"
                   className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
                 />
               </div>
@@ -452,6 +485,58 @@ function NewInvoicePage() {
                 + New customer
               </button>
             </div>
+          </div>
+        )}
+        {selectedCustomer && (
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
+            <div className="text-xs font-medium text-neutral-700">Bill to</div>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="bill-to"
+                  checked={!billToPerson}
+                  onChange={() => setBillToPerson(false)}
+                />
+                Company
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="bill-to"
+                  checked={billToPerson}
+                  onChange={() => setBillToPerson(true)}
+                />
+                {selectedCustomer.firstName} {selectedCustomer.lastName}
+              </label>
+            </div>
+
+            {!billToPerson && (
+              <>
+                <input
+                  value={billToCompany}
+                  onChange={(e) => setBillToCompany(e.target.value)}
+                  placeholder="e.g. Boston Police Dept"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-neutral-500">
+                  {billToCompany.trim() ? (
+                    <>
+                      The invoice reads <strong>{billToCompany.trim()}</strong>, then{" "}
+                      <strong>
+                        ATTN: {selectedCustomer.firstName} {selectedCustomer.lastName}
+                      </strong>
+                      , then their usual contact info.
+                    </>
+                  ) : (
+                    <>
+                      Leave blank to bill {selectedCustomer.firstName}{" "}
+                      {selectedCustomer.lastName} directly.
+                    </>
+                  )}
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

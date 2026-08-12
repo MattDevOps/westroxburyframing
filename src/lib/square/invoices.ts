@@ -17,6 +17,8 @@ export type CreateAndSendInvoiceInput = {
   customerEmail: string;
   customerGivenName?: string;
   customerFamilyName?: string;
+  /** Company being billed, so Square shows the company rather than the person. */
+  customerCompanyName?: string;
   title?: string;
   message?: string;
   lines: InvoiceLine[];
@@ -64,6 +66,7 @@ export async function createAndSendInvoice(input: CreateAndSendInvoiceInput) {
     email: input.customerEmail,
     givenName: input.customerGivenName,
     familyName: input.customerFamilyName,
+    companyName: input.customerCompanyName,
   });
 
   // Verify customer has email set
@@ -221,6 +224,7 @@ export async function updateInvoiceForOrderEdit(params: {
   customerEmail: string;
   customerGivenName?: string;
   customerFamilyName?: string;
+  customerCompanyName?: string;
 }): Promise<{ invoiceId: string; status: string; publicUrl: string } | null> {
   try {
     const existing = await getInvoice(params.squareInvoiceId);
@@ -257,6 +261,7 @@ export async function updateInvoiceForOrderEdit(params: {
       customerEmail: params.customerEmail,
       customerGivenName: params.customerGivenName,
       customerFamilyName: params.customerFamilyName,
+      customerCompanyName: params.customerCompanyName,
       title: "West Roxbury Framing (Updated)",
       message: "Your invoice has been updated with revised pricing.",
       lines: [

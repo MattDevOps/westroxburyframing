@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { resolveBillTo } from "@/lib/billTo";
 
 type Ctx = { params: Promise<{ orderId: string }> };
 
@@ -19,12 +20,21 @@ export async function GET(_req: Request, ctx: Ctx) {
           lastName: true,
           email: true,
           phone: true,
+          organization: true,
           addressLine1: true,
           addressLine2: true,
           city: true,
           state: true,
           zip: true,
+          orgAddressLine1: true,
+          orgAddressLine2: true,
+          orgCity: true,
+          orgState: true,
+          orgZip: true,
         },
+      },
+      invoice: {
+        select: { billToCompany: true },
       },
       payments: {
         where: { status: "paid" },
@@ -62,15 +72,12 @@ export async function GET(_req: Request, ctx: Ctx) {
   const amountPaid = order.payments.reduce((sum, p) => sum + p.amount, 0);
   const amountDue = Math.max(0, order.totalAmount - amountPaid);
 
-  const customerAddress = [
-    order.customer.addressLine1,
-    order.customer.addressLine2,
-    order.customer.city,
-    order.customer.state,
-    order.customer.zip,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  // A linked invoice may override who gets billed; otherwise use the customer's company.
+  const billTo = resolveBillTo(
+    order.invoice?.billToCompany ?? order.customer.organization,
+    order.customer
+  );
+  const customerAddress = billTo.addressText;
 
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
@@ -166,7 +173,8 @@ export async function GET(_req: Request, ctx: Ctx) {
       <div class="meta-block">
         <h3>Billed To</h3>
         <p>
-          <strong>${h(order.customer.firstName)} ${h(order.customer.lastName)}</strong><br />
+          <strong>${h(billTo.name)}</strong><br />
+          ${billTo.attn ? `ATTN: ${h(billTo.attn)}<br />` : ""}
           ${customerAddress ? `${h(customerAddress)}<br />` : ""}
           ${order.customer.email ? `${h(order.customer.email)}<br />` : ""}
           ${order.customer.phone ? h(order.customer.phone) : ""}

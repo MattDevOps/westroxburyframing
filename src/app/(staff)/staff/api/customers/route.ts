@@ -25,6 +25,7 @@ export async function GET(req: Request) {
       { lastName: { contains: q, mode: "insensitive" } },
       { email: { contains: q, mode: "insensitive" } },
       { phone: { contains: q } },
+      { organization: { contains: q, mode: "insensitive" } },
     ];
   }
   if (emailsParam) {
@@ -224,6 +225,11 @@ export async function POST(req: Request) {
   const lastName = String(body.last_name || "").trim();
   const marketing = Boolean(body.marketing_opt_in);
   const organization = "organization" in body ? String(body.organization || "").trim() || null : undefined;
+  const orgAddressLine1 = "org_address_line1" in body ? String(body.org_address_line1 || "").trim() || null : undefined;
+  const orgAddressLine2 = "org_address_line2" in body ? String(body.org_address_line2 || "").trim() || null : undefined;
+  const orgCity = "org_city" in body ? String(body.org_city || "").trim() || null : undefined;
+  const orgState = "org_state" in body ? String(body.org_state || "").trim() || null : undefined;
+  const orgZip = "org_zip" in body ? String(body.org_zip || "").trim() || null : undefined;
   const addressLine1 = "address_line1" in body ? String(body.address_line1 || "").trim() || null : undefined;
   const addressLine2 = "address_line2" in body ? String(body.address_line2 || "").trim() || null : undefined;
   const city = "city" in body ? String(body.city || "").trim() || null : undefined;
@@ -274,6 +280,11 @@ export async function POST(req: Request) {
     if (email && !existing.email) updateData.email = email;
     // Update address fields if provided
     if (organization !== undefined) updateData.organization = organization;
+    if (orgAddressLine1 !== undefined) updateData.orgAddressLine1 = orgAddressLine1;
+    if (orgAddressLine2 !== undefined) updateData.orgAddressLine2 = orgAddressLine2;
+    if (orgCity !== undefined) updateData.orgCity = orgCity;
+    if (orgState !== undefined) updateData.orgState = orgState;
+    if (orgZip !== undefined) updateData.orgZip = orgZip;
     if (addressLine1 !== undefined) updateData.addressLine1 = addressLine1;
     if (addressLine2 !== undefined) updateData.addressLine2 = addressLine2;
     if (city !== undefined) updateData.city = city;
@@ -301,6 +312,11 @@ export async function POST(req: Request) {
       phone: phone ? phone : null,
       email: email ? email : null,
       organization: organization || null,
+      orgAddressLine1: orgAddressLine1 || null,
+      orgAddressLine2: orgAddressLine2 || null,
+      orgCity: orgCity || null,
+      orgState: orgState || null,
+      orgZip: orgZip || null,
       addressLine1: addressLine1 || null,
       addressLine2: addressLine2 || null,
       city: city || null,

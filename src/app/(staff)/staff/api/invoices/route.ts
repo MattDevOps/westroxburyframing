@@ -42,6 +42,7 @@ export async function GET(req: Request) {
       { customer: { firstName: { contains: search, mode: "insensitive" } } },
       { customer: { lastName: { contains: search, mode: "insensitive" } } },
       { customer: { phone: { contains: search } } },
+      { billToCompany: { contains: search, mode: "insensitive" } },
       // Quick invoices have no customer — their note is the only handle on them.
       { notes: { contains: search, mode: "insensitive" } },
     ];
@@ -80,6 +81,9 @@ export async function GET(req: Request) {
  *   orderIds?: string[],          // orders to attach
  *   depositPercent?: number,      // e.g. 50
  *   notes?: string,
+ *   billToCompany?: string,       // bill the company, ATTN the customer; defaults
+ *                                 // to the customer's organization when omitted
+ *   billToPerson?: boolean,       // true = bill the person even if they have a company
  *   // If no orderIds, provide amounts directly:
  *   subtotalAmount?: number,      // cents
  *   taxAmount?: number,           // cents
@@ -94,10 +98,20 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
   // customerId is optional — quick invoices (price + message only) have no customer.
+  let billToCompany: string | null = null;
   if (body.customerId) {
     const customer = await prisma.customer.findUnique({ where: { id: body.customerId } });
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+    // Snapshot who is billed at creation time: an explicit company wins, then the
+    // customer's own company, unless staff chose to bill the person directly.
+    if (body.billToPerson) {
+      billToCompany = null;
+    } else if (typeof body.billToCompany === "string") {
+      billToCompany = body.billToCompany.trim() || null;
+    } else {
+      billToCompany = customer.organization?.trim() || null;
     }
   } else if (body.orderIds?.length) {
     return NextResponse.json(
@@ -189,6 +203,7 @@ export async function POST(req: Request) {
       balanceDue,
       currency: "USD",
       status: body.status === "sent" ? "sent" : "draft",
+      billToCompany,
       notes: body.notes || null,
       createdByUserId: userId,
     },

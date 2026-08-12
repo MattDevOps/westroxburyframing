@@ -23,6 +23,12 @@ export async function GET(req: Request) {
       lastName: true,
       phone: true,
       email: true,
+      organization: true,
+      orgAddressLine1: true,
+      orgAddressLine2: true,
+      orgCity: true,
+      orgState: true,
+      orgZip: true,
       addressLine1: true,
       addressLine2: true,
       city: true,
@@ -54,6 +60,8 @@ export async function GET(req: Request) {
       "Last Name",
       "Email",
       "Phone",
+      "Company",
+      "Company Address",
       "Address Line 1",
       "Address Line 2",
       "City",
@@ -74,6 +82,12 @@ export async function GET(req: Request) {
         esc(c.lastName),
         esc(c.email),
         esc(c.phone),
+        esc(c.organization),
+        esc(
+          [c.orgAddressLine1, c.orgAddressLine2, c.orgCity, c.orgState, c.orgZip]
+            .filter(Boolean)
+            .join(", ")
+        ),
         esc(c.addressLine1),
         esc(c.addressLine2),
         esc(c.city),

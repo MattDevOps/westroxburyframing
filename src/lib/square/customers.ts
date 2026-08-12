@@ -31,6 +31,12 @@ export async function upsertCustomer(args: {
   email: string;
   givenName?: string;
   familyName?: string;
+  /**
+   * Company being billed, if any. Always sent (empty string when absent) so a
+   * customer who was last billed through their employer goes back to being
+   * billed personally on the next invoice instead of keeping a stale company.
+   */
+  companyName?: string;
 }): Promise<string> {
   if (!args.email || !args.email.trim()) {
     throw new Error("Email is required to create a Square customer");
@@ -45,6 +51,7 @@ export async function upsertCustomer(args: {
         body: JSON.stringify({
           given_name: args.givenName || "",
           family_name: args.familyName || "",
+          company_name: args.companyName || "",
           email_address: args.email.trim(),
         }),
       });
@@ -65,6 +72,7 @@ export async function upsertCustomer(args: {
     body: JSON.stringify({
       given_name: args.givenName || "",
       family_name: args.familyName || "",
+      company_name: args.companyName || "",
       email_address: args.email.trim(),
     }),
   });

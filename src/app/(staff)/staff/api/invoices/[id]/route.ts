@@ -89,6 +89,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if ("notes" in body) data.notes = body.notes || null;
   if ("status" in body) data.status = body.status;
+  if ("billToCompany" in body) {
+    data.billToCompany = String(body.billToCompany || "").trim() || null;
+  }
   if ("depositPercent" in body) {
     data.depositPercent = body.depositPercent;
     data.depositAmount = Math.max(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
+import { resolveBillTo } from "@/lib/billTo";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -25,11 +26,17 @@ export async function GET(req: Request, ctx: Ctx) {
           lastName: true,
           phone: true,
           email: true,
+          organization: true,
           addressLine1: true,
           addressLine2: true,
           city: true,
           state: true,
           zip: true,
+          orgAddressLine1: true,
+          orgAddressLine2: true,
+          orgCity: true,
+          orgState: true,
+          orgZip: true,
         },
       },
       orders: {
@@ -70,15 +77,12 @@ export async function GET(req: Request, ctx: Ctx) {
       .replace(/'/g, "&#039;");
   };
 
-  const customerAddress = [
-    invoice.customer?.addressLine1,
-    invoice.customer?.addressLine2,
-    invoice.customer?.city,
-    invoice.customer?.state,
-    invoice.customer?.zip,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  // Per-invoice override wins; otherwise fall back to the customer's company.
+  const billTo = resolveBillTo(
+    invoice.billToCompany ?? invoice.customer?.organization,
+    invoice.customer
+  );
+  const customerAddress = billTo.addressText;
 
   const showItemTypeCol = invoice.orders.some((o) => (o.itemType || "").trim() !== "");
 
@@ -174,7 +178,8 @@ export async function GET(req: Request, ctx: Ctx) {
       invoice.customer
         ? `<h2>Bill To:</h2>
     <p>
-      ${h(invoice.customer.firstName)} ${h(invoice.customer.lastName)}<br />
+      ${h(billTo.name)}<br />
+      ${billTo.attn ? `ATTN: ${h(billTo.attn)}<br />` : ""}
       ${customerAddress ? `${h(customerAddress)}<br />` : ""}
       ${invoice.customer.email ? `${h(invoice.customer.email)}<br />` : ""}
       ${invoice.customer.phone ? h(invoice.customer.phone) : ""}

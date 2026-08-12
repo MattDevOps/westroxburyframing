@@ -10,6 +10,12 @@ type Customer = {
   lastName: string | null;
   email: string | null;
   phone: string | null;
+  organization?: string | null;
+  orgAddressLine1?: string | null;
+  orgAddressLine2?: string | null;
+  orgCity?: string | null;
+  orgState?: string | null;
+  orgZip?: string | null;
   addressLine1?: string | null;
   addressLine2?: string | null;
   city?: string | null;
@@ -182,6 +188,12 @@ export default function CustomerDetailPage({
       last_name: String(form.get("last_name") || ""),
       phone: String(form.get("phone") || ""),
       email: String(form.get("email") || ""),
+      organization: String(form.get("organization") || ""),
+      org_address_line1: String(form.get("org_address_line1") || ""),
+      org_address_line2: String(form.get("org_address_line2") || ""),
+      org_city: String(form.get("org_city") || ""),
+      org_state: String(form.get("org_state") || ""),
+      org_zip: String(form.get("org_zip") || ""),
       address_line1: String(form.get("address_line1") || ""),
       address_line2: String(form.get("address_line2") || ""),
       city: String(form.get("city") || ""),
@@ -228,6 +240,9 @@ export default function CustomerDetailPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{name}</h1>
+          {customer.organization && (
+            <p className="text-neutral-700 text-sm mt-0.5">{customer.organization}</p>
+          )}
           <p className="text-neutral-600 text-sm mt-1">
             {customer.email || "—"} · {customer.phone || "—"}
             {customer.addressLine1 && (
@@ -492,6 +507,59 @@ export default function CustomerDetailPage({
                 defaultValue={customer.email || ""}
                 className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
               />
+            </div>
+
+            {/* Company Section */}
+            <div className="pt-2 border-t border-neutral-200">
+              <div className="text-xs font-medium text-neutral-700 mb-3">Company (Optional)</div>
+              <div>
+                <label className="block text-xs text-neutral-600 mb-1">Company / Organization</label>
+                <input
+                  name="organization"
+                  defaultValue={customer.organization || ""}
+                  placeholder="e.g. Boston Police Dept"
+                  className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="space-y-3 mt-3">
+                <p className="text-xs text-neutral-500">
+                  Company billing address — used on invoices billed to the company.
+                  Leave blank to use the personal address below.
+                </p>
+                <input
+                  name="org_address_line1"
+                  defaultValue={customer.orgAddressLine1 || ""}
+                  placeholder="Company street address"
+                  className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                />
+                <input
+                  name="org_address_line2"
+                  defaultValue={customer.orgAddressLine2 || ""}
+                  placeholder="Suite, floor, mail stop, etc."
+                  className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    name="org_city"
+                    defaultValue={customer.orgCity || ""}
+                    placeholder="City"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                  />
+                  <input
+                    name="org_state"
+                    defaultValue={customer.orgState || ""}
+                    placeholder="State"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                  />
+                </div>
+                <input
+                  name="org_zip"
+                  defaultValue={customer.orgZip || ""}
+                  placeholder="ZIP code"
+                  className="w-full rounded-xl border border-neutral-300 bg-white/5 px-3 py-2 text-sm"
+                />
+              </div>
             </div>
 
             {/* Address Section */}

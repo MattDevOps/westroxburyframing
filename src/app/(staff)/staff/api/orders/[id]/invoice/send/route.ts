@@ -30,6 +30,7 @@ export async function POST(req: Request, ctx: any) {
       include: {
         customer: true,
         specs: true,
+        invoice: { select: { billToCompany: true } },
       },
     });
     if (!order) {
@@ -37,6 +38,9 @@ export async function POST(req: Request, ctx: any) {
     }
 
     const orderData = order as any;
+    // A linked invoice may override who gets billed; otherwise the customer's company.
+    const billToCompany =
+      order.invoice?.billToCompany ?? order.customer?.organization ?? null;
     const totalCents = order.totalAmount || 0;
 
     // When sending "full" after deposit was paid, invoice only the remaining balance
@@ -151,6 +155,7 @@ export async function POST(req: Request, ctx: any) {
           (order as any).customer?.lastName ||
           (order as any).customer?.last_name ||
           undefined,
+        customerCompanyName: billToCompany || undefined,
         title: "West Roxbury Framing",
         message: "Thank you for your order. You can pay your invoice securely online.",
         lines,

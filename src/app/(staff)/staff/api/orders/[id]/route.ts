@@ -269,7 +269,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
   });
   if (!prev) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const updated = await prisma.order.update({ where: { id }, data, include: { customer: true } });
+  const updated = await prisma.order.update({
+    where: { id },
+    data,
+    include: { customer: true, invoice: { select: { billToCompany: true } } },
+  });
 
   const events: Array<{ type: string; message: string }> = [];
   events.push({ type: "edit", message: "Order updated" });
@@ -306,6 +310,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
         customerEmail,
         customerGivenName: updated.customer?.firstName || undefined,
         customerFamilyName: updated.customer?.lastName || undefined,
+        customerCompanyName:
+          (updated.invoice?.billToCompany ?? updated.customer?.organization) || undefined,
       });
       if (invoiceResult) {
         await prisma.order.update({

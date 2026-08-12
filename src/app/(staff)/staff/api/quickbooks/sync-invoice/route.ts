@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import { syncInvoiceToQBO, syncCustomerToQBO, refreshQBOToken, isQBOConfigured } from "@/lib/quickbooks";
 import { env } from "@/lib/env";
+import { resolveBillTo } from "@/lib/billTo";
 
 /**
  * POST /staff/api/quickbooks/sync-invoice
@@ -81,29 +82,41 @@ export async function POST(req: Request) {
       console.warn("Failed to refresh QBO token, using existing:", e);
     }
 
-    // Sync customer to QBO (create if doesn't exist)
-    let qboCustomerId = invoice.customer.qboCustomerId || null;
+    // Who the receivable belongs to: the company when one is being billed.
+    const billTo = resolveBillTo(
+      invoice.billToCompany ?? invoice.customer.organization,
+      invoice.customer
+    );
+
+    // Sync customer to QBO (create if doesn't exist).
+    // Customer.qboCustomerId holds the *person's* QBO record, so it can only be
+    // reused when we're billing the person — otherwise a company invoice would
+    // book against the individual. Company records are resolved by name instead.
+    let qboCustomerId = billTo.isCompany ? null : invoice.customer.qboCustomerId || null;
 
     if (!qboCustomerId) {
       const qboCustomer = await syncCustomerToQBO(accessToken, env.QBO_REALM_ID, {
         firstName: invoice.customer.firstName,
         lastName: invoice.customer.lastName,
+        companyName: billTo.isCompany ? billTo.name : null,
         email: invoice.customer.email,
         phone: invoice.customer.phone,
-        addressLine1: invoice.customer.addressLine1,
-        addressLine2: invoice.customer.addressLine2,
-        city: invoice.customer.city,
-        state: invoice.customer.state,
-        zip: invoice.customer.zip,
+        addressLine1: billTo.address.line1,
+        addressLine2: billTo.address.line2,
+        city: billTo.address.city,
+        state: billTo.address.state,
+        zip: billTo.address.zip,
       });
 
       qboCustomerId = qboCustomer.id;
 
-      // Save QBO customer ID to our customer record
-      await prisma.customer.update({
-        where: { id: invoice.customer.id },
-        data: { qboCustomerId: qboCustomerId },
-      });
+      // Only cache the id when it really is this person's record.
+      if (!billTo.isCompany) {
+        await prisma.customer.update({
+          where: { id: invoice.customer.id },
+          data: { qboCustomerId: qboCustomerId },
+        });
+      }
     }
 
     // Build line items from orders
@@ -126,7 +139,7 @@ export async function POST(req: Request) {
     const qboInvoice = await syncInvoiceToQBO(accessToken, env.QBO_REALM_ID, {
       invoiceNumber: invoice.invoiceNumber,
       customerId: qboCustomerId,
-      customerName: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
+      customerName: billTo.name,
       lineItems,
       totalAmount: invoice.totalAmount,
       taxAmount: invoice.taxAmount,
