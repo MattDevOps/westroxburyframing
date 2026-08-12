@@ -10,16 +10,27 @@ export async function GET(req: Request) {
   const q = (searchParams.get("q") || "").trim();
   if (q.length < 2) return NextResponse.json({ results: [] });
 
+  // Match every word typed, in any field: "marc s" and "smith marc" both find
+  // Marc Smith. Digits are matched against the phone with punctuation stripped.
+  const terms = q.split(/\s+/).filter(Boolean).slice(0, 5);
+  const digitsOf = (s: string) => s.replace(/\D/g, "");
+
   const results = await prisma.customer.findMany({
     where: {
-      OR: [
-        { phone: { contains: q } },
-        { email: { contains: q.toLowerCase() } },
-        { firstName: { contains: q, mode: "insensitive" } },
-        { lastName: { contains: q, mode: "insensitive" } },
-      ],
+      AND: terms.map((term) => {
+        const or: any[] = [
+          { firstName: { contains: term, mode: "insensitive" } },
+          { lastName: { contains: term, mode: "insensitive" } },
+          { email: { contains: term, mode: "insensitive" } },
+          { organization: { contains: term, mode: "insensitive" } },
+          { phone: { contains: term } },
+        ];
+        const digits = digitsOf(term);
+        if (digits.length >= 3) or.push({ phone: { contains: digits } });
+        return { OR: or };
+      }),
     },
-    take: 10,
+    take: 20,
     orderBy: { updatedAt: "desc" },
   });
 
@@ -30,6 +41,7 @@ export async function GET(req: Request) {
       last_name: c.lastName,
       phone: c.phone,
       email: c.email,
+      organization: c.organization,
       marketing_opt_in: c.marketingOptIn,
     })),
   });

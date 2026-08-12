@@ -9,6 +9,7 @@ interface CustomerOption {
   lastName: string | null;
   phone: string | null;
   email: string | null;
+  organization?: string | null;
 }
 
 interface OrderOption {
@@ -45,10 +46,25 @@ function NewInvoicePage() {
   );
   const [loadingOrders, setLoadingOrders] = useState(false);
 
+  // New customer (someone not in the database yet)
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+  });
+  const [savingCustomer, setSavingCustomer] = useState(false);
+
+  // Invoice an amount directly, with no order attached
+  const [manualMode, setManualMode] = useState(false);
+  const [manualAmount, setManualAmount] = useState("");
+
   const [depositPercent, setDepositPercent] = useState<number | null>(50);
   const [notes, setNotes] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Search customers
   useEffect(() => {
@@ -65,7 +81,8 @@ function NewInvoicePage() {
       return;
     }
 
-    if (!customerSearch.trim()) {
+    const q = customerSearch.trim();
+    if (q.length < 2) {
       setCustomers([]);
       return;
     }
@@ -73,15 +90,24 @@ function NewInvoicePage() {
     const timeout = setTimeout(async () => {
       setLoadingCustomers(true);
       try {
-        const res = await fetch(`/staff/api/customers?search=${encodeURIComponent(customerSearch.trim())}`);
+        const res = await fetch(`/staff/api/customers/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
-        setCustomers(data.customers || []);
+        setCustomers(
+          (data.results || []).map((c: any) => ({
+            id: c.id,
+            firstName: c.first_name,
+            lastName: c.last_name,
+            phone: c.phone,
+            email: c.email,
+            organization: c.organization,
+          }))
+        );
       } catch {
         // ignore
       } finally {
         setLoadingCustomers(false);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [customerSearch, preselectedCustomerId]);
@@ -113,13 +139,94 @@ function NewInvoicePage() {
   };
 
   const selectedOrders = orders.filter((o) => selectedOrderIds.includes(o.id));
-  const totalCents = selectedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const manualCents = Math.round(Number(manualAmount) * 100);
+  const manualValid = manualMode && Number.isFinite(manualCents) && manualCents >= 1;
+  const totalCents = manualMode
+    ? (manualValid ? manualCents : 0)
+    : selectedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
   const depositCents = depositPercent ? Math.round(totalCents * depositPercent / 100) : 0;
+  const readyForDetails = manualMode ? manualValid : selectedOrderIds.length > 0;
+
+  // Split whatever was typed into the search box into name / phone / email so
+  // the new-customer form starts pre-filled.
+  function openNewCustomerForm() {
+    const q = customerSearch.trim();
+    const prefill = { firstName: "", lastName: "", phone: "", email: "" };
+    if (q.includes("@")) {
+      prefill.email = q;
+    } else if (q.replace(/\D/g, "").length >= 7) {
+      prefill.phone = q;
+    } else if (q) {
+      const parts = q.split(/\s+/);
+      prefill.firstName = parts[0] || "";
+      prefill.lastName = parts.slice(1).join(" ");
+    }
+    setNewCustomer(prefill);
+    setShowNewCustomer(true);
+    setError(null);
+  }
+
+  async function handleCreateCustomer() {
+    const firstName = newCustomer.firstName.trim();
+    const lastName = newCustomer.lastName.trim();
+    const phone = newCustomer.phone.trim();
+    const email = newCustomer.email.trim();
+
+    if (!firstName || !lastName) {
+      setError("First and last name are required.");
+      return;
+    }
+    if (!phone && !email) {
+      setError("Enter a phone number or an email address.");
+      return;
+    }
+
+    setSavingCustomer(true);
+    setError(null);
+    try {
+      const res = await fetch("/staff/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.customer?.id) {
+        setError(data.error || "Could not save that customer.");
+        return;
+      }
+
+      setSelectedCustomer({
+        id: data.customer.id,
+        firstName,
+        lastName,
+        phone: phone || null,
+        email: email || null,
+      });
+      setShowNewCustomer(false);
+      setCustomerSearch("");
+      setCustomers([]);
+      // Phone or email already belonged to a record — that one is used instead.
+      setNotice(data.existing ? data.message || "Matched an existing customer." : null);
+    } catch (e: any) {
+      setError(e?.message || "Could not save that customer.");
+    } finally {
+      setSavingCustomer(false);
+    }
+  }
 
   async function handleCreate() {
     if (!selectedCustomer) return;
-    if (selectedOrderIds.length === 0) {
+    if (!manualMode && selectedOrderIds.length === 0) {
       setError("Select at least one order");
+      return;
+    }
+    if (manualMode && !manualValid) {
+      setError("Enter an amount of $0.01 or more");
       return;
     }
 
@@ -132,7 +239,9 @@ function NewInvoicePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: selectedCustomer.id,
-          orderIds: selectedOrderIds,
+          ...(manualMode
+            ? { subtotalAmount: manualCents, taxAmount: 0, discountAmount: 0 }
+            : { orderIds: selectedOrderIds }),
           depositPercent,
           notes: notes.trim() || undefined,
         }),
@@ -186,6 +295,12 @@ function NewInvoicePage() {
         </div>
       )}
 
+      {notice && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {notice}
+        </div>
+      )}
+
       {/* Step 1: Select Customer */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
         <h2 className="font-semibold text-neutral-900">1. Customer</h2>
@@ -209,16 +324,86 @@ function NewInvoicePage() {
                 setSelectedCustomer(null);
                 setSelectedOrderIds([]);
                 setCustomerSearch("");
+                setManualMode(false);
+                setManualAmount("");
+                setNotice(null);
+                setError(null);
               }}
             >
               Change
             </button>
           </div>
+        ) : showNewCustomer ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="nc-first" className="block text-xs text-neutral-600 mb-1">First name *</label>
+                <input
+                  autoFocus
+                  value={newCustomer.firstName}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, firstName: e.target.value })}
+                  id="nc-first"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="nc-last" className="block text-xs text-neutral-600 mb-1">Last name *</label>
+                <input
+                  value={newCustomer.lastName}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, lastName: e.target.value })}
+                  id="nc-last"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="nc-phone" className="block text-xs text-neutral-600 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                  id="nc-phone"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="nc-email" className="block text-xs text-neutral-600 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                  id="nc-email"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-neutral-500">
+              Phone or email is required — it&apos;s how the invoice gets sent.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreateCustomer}
+                disabled={savingCustomer}
+                className="rounded-xl bg-black text-white px-4 py-2 text-sm disabled:opacity-50"
+              >
+                {savingCustomer ? "Saving…" : "Save & Use"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowNewCustomer(false);
+                  setError(null);
+                }}
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by name or phone…"
+              autoFocus
+              placeholder="Search by name, phone or email…"
               value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
               className="w-full rounded-xl border border-neutral-300 px-4 py-2.5 text-sm"
@@ -227,7 +412,7 @@ function NewInvoicePage() {
               <div className="text-xs text-neutral-500 mt-1">Searching…</div>
             )}
             {customers.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 {customers.map((c) => (
                   <button
                     key={c.id}
@@ -241,13 +426,32 @@ function NewInvoicePage() {
                     <span className="font-medium">
                       {c.firstName} {c.lastName}
                     </span>
+                    {c.organization && (
+                      <span className="text-neutral-500 ml-2">{c.organization}</span>
+                    )}
                     {c.phone && (
                       <span className="text-neutral-500 ml-2">{c.phone}</span>
+                    )}
+                    {c.email && (
+                      <span className="text-neutral-400 ml-2">{c.email}</span>
                     )}
                   </button>
                 ))}
               </div>
             )}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {!loadingCustomers && customerSearch.trim().length >= 2 && customers.length === 0 && (
+                <span className="text-xs text-neutral-500">
+                  No customer matches “{customerSearch.trim()}”.
+                </span>
+              )}
+              <button
+                onClick={openNewCustomerForm}
+                className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50"
+              >
+                + New customer
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -255,14 +459,57 @@ function NewInvoicePage() {
       {/* Step 2: Select Orders */}
       {selectedCustomer && (
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
-          <h2 className="font-semibold text-neutral-900">2. Select Orders</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-neutral-900">
+              {manualMode ? "2. Amount" : "2. Select Orders"}
+            </h2>
+            <button
+              onClick={() => {
+                setManualMode(!manualMode);
+                setSelectedOrderIds([]);
+                setError(null);
+              }}
+              className="text-xs text-blue-700 hover:text-blue-900 underline"
+            >
+              {manualMode ? "Pick from orders instead" : "No order — bill an amount"}
+            </button>
+          </div>
 
-          {loadingOrders ? (
+          {manualMode ? (
+            <div className="space-y-2">
+              <label className="block text-sm text-neutral-700">Amount to invoice</label>
+              <div className="relative max-w-xs">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 text-lg">
+                  $
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0.01"
+                  step="0.01"
+                  autoFocus
+                  value={manualAmount}
+                  onChange={(e) => setManualAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full rounded-xl border border-neutral-300 pl-9 pr-4 py-2.5 text-lg"
+                />
+              </div>
+              <p className="text-xs text-neutral-400">
+                Enter it tax-included. Describe what it&apos;s for in the notes below.
+              </p>
+            </div>
+          ) : loadingOrders ? (
             <p className="text-sm text-neutral-500">Loading orders…</p>
           ) : orders.length === 0 ? (
             <div className="text-sm text-neutral-500 space-y-2">
               <p>No active orders for this customer.</p>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setManualMode(true)}
+                  className="rounded-lg bg-black text-white px-3 py-1.5 text-xs hover:bg-neutral-800"
+                >
+                  Bill an amount directly
+                </button>
                 <a
                   href={`/staff/orders/intake?customerId=${selectedCustomer.id}`}
                   className="rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-700"
@@ -330,7 +577,7 @@ function NewInvoicePage() {
       )}
 
       {/* Step 3: Deposit & Notes */}
-      {selectedOrderIds.length > 0 && (
+      {selectedCustomer && readyForDetails && (
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4">
           <h2 className="font-semibold text-neutral-900">3. Deposit & Notes</h2>
 
@@ -403,7 +650,7 @@ function NewInvoicePage() {
             </a>
             <button
               onClick={handleCreate}
-              disabled={creating}
+              disabled={creating || totalCents < 1}
               className="rounded-xl bg-black text-white px-5 py-2.5 text-sm disabled:opacity-50"
             >
               {creating ? "Creating…" : "Create Invoice"}
