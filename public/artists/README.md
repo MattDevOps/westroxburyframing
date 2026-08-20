@@ -20,7 +20,8 @@ is their copyright, not ours.
 Every profile currently runs text-only. Each artist needs a headshot and 3-6
 photos of their work:
 
-- [ ] `paul-goodnight/` — Paul Goodnight
+- [x] `paul-goodnight/` — portrait + 3 shop photos in (Aug 2026). Still no
+      photos of the artwork on its own.
 - [ ] `wendi-gray/` — Wendi Gray (also needs a 2-3 sentence blurb from her)
 - [ ] `darrell-smith/` — Darrell Smith
 - [ ] `laurence-pierce/` — Laurence Pierce
@@ -30,3 +31,11 @@ photos of their work:
 Once a folder has images, add them to the artist's `works` array (and set
 `portrait`) — the gallery and the "Work Coming Soon" notice switch over on
 their own.
+
+## works vs shopPhotos
+
+`works` is photographs of the artwork itself, which needs the artist's written
+permission. `shopPhotos` is our own photos taken in the shop — the artist
+standing with a finished frame, a piece on the bench. Those are ours to
+publish, and they run at their natural aspect ratio, so set `width`/`height`
+on each one.

@@ -30,6 +30,12 @@ export interface ArtistWork {
   framing?: string;
   /** Credit line the artist asked for, e.g. "Courtesy of the artist". */
   credit?: string;
+  /**
+   * Pixel dimensions of the file. Only needed for `shopPhotos`, which run at
+   * their natural aspect ratio instead of being cropped to a square-ish tile.
+   */
+  width?: number;
+  height?: number;
 }
 
 /** An extra reference beyond the primary website/Instagram — shop, museum, press. */
@@ -54,6 +60,13 @@ export interface Artist {
   portraitAlt?: string;
   /** Their artwork. Empty until the artist sends photos we may publish. */
   works: ArtistWork[];
+  /**
+   * Photos taken in our shop of their pieces after we framed them — the artist
+   * standing with the finished frame, work on the bench, that sort of thing.
+   * These are our own photographs, so they don't need the artist's image
+   * permission the way `works` does.
+   */
+  shopPhotos?: ArtistWork[];
   website?: string;
   /** Display text for the website button, defaults to the bare domain. */
   websiteLabel?: string;
@@ -109,7 +122,32 @@ const PAUL_GOODNIGHT: Artist = {
   bio: `Paul Goodnight is one of Boston's best-known painters. His figurative work carries the rhythm of the African diaspora, and it hangs everywhere from private collections to the Smithsonian American Art Museum.
 
 He works out of the Piano Factory artists' compound in Boston's South End, and his paintings have reached a wide audience through film and television.`,
+  portrait: "/artists/paul-goodnight/portrait.webp",
+  portraitAlt: "Paul Goodnight, Boston painter",
   works: [],
+  shopPhotos: [
+    {
+      src: "/artists/paul-goodnight/framed-print-black-and-gold.jpg",
+      width: 1280,
+      height: 960,
+      alt: "Paul Goodnight at West Roxbury Framing with one of his signed prints of figures in wide-brimmed hats, framed in a black moulding with a gold fillet and white mat",
+      framing: "Black moulding with a gold fillet and white mat",
+    },
+    {
+      src: "/artists/paul-goodnight/framed-painting-silver-moulding.jpg",
+      width: 800,
+      height: 600,
+      alt: "Paul Goodnight in the shop with one of his paintings framed in a wide silver-leaf moulding",
+      framing: "Wide silver-leaf moulding, no mat",
+    },
+    {
+      src: "/artists/paul-goodnight/framed-drawings-double-opening.jpg",
+      width: 1048,
+      height: 1280,
+      alt: "Paul Goodnight and West Roxbury Framing owner Moses Hasson holding a double-opening frame with two of Goodnight's seated figure drawings",
+      framing: "Double-opening mat in a black moulding — a study and the finished figure in one frame",
+    },
+  ],
   website: "https://www.paulgoodnight.com/",
   websiteLabel: "paulgoodnight.com",
   links: [

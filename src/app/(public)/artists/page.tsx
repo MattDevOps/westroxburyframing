@@ -85,7 +85,8 @@ export default function ArtistsIndexPage() {
     websiteLabel: websiteLabel(artist),
     instagram: artist.instagram,
     links: artist.links,
-    workCount: artist.works.length,
+    // Shop photos count as work to see — the CTA label switches on this.
+    workCount: artist.works.length + (artist.shopPhotos?.length || 0),
   }));
 
   const listSchema = {

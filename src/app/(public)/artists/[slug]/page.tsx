@@ -29,8 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     artist.metaDescription ||
     `${artist.name}: ${artist.blurb} Framed by hand at West Roxbury Framing.`;
 
-  // No artwork or headshot yet — fall back to the site-wide OG image.
-  const ogImage = artist.works[0]?.src || artist.portrait;
+  // No artwork, shop photo or headshot yet — fall back to the site-wide OG image.
+  const ogImage =
+    artist.works[0]?.src || artist.shopPhotos?.[0]?.src || artist.portrait;
 
   return {
     // Already ends in the shop name, so skip the layout's title template.
@@ -57,6 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                 height: 630,
                 alt:
                   artist.works[0]?.alt ||
+                  artist.shopPhotos?.[0]?.alt ||
                   artist.portraitAlt ||
                   `Work by ${artist.name}`,
               },
@@ -77,6 +79,7 @@ export default async function ArtistPage({ params }: PageProps) {
 
   const others = getOtherArtists(artist.slug);
   const sameAs = artistSameAs(artist);
+  const shopPhotos = artist.shopPhotos || [];
 
   // ProfilePage wrapping a Person is the shape Google documents for a page
   // that is *about* one person — it reads better than a bare Person node.
@@ -259,7 +262,7 @@ export default async function ArtistPage({ params }: PageProps) {
           </div>
 
           {/* Their work, framed by us */}
-          {artist.works.length === 0 ? (
+          {artist.works.length === 0 && shopPhotos.length === 0 && (
             <section className="mt-16 border border-border rounded-sm bg-secondary p-8 text-center">
               <h2 className="font-serif text-xl font-bold text-foreground mb-2">
                 Work Coming <span className="text-gold">Soon</span>
@@ -271,7 +274,9 @@ export default async function ArtistPage({ params }: PageProps) {
                   " In the meantime, the links above go straight to it."}
               </p>
             </section>
-          ) : (
+          )}
+
+          {artist.works.length > 0 && (
             <section className="mt-20">
               <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
                 Their <span className="text-gold">Work</span>
@@ -315,6 +320,58 @@ export default async function ArtistPage({ params }: PageProps) {
                         {work.credit && (
                           <p className="text-[11px] text-muted-foreground/70 mt-2">
                             {work.credit}
+                          </p>
+                        )}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Photos from our shop — their pieces after we framed them */}
+          {shopPhotos.length > 0 && (
+            <section className="mt-20">
+              <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+                Framed in <span className="text-gold">Our Shop</span>
+              </h2>
+              <p className="text-muted-foreground text-sm mb-8">
+                Pieces by {artist.name} we&apos;ve framed at West Roxbury
+                Framing.
+              </p>
+              {/* Columns, not a fixed grid — these are camera photos in mixed
+                  orientations and cropping them to one tile shape lops off
+                  either the frame or the people holding it. */}
+              <div className="columns-1 sm:columns-2 gap-5 [column-fill:balance]">
+                {shopPhotos.map((photo) => (
+                  <figure
+                    key={photo.src}
+                    className="mb-5 break-inside-avoid overflow-hidden rounded-sm border border-border bg-card"
+                  >
+                    <Image
+                      src={photo.src}
+                      alt={photo.alt}
+                      width={photo.width || 1200}
+                      height={photo.height || 900}
+                      className="w-full h-auto"
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                    />
+                    {(photo.title || photo.framing || photo.credit) && (
+                      <figcaption className="p-4">
+                        {photo.title && (
+                          <h3 className="text-sm font-medium text-foreground">
+                            {photo.title}
+                          </h3>
+                        )}
+                        {photo.framing && (
+                          <p className="text-xs text-gold/80 mt-1">
+                            {photo.framing}
+                          </p>
+                        )}
+                        {photo.credit && (
+                          <p className="text-[11px] text-muted-foreground/70 mt-2">
+                            {photo.credit}
                           </p>
                         )}
                       </figcaption>
