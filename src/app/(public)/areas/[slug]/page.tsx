@@ -39,9 +39,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: `https://www.westroxburyframing.com/areas/${area.slug}`,
       images: [
         {
-          url: "/framed-art/01.webp",
-          width: 1200,
-          height: 630,
+          url: "/og-image.jpg",
+          width: 482,
+          height: 483,
           alt: `Custom picture framing near ${area.name} — West Roxbury Framing`,
         },
       ],

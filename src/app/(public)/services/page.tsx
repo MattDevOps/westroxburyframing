@@ -43,9 +43,9 @@ export const metadata: Metadata = {
     url: "https://www.westroxburyframing.com/services",
     images: [
       {
-        url: "/framed-art/01.webp",
-        width: 1200,
-        height: 630,
+        url: "/og-image.jpg",
+        width: 482,
+        height: 483,
         alt: "Custom framing services at West Roxbury Framing",
       },
     ],

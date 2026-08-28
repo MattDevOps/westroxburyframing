@@ -75,9 +75,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/framed-art/01.webp",
-        width: 1200,
-        height: 630,
+        url: "/og-image.jpg",
+        width: 482,
+        height: 483,
         alt: "West Roxbury Framing — Custom Picture Framing",
       },
     ],
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     title: "West Roxbury Framing | Custom Picture Framing in West Roxbury, MA",
     description:
       "Family-owned custom picture framing shop serving Boston since 1981. Walk-ins welcome.",
-    images: ["/framed-art/01.webp"],
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -108,7 +108,7 @@ const localBusinessSchema = {
   url: "https://www.westroxburyframing.com",
   telephone: "+1-617-327-3890",
   email: "jake@westroxburyframing.com",
-  image: "https://www.westroxburyframing.com/framed-art/01.webp",
+  image: "https://www.westroxburyframing.com/og-image.jpg",
   logo: "https://www.westroxburyframing.com/logo.png",
   address: {
     "@type": "PostalAddress",
