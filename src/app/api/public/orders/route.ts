@@ -4,6 +4,7 @@ import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
 import { sendNewWebLeadNotification } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { detectSpamName } from "@/lib/spam";
+import { fileWebLeadInInbox } from "@/lib/inbox";
 
 const limiter = rateLimit({ limit: 15, windowSeconds: 600 }); // 15 per 10 min
 
@@ -144,6 +145,19 @@ export async function POST(request: Request) {
                 action: "web_lead_submitted",
                 metadata: { orderNumber, customerName: `${firstName} ${lastName}`, photoCount: photos.length },
             },
+        });
+
+        // File in the Customer Inbox so staff can see and reply from the backend.
+        await fileWebLeadInInbox({
+            orderId: order.id,
+            orderNumber,
+            firstName,
+            lastName,
+            email,
+            phone,
+            itemType,
+            description,
+            notes,
         });
 
         // Notify staff via email

@@ -4,6 +4,7 @@ import { nextOrderNumber, normalizeEmail, normalizePhone } from "@/lib/ids";
 import { sendNewWebLeadNotification } from "@/lib/email";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { detectSpamName } from "@/lib/spam";
+import { fileWebLeadInInbox } from "@/lib/inbox";
 
 const limiter = rateLimit({ limit: 15, windowSeconds: 600 }); // 15 per 10 min
 
@@ -171,33 +172,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // File this in the Customer Inbox so staff can reply by email from the
-    // backend. Best-effort — never block the lead on an inbox write.
-    try {
-      const inboxBody = [
-        itemType ? `Item: ${itemType}` : null,
-        width && height ? `Size: ${width} x ${height} in` : null,
-        description ? `\nDescription:\n${description}` : null,
-        notes ? `\nNotes:\n${notes}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n") || "(No details provided)";
-      await prisma.customerMessage.create({
-        data: {
-          name: `${firstName} ${lastName}`,
-          email: email || "",
-          phone: phone || null,
-          subject: `Your quote request (${orderNumber})`,
-          body: inboxBody,
-          source: "quote_request",
-          orderId: order.id,
-          orderNumber,
-          status: "new",
-        },
-      });
-    } catch (e) {
-      console.error("Failed to save quote request to inbox:", e);
-    }
+    // File in the Customer Inbox so staff can see and reply from the backend.
+    await fileWebLeadInInbox({
+      orderId: order.id,
+      orderNumber,
+      firstName,
+      lastName,
+      email,
+      phone,
+      itemType,
+      description,
+      notes,
+      width,
+      height,
+    });
 
     // Notify staff via email
     const emailResult = await sendNewWebLeadNotification({
