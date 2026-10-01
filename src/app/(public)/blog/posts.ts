@@ -11,6 +11,73 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "how-to-plan-a-gallery-wall",
+    title: "How to Plan a Gallery Wall You Won't Want to Redo",
+    excerpt:
+      "A gallery wall looks effortless when it's done right and chaotic when it's not. Here's how to plan the layout, spacing, and frame mix before you put a single nail in the wall.",
+    category: "Framing Guide",
+    date: "October 1, 2026",
+    metaDescription:
+      "How to plan a gallery wall that actually works — layout, spacing, and frame-mixing tips from West Roxbury Framing, serving Boston since 1981.",
+    keywords: [
+      "how to plan a gallery wall",
+      "gallery wall ideas",
+      "gallery wall layout",
+      "picture wall arrangement",
+      "gallery wall framing Boston",
+      "mixing frame styles",
+      "custom framing West Roxbury",
+    ],
+    content: `
+## Why Gallery Walls Fail (and How to Avoid It)
+
+Most gallery walls go wrong before the first nail goes in. Someone hangs their favorite piece first, then adds frames around it one at a time, eyeballing the spacing as they go. A few hours later there's a wall full of nail holes, crooked pairings, and a layout that never quite settles.
+
+A gallery wall that looks intentional — the kind you see in a well-decorated living room or a stairwell that stops people on their way up — is planned on the floor first, not improvised on the wall. With the colder months ahead and people spending more time inside, and family visiting for the holidays before long, fall is a good stretch to finally tackle that empty wall.
+
+## Start on the Floor, Not the Wall
+
+Lay every piece out on the floor exactly as you want it to hang, using the actual frames if you have them. This is the step people skip, and it's the one that saves you the most frustration. Move pieces around freely, step back, and look at the arrangement from across the room before anything touches the wall.
+
+If you don't have all the frames yet, cut paper templates to the exact outer dimensions of each piece and tape those to the wall instead. It's not glamorous, but it lets you see the real layout — spacing, sightlines, and all — without a single hole.
+
+## Pick One Organizing Idea and Stick to It
+
+Most gallery walls work because they follow one clear rule, not five competing ones. A few that hold up well:
+
+### The Grid
+Same-size frames, evenly spaced, in clean rows and columns. Forgiving, modern, and hard to get wrong — a good choice for a hallway or a set of matching prints.
+
+### The Salon Wall
+A dense, irregular cluster of different sizes and orientations, anchored by a few larger pieces with smaller ones filling the gaps. This is the look that feels collected over time, but it actually needs the most planning — irregular doesn't mean random.
+
+### The Anchor-and-Orbit
+One larger, central piece — a family portrait, a favorite print — with smaller frames arranged around it. Good for a single standout piece you don't want to lose in a crowd.
+
+Pick one approach before you start. A layout that borrows a little from each usually ends up looking unplanned instead of eclectic.
+
+## Spacing That Reads as Intentional
+
+As a starting point, 2–3 inches between frames keeps a wall feeling connected without crowding. Tighter spacing (an inch or less) reads as one cohesive block — the salon-wall look. Wider spacing (4+ inches) makes each piece feel more like its own moment, which works well with fewer, larger pieces.
+
+Whatever gap you choose, keep it consistent across the whole wall. Inconsistent spacing is the single biggest giveaway of an unplanned gallery wall, even when every individual piece looks great.
+
+## Mixing Frames Without It Looking Random
+
+You don't need matching frames for a gallery wall to feel cohesive — but you do need a thread that ties them together. Pick one: all black frames in different widths, a mix of wood tones in the same family, or mats that are all the same color even if the mouldings differ. One consistent element lets the rest of the pieces vary without the wall feeling thrown together.
+
+This is also where it helps to have the pieces framed by the same hand. When we build out a gallery wall for a customer, we're thinking about how each frame will sit next to the others — not just how each piece looks on its own.
+
+## When to Bring the Pieces In
+
+If you've got a mix of photos, prints, a diploma, and a few odd-sized pieces you want to pull into one wall, it's worth bringing them in before you buy a single frame. We can lay out moulding and mat options next to each other so you can see how they'll actually look side by side — not just guess from a dozen tabs open on your laptop.
+
+## Come Plan It With Us
+
+Bring your pieces — framed, unframed, or still just an idea — to 1741 Centre St in West Roxbury. Walk-ins are always welcome, or book a free consultation online and we'll sit down with you and work out a layout and frame mix that holds up on the wall, not just on paper. We've been framing for Boston-area homes since 1981, and in 2024 we were honored with a Boston Legacy Business Award for it.
+    `,
+  },
+  {
     slug: "how-much-does-custom-framing-cost",
     title: "What Goes Into Custom Framing Pricing? An Honest Guide for Boston Customers",
     excerpt:
