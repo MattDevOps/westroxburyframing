@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { hasArtists } from "@/app/(public)/artists/artists";
+import { DELIVERY } from "@/lib/delivery";
 
 export default function FooterPublic() {
   return (
@@ -71,6 +72,7 @@ export default function FooterPublic() {
               </div>
               <p className="text-gold text-xs font-semibold uppercase tracking-wide">Walk-ins always welcome</p>
               <p className="text-xs text-muted-foreground">Free parking available on Centre St and behind the building.</p>
+              <p className="text-xs text-muted-foreground">{DELIVERY.footer}</p>
             </div>
           </div>
         </div>

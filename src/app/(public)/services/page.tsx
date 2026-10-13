@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import ServicesContent from "./ServicesContent";
+import { FAQS } from "./faqs";
 
 export const metadata: Metadata = {
   title: "Framing Services & Rush Same-Day Framing — West Roxbury, MA",
@@ -58,80 +59,11 @@ export const metadata: Metadata = {
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "How much does custom framing cost?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Every framing job is custom — pricing depends on the moulding, mat, glass type, and size of your piece. Bring it in and we'll walk through your options together. Quotes are always free.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How long does custom framing take?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Most standard orders are ready within 5–7 business days. Rush same-day service is available for an additional fee.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do you offer rush or same-day framing?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes — we offer rush same-day framing for customers in Boston and the surrounding area who need a frame fast. Great for last-minute gifts, graduations, gallery deadlines, and memorial services. Call us at (617) 327-3890 or walk in to confirm availability and pricing for rush jobs.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do you frame sports jerseys and memorabilia?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Absolutely — jersey framing is one of our specialties. We build custom shadow boxes for jerseys, signed balls, bats, helmets, medals, patches, and other sports memorabilia.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What type of glass should I choose?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "It depends on your piece and where it will hang. Standard clear glass works for most items. UV-filtering conservation glass prevents fading. Museum glass eliminates reflections — ideal for valuable artwork.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Can you fix a broken or damaged frame?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes! We repair cracked, chipped, or broken frames. We can also refinish or repaint an existing frame to give it new life.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do you offer discounts for non-profits or military?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes — non-profit organizations and active/retired military members receive an additional 5% discount on all framing services.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "What areas do you serve?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Our shop is in West Roxbury, MA and we serve customers from all over the Boston metro area, including Roslindale, Jamaica Plain, Brookline, Dedham, Needham, Newton, and Hyde Park.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Do I need an appointment?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Walk-ins are always welcome! If you'd like dedicated one-on-one time with our framing expert, you can book a free consultation online.",
-      },
-    },
-  ],
+  mainEntity: FAQS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
 };
 
 export default function ServicesPage() {

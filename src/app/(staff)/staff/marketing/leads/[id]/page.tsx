@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { DELIVERY } from "@/lib/delivery";
 import { Mail, MessageSquare, Save, Trash2, ExternalLink, Phone, Building, Globe, Sparkles, Loader2, Copy, Check } from "lucide-react";
 
 type LeadEmailRecord = {
@@ -950,7 +951,7 @@ A few things designers and firms tend to like about working with us:
 - We match moulding lines years later so new pieces blend with existing installations
 - Volume pricing on projects of 10+ pieces, Net-30 for established accounts
 - Single point of contact for the duration of every project
-- Pickup, delivery, and on-site install across Greater Boston
+- Pickup, delivery, and on-site install within ${DELIVERY.radiusMiles} miles of West Roxbury for an additional fee
 
 If framing is something ${company} handles regularly, for client homes, the office itself, or anything in between, I'd love to put a portfolio in front of you. Stop by the shop anytime, or reply to this email and we'll set something up.
 

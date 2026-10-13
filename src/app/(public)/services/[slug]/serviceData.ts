@@ -2,6 +2,8 @@
 // Mirrors the structure used by /areas/[slug] but tuned for service-type SEO.
 // Each entry powers one page at /services/<slug>.
 
+import { DELIVERY } from "@/lib/delivery";
+
 export interface ServiceFAQ {
   q: string;
   a: string;
@@ -115,7 +117,7 @@ export const SERVICES: ServiceInfo[] = [
       },
       {
         title: "Pickup or local delivery",
-        body: "Most jerseys finish in 5–7 business days. Rush jobs available. We can deliver to most Greater Boston addresses for an extra fee.",
+        body: `Most jerseys finish in 5–7 business days. Rush jobs available. ${DELIVERY.step}`,
       },
     ],
     features: [
@@ -550,7 +552,7 @@ export const SERVICES: ServiceInfo[] = [
     process: [
       {
         title: "On-site walkthrough",
-        body: "We come to your space (Greater Boston) to see the project in person. We measure, photograph, and understand the scope. No charge for the walkthrough — we just need to see the work to scope it properly.",
+        body: `We come to your space (within ${DELIVERY.radiusMiles} miles of West Roxbury) to see the project in person. We measure, photograph, and understand the scope. No charge for the walkthrough — we just need to see the work to scope it properly.`,
       },
       {
         title: "Pricing in writing",
@@ -572,10 +574,10 @@ export const SERVICES: ServiceInfo[] = [
     features: [
       "Volume pricing on projects of 10+ pieces",
       "Net-30 invoicing for qualified businesses",
-      "On-site walkthroughs and measurements (Greater Boston)",
+      `On-site walkthroughs and measurements (within ${DELIVERY.radiusMiles} miles of West Roxbury)`,
       "Single point of contact for the duration of the project",
       "Approval samples for designer/facilities sign-off",
-      "Pickup, delivery, AND professional hanging / installation — we hang the work for you, level and secure",
+      `Pickup, delivery, AND professional hanging / installation within ${DELIVERY.radiusMiles} miles of West Roxbury — we hang the work for you, level and secure`,
       "Right hardware for every wall type (drywall, plaster, concrete, brick)",
       "Conservation glass and acid-free materials standard for institutional work",
       "Insurance certificates for installations on request",
@@ -594,7 +596,7 @@ export const SERVICES: ServiceInfo[] = [
       },
       {
         q: "Can you hang the artwork as well?",
-        a: "Yes. We handle delivery and installation for most Greater Boston installs. We carry liability coverage and can provide an insurance certificate on request.",
+        a: `Yes. We handle delivery and installation within ${DELIVERY.radiusMiles} miles of West Roxbury for an additional fee. We carry liability coverage and can provide an insurance certificate on request.`,
       },
       {
         q: "We're a designer / staging company. Can you be our wholesale framer?",

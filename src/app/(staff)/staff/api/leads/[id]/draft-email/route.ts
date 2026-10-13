@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getStaffUserIdFromRequest } from "@/lib/staffRequest";
 import Anthropic from "@anthropic-ai/sdk";
+import { DELIVERY } from "@/lib/delivery";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -127,9 +128,9 @@ The shop's positioning:
 - Hand-built custom framing for 40+ years (since 1981)
 - 5.0 stars on Google with 100+ reviews
 - 2024 Boston Legacy Business Award
-- Specialties: custom picture framing, **picture hanging and installation** (single pieces, gallery walls, donor walls, full installations across Greater Boston — major selling point for designers, hotels, hospitals, law firms), sports memorabilia / jersey shadow boxes, diploma framing for any school, military and first-responder shadow boxes (active relationships with BPD, BFD, VA hospitals), corporate art programs (hotels, law firms, hospitals, designers), canvas stretching and gallery wraps, wedding keepsakes, photo restoration
+- Specialties: custom picture framing, **picture hanging and installation** (single pieces, gallery walls, donor walls, full installations within ${DELIVERY.radiusMiles} miles of West Roxbury — major selling point for designers, hotels, hospitals, law firms), sports memorabilia / jersey shadow boxes, diploma framing for any school, military and first-responder shadow boxes (active relationships with BPD, BFD, VA hospitals), corporate art programs (hotels, law firms, hospitals, designers), canvas stretching and gallery wraps, wedding keepsakes, photo restoration
 - Pricing is always done in person — they prefer the customer brings the piece in so they can design and price accurately
-- Greater Boston pickup, delivery, AND professional hanging/installation — we hang the work for you
+- Pickup, delivery, AND professional hanging/installation within ${DELIVERY.radiusMiles} miles of West Roxbury for an additional fee — we hang the work for you
 - Volume pricing for projects of 10+ pieces; Net-30 for established business accounts${
     calendlyUrl
       ? `\n- Booking link for a quick intro call: ${calendlyUrl}`

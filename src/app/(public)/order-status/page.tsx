@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ORDER_STATUS_LABEL } from "@/lib/orderStatus";
+import { DELIVERY } from "@/lib/delivery";
 
 const STATUS_COLORS: Record<string, string> = {
   estimate: "bg-purple-100 text-purple-800 border-purple-300",
@@ -173,7 +174,7 @@ export default function OrderStatusPage() {
               <div className="rounded-xl border border-neutral-200 bg-blue-50 p-4">
                 <p className="text-sm text-blue-900">
                   {order.status === "ready_for_pickup" && (
-                    <>Your order is ready for pickup! Please visit us during business hours to collect your framing.</>
+                    <>Your order is ready for pickup! Please visit us during business hours to collect your framing. {DELIVERY.readyNote}</>
                   )}
                   {order.status === "in_production" && (
                     <>Your order is currently being framed. We'll notify you when it's ready for pickup.</>
@@ -193,7 +194,7 @@ export default function OrderStatusPage() {
                   {order.status === "on_hold" && (
                     <>This order is currently on hold. Please contact us for more information.</>
                   )}
-                  {order.status === "completed" || order.status === "picked_up" && (
+                  {(order.status === "completed" || order.status === "picked_up") && (
                     <>Thank you for your order! We hope you love your framing.</>
                   )}
                   {!["ready_for_pickup", "in_production", "awaiting_materials", "quality_check", "new_design", "estimate", "on_hold", "completed", "picked_up"].includes(order.status) && (

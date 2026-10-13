@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Truck } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
+import { DELIVERY } from "@/lib/delivery";
 
 export default function ContactContent() {
   return (
@@ -64,6 +65,15 @@ export default function ContactContent() {
                   <p className="text-muted-foreground text-sm">Saturday: Closed</p>
                   <p className="text-muted-foreground text-sm">Sunday: 10:30am – 4:30pm</p>
                   <p className="text-muted-foreground text-xs mt-1">Need to come earlier or stay later? Contact us — we're happy to accommodate by an hour.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-sm bg-gold/10 flex items-center justify-center shrink-0">
+                  <Truck size={18} className="text-gold" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground text-sm mb-1">{DELIVERY.title}</h4>
+                  <p className="text-muted-foreground text-sm">{DELIVERY.short}</p>
                 </div>
               </div>
             </div>

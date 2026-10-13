@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { MapPin, Phone, Clock, ArrowRight, Star } from "lucide-react";
+import { MapPin, Phone, Clock, ArrowRight, Star, Truck } from "lucide-react";
 import type { AreaInfo } from "./areaData";
+import { DELIVERY } from "@/lib/delivery";
 
 const SERVICES = [
   "Custom Picture Framing",
@@ -167,6 +168,15 @@ export default function AreaContent({ area }: { area: AreaInfo }) {
               <div className="bg-card rounded-sm border border-border p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">Directions from {area.name}</h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">{area.directions}</p>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-sm bg-gold/10 flex items-center justify-center shrink-0">
+                  <Truck size={18} className="text-gold" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground text-sm mb-1">{DELIVERY.title} to {area.name}</h4>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{DELIVERY.short}</p>
+                </div>
               </div>
             </div>
             <div className="aspect-video md:aspect-auto rounded-sm overflow-hidden border border-border">

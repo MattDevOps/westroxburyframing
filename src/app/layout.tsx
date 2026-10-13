@@ -4,6 +4,7 @@ import { Inter, Playfair_Display, Oswald } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { DELIVERY } from "@/lib/delivery";
 
 // GA4 loads only where NEXT_PUBLIC_GA_ID is set, so local dev and preview
 // deploys stay out of the shop's numbers. Set it in Vercel for Production only.
@@ -98,6 +99,19 @@ export const metadata: Metadata = {
   },
 };
 
+const SHOP_GEO = {
+  "@type": "GeoCoordinates",
+  latitude: 42.287442,
+  longitude: -71.150185,
+};
+
+// Pickup & delivery radius around the shop.
+const DELIVERY_AREA = {
+  "@type": "GeoCircle",
+  geoMidpoint: SHOP_GEO,
+  geoRadius: DELIVERY.radiusMeters,
+};
+
 const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
@@ -118,11 +132,7 @@ const localBusinessSchema = {
     postalCode: "02132",
     addressCountry: "US",
   },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 42.287442,
-    longitude: -71.150185,
-  },
+  geo: SHOP_GEO,
   openingHoursSpecification: [
     {
       "@type": "OpeningHoursSpecification",
@@ -150,6 +160,7 @@ const localBusinessSchema = {
     "https://www.yelp.com/biz/west-roxbury-framing-west-roxbury",
   ],
   areaServed: [
+    DELIVERY_AREA,
     { "@type": "City", name: "West Roxbury" },
     { "@type": "City", name: "Roslindale" },
     { "@type": "City", name: "Jamaica Plain" },
@@ -167,6 +178,10 @@ const localBusinessSchema = {
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Photo Restoration" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Canvas Stretching" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Frame Repair" } },
+      {
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: "Artwork Pickup & Delivery", areaServed: DELIVERY_AREA },
+      },
     ],
   },
 };

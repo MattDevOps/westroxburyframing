@@ -7,10 +7,11 @@ import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Trophy, Hammer } fro
 // Names + taglines only; the bios are a few KB of text and ride along in the
 // client bundle, which is cheaper than letting a second copy of the list drift.
 import { sortedArtists } from "./artists/artists";
+import { DELIVERY } from "@/lib/delivery";
 
 const services = [
   { icon: Frame, title: "Custom & Handmade Frames", description: "Hundreds of styles, finishes, and colors in wood and aluminum — designed in-shop to suit your piece." },
-  { icon: Hammer, title: "Picture Hanging & Installation", description: "Single pieces, gallery walls, and full installations in homes, offices, hotels, and law firms across Greater Boston — level, secure, and exactly where you want it." },
+  { icon: Hammer, title: "Picture Hanging & Installation", description: `Single pieces, gallery walls, and full installations in homes, offices, hotels, and law firms within ${DELIVERY.radiusMiles} miles of West Roxbury — level, secure, and exactly where you want it.` },
   { icon: Layers, title: "Custom Matting", description: "Conservation and decorative mats in countless colors and styles, hand-cut to fit your artwork perfectly." },
   { icon: Maximize, title: "Mounting & Shadow Boxes", description: "Dry mounting, float mounting, canvas stretching, museum mounting, and shadow boxes for jerseys, medals, and memorabilia." },
   { icon: Wrench, title: "Insurance Repair & Replacement", description: "Damaged art or frames covered by insurance — we work directly with adjusters to repair or replace with care." },
@@ -241,7 +242,7 @@ export default function HomePage() {
             {[
               { title: "Free Consultation", desc: "Walk in or schedule a visit at 1741 Centre Street with your artwork, photo, jersey, diploma, or keepsake. We need to see the piece in person." },
               { title: "Design & Pricing Together", desc: "We sit down with you, walk through moulding, mat, and glass options for your piece, and work out the pricing right then. No guesswork." },
-              { title: "Pickup When Ready", desc: "Our framers hand-build your piece in our West Roxbury shop. Most jobs are ready in 5–10 business days. Once your job is completed, we'll notify you to pick it up." },
+              { title: "Pickup or Delivery", desc: `Our framers hand-build your piece in our West Roxbury shop. Most jobs are ready in 5–10 business days. Once your job is completed, we'll notify you to pick it up, or we can deliver it within ${DELIVERY.radiusMiles} miles for an additional fee.` },
             ].map((s, i) => (
               <motion.div
                 key={s.title}
@@ -545,6 +546,10 @@ export default function HomePage() {
                 <p className="text-foreground/70 text-sm">
                   Free street parking is available directly in front of the shop on Centre Street. Additional parking in the municipal lot behind the building.
                 </p>
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-foreground mb-2">{DELIVERY.title}</h3>
+                <p className="text-foreground/70 text-sm">{DELIVERY.short}</p>
               </div>
               <div>
                 <h3 className="font-serif text-xl text-foreground mb-2">Contact</h3>

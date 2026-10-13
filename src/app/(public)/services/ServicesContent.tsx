@@ -3,10 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock, ArrowRight, Hammer } from "lucide-react";
+import { Frame, Layers, Maximize, Wrench, Shield, Sparkles, Scissors, Box, PaintBucket, Gem, DollarSign, Clock, ArrowRight, Hammer, Truck } from "lucide-react";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SERVICES as NICHE_SERVICES } from "./[slug]/serviceData";
+import { DELIVERY } from "@/lib/delivery";
+import { FAQS } from "./faqs";
 
 const SERVICES = [
   {
@@ -17,7 +19,12 @@ const SERVICES = [
   {
     icon: Hammer,
     title: "Picture Hanging & Installation",
-    body: "We don't just frame — we hang the work in your home, office, lobby, or hotel. Single statement pieces, balanced gallery walls, donor walls, partner-diploma displays, and full art installations across Greater Boston. We bring the right hardware for your wall type (drywall, plaster, concrete, brick), level every piece, and clean up after. Most jobs same-week. Available as a standalone service even on pieces we didn't frame.",
+    body: `We don't just frame — we hang the work in your home, office, lobby, or hotel. Single statement pieces, balanced gallery walls, donor walls, partner-diploma displays, and full art installations within ${DELIVERY.radiusMiles} miles of West Roxbury. We bring the right hardware for your wall type (drywall, plaster, concrete, brick), level every piece, and clean up after. Most jobs same-week. Available as a standalone service even on pieces we didn't frame.`,
+  },
+  {
+    icon: Truck,
+    title: DELIVERY.title,
+    body: DELIVERY.long,
   },
   {
     icon: Layers,
@@ -78,45 +85,6 @@ const SERVICES = [
     icon: DollarSign,
     title: "Budget-Friendly Framing",
     body: "Quality custom framing doesn't have to break the bank. Our experts will work with you to find the best frame, mat, and glass combination that looks great and fits your budget. We also offer volume discounts for businesses and organizations.",
-  },
-];
-
-const FAQS = [
-  {
-    q: "How much does custom framing cost?",
-    a: "Every framing job is custom — pricing depends on the moulding, mat, glass type, and size of your piece. Bring it in and we'll walk through your options together. Quotes are always free.",
-  },
-  {
-    q: "How long does custom framing take?",
-    a: "Most standard orders are ready within 5–7 business days. Rush same-day service is available for an additional fee. We'll give you an exact timeline when you place your order.",
-  },
-  {
-    q: "Do you offer rush or same-day framing?",
-    a: "Yes — we offer rush same-day framing for customers in Boston and the surrounding area who need a frame fast. Great for last-minute gifts, graduations, gallery deadlines, and memorial services. Call us at (617) 327-3890 or walk in to confirm availability and pricing for rush jobs.",
-  },
-  {
-    q: "Do you frame sports jerseys and memorabilia?",
-    a: "Absolutely — jersey framing is one of our specialties. We build custom shadow boxes for jerseys, signed balls, bats, helmets, medals, patches, and other sports memorabilia. We serve fans across Boston and the surrounding area.",
-  },
-  {
-    q: "What type of glass should I choose?",
-    a: "It depends on your piece and where it will hang. Standard clear glass works well for most items. If it's near a window or under lights, UV-filtering conservation glass prevents fading. Museum glass eliminates reflections almost entirely — ideal for valuable artwork.",
-  },
-  {
-    q: "Can you fix a broken or damaged frame?",
-    a: "Yes! We repair cracked, chipped, or broken frames. We can also refinish or repaint an existing frame to give it new life. Bring it in for a free assessment.",
-  },
-  {
-    q: "Do you offer discounts for non-profits or military?",
-    a: "Yes — non-profit organizations and active/retired military members receive an additional 5% discount on all framing services.",
-  },
-  {
-    q: "What areas do you serve?",
-    a: "Our shop is in West Roxbury, MA and we serve customers from all over the Boston metro area, including Roslindale, Jamaica Plain, Brookline, Dedham, Needham, Newton, Hyde Park, and beyond. We're located at 1741 Centre Street with free parking.",
-  },
-  {
-    q: "Do I need an appointment?",
-    a: "Walk-ins are always welcome! If you'd like dedicated one-on-one time with our framing expert — especially for complex projects — you can book a free consultation online.",
   },
 ];
 
