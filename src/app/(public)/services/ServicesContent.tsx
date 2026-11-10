@@ -45,10 +45,6 @@ const SERVICES = [
     icon: Frame,
     title: "Mirror Framing — Any Size",
     body: "We frame all mirrors, no matter the size. Bathroom vanity mirrors, full-length and floor mirrors, oversized wall mirrors, antique and beveled glass: bring us your mirror or we can supply one cut to size. Every frame is built by hand in our West Roxbury shop to fit your mirror exactly.",
-    image: {
-      src: "/services/mirror-framing.jpg",
-      alt: "Large gold-framed mirror custom framed at West Roxbury Framing, with the shop team reflected in it",
-    },
   },
   {
     icon: Sparkles,
@@ -160,23 +156,11 @@ export default function ServicesContent() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className={`bg-card p-8 rounded-sm border border-border hover:border-gold/30 transition-colors ${s.image ? "md:col-span-2 sm:flex sm:items-center sm:gap-8" : ""}`}
+                className="bg-card p-8 rounded-sm border border-border hover:border-gold/30 transition-colors"
               >
-                {s.image && (
-                  <Image
-                    src={s.image.src}
-                    alt={s.image.alt}
-                    width={960}
-                    height={1280}
-                    sizes="(min-width: 640px) 256px, 100vw"
-                    className="w-full sm:w-64 h-auto shrink-0 rounded-sm mb-6 sm:mb-0"
-                  />
-                )}
-                <div>
-                  <s.icon size={28} className="text-gold mb-4" />
-                  <h3 className="font-serif text-xl text-foreground mb-3">{s.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{s.body}</p>
-                </div>
+                <s.icon size={28} className="text-gold mb-4" />
+                <h3 className="font-serif text-xl text-foreground mb-3">{s.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{s.body}</p>
               </motion.div>
             ))}
           </div>

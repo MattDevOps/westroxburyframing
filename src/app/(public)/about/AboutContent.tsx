@@ -55,6 +55,32 @@ export default function AboutContent() {
         </div>
       </section>
 
+      <section className="pb-24">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="aspect-[3/4] w-full max-w-md mx-auto rounded-sm overflow-hidden relative"
+          >
+            <Image src="/home/mirror-framing.jpg" alt="Large gold-framed mirror custom framed at West Roxbury Framing, with the shop team reflected in it" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 448px" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-serif text-3xl font-bold text-foreground mb-4">We Frame All Mirrors</h2>
+            <p className="text-foreground/70 leading-relaxed mb-4">
+              We frame all mirrors, no matter the size. Bathroom vanity mirrors, full-length and floor mirrors, oversized wall mirrors, antique and beveled glass: bring us your mirror or we can supply one cut to size.
+            </p>
+            <p className="text-foreground/70 leading-relaxed">
+              Every frame is built by hand in our West Roxbury shop to fit your mirror exactly.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       <section className="py-24 bg-secondary">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
